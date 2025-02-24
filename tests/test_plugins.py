@@ -1,47 +1,48 @@
-# tests/test_plugins.py
 import unittest
-import math
-from plugins.encryption_bb84.bb84 import run_bb84_protocol
-from plugins.handshake.handshake import perform_handshake
-from plugins.teleportation.teleport import teleport
-from plugins.network.network import entanglement_swapping
-from plugins.qrng.qrng import generate_random_number
-from plugins.authentication.auth import generate_quantum_fingerprint, verify_fingerprint
-from core.qubit import Qubit
+import numpy as np
+from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
+from plugins.handshake.handshake import handshake_cirq
+from plugins.teleportation.teleport import teleportation_circuit
+from plugins.network.network import entanglement_swapping_cirq
+from plugins.qrng.qrng import generate_random_number_cirq
+from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
+from plugins.grover.grover import run_grover
 
 class TestPlugins(unittest.TestCase):
     def test_bb84(self):
-        result = run_bb84_protocol(10)
-        # Shared key length should be between 0 and 10.
+        result = bb84_protocol_cirq(10, noise_prob=0.01)
         self.assertTrue(0 <= len(result['shared_key']) <= 10)
 
     def test_handshake(self):
-        result = perform_handshake()
+        result = handshake_cirq(noise_prob=0.01)
         self.assertIn(result['alice_result'], [0, 1])
         self.assertIn(result['bob_result'], [0, 1])
         self.assertIn(result['handshake_success'], [True, False])
 
     def test_teleportation(self):
-        q_unknown = Qubit([math.sqrt(3)/2, 1/2])
-        result = teleport(q_unknown)
-        self.assertEqual(len(result['classical_bits']), 2)
-        # Check that Bob's qubit state is a valid basis state.
-        self.assertTrue(result['bob_state'] in ([1.0, 0.0], [0.0, 1.0]))
-    
+        state, measurements, circuit, log_str = teleportation_circuit(noise_prob=0.01)
+        self.assertEqual(len(measurements), 2)
+        norm = np.linalg.norm(state)
+        self.assertAlmostEqual(norm, 1.0, places=5)
+
     def test_network(self):
-        result = entanglement_swapping()
-        self.assertTrue(result['node_A_state'] in ([1.0, 0.0], [0.0, 1.0]))
-        self.assertTrue(result['node_C_state'] in ([1.0, 0.0], [0.0, 1.0]))
+        result = entanglement_swapping_cirq(noise_prob=0.01)
+        self.assertIn(result['node_A_measurement'], [0, 1])
+        self.assertIn(result['node_C_measurement'], [0, 1])
 
     def test_qrng(self):
-        number, bits = generate_random_number(8)
+        number, bits, log_str = generate_random_number_cirq(8)
         self.assertEqual(len(bits), 8)
 
     def test_authentication(self):
         data = "test_user"
-        fingerprint = generate_quantum_fingerprint(data, num_qubits=8)
-        valid = verify_fingerprint(data, fingerprint, num_qubits=8)
+        fingerprint, log_str = generate_quantum_fingerprint_cirq(data, num_qubits=8)
+        valid = verify_fingerprint_cirq(data, fingerprint, num_qubits=8)
         self.assertTrue(valid)
+
+    def test_grover(self):
+        outcome, circuit, log_str = run_grover(3, '101', noise_prob=0.01)
+        self.assertEqual(len(outcome), 3)
 
 if __name__ == '__main__':
     unittest.main()
