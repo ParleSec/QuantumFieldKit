@@ -1,37 +1,37 @@
 """
-Quantum Random Number Generator (QRNG) Simulation Module
+High-Fidelity Quantum Random Number Generator using Cirq with Detailed Math Logging.
 
-This module uses the inherent randomness of quantum measurement.
-By preparing a qubit in superposition and measuring it, a random bit is generated.
-Multiple measurements form a random number.
+Prepares a qubit in superposition and measures it, logging the quantum state and measurement.
 """
+import cirq
 
-import random
-import math
-from core.qubit import Qubit
+def generate_random_bit_cirq():
+    q = cirq.NamedQubit("q")
+    circuit = cirq.Circuit()
+    circuit.append(cirq.H(q))
+    circuit.append(cirq.measure(q, key='m'))
+    simulator = cirq.Simulator()
+    result = simulator.run(circuit, repetitions=1)
+    return int(result.measurements['m'][0][0]), circuit
 
-def generate_random_bit():
-    """
-    Generate a random bit using quantum superposition.
-    Prepare a qubit, apply Hadamard to create superposition, and measure.
-    """
-    q = Qubit()
-    q.apply_hadamard()
-    return q.measure()
-
-def generate_random_number(num_bits=8):
-    """
-    Generate a random number from a sequence of quantum-generated bits.
-    :param num_bits: Number of bits in the generated number.
-    :return: A tuple (number, list of bits).
-    """
-    bits = [generate_random_bit() for _ in range(num_bits)]
+def generate_random_number_cirq(num_bits=8):
+    log = ["=== QRNG Simulation (Cirq Edition) ==="]
+    bits = []
+    circuits = []
+    for _ in range(num_bits):
+        bit, circ = generate_random_bit_cirq()
+        bits.append(bit)
+        circuits.append(circ)
+        log.append(f"Generated bit: {bit} with circuit: {circ}")
     number = 0
     for bit in bits:
         number = (number << 1) | bit
-    return number, bits
+    log.append(f"Final random number: {number}")
+    return number, bits, "\n".join(log)
 
 if __name__ == '__main__':
-    number, bits = generate_random_number(16)
-    print("Generated random number:", number)
+    number, bits, log_str = generate_random_number_cirq(16)
+    print("Cirq QRNG Simulation:")
+    print("Random number:", number)
     print("Bit sequence:", bits)
+    print("\nDetailed Log:\n", log_str)

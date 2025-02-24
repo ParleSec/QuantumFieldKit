@@ -1,42 +1,39 @@
 """
-Quantum Handshake Simulation Module
+High-Fidelity Quantum Handshake Simulation using Google Cirq with Detailed Math Logging.
 
-This module simulates a quantum handshake where two parties (Alice and Bob)
-share an entangled pair. Each measures their qubit, and if the results are
-correlated (i.e. identical), the handshake is considered successful.
+Creates an entangled Bell pair and logs the operations and measurements for authentication.
 """
+import cirq
 
-import random
-from core.qubit import Qubit
+def add_noise(circuit, noise_prob):
+    noisy_ops = []
+    for op in circuit.all_operations():
+        noisy_ops.append(op)
+        for q in op.qubits:
+            noisy_ops.append(cirq.DepolarizingChannel(noise_prob).on(q))
+    return cirq.Circuit(noisy_ops)
 
-def create_entangled_pair():
-    """
-    Simulate the creation of an entangled pair.
-    For simulation, randomly choose an outcome and create two qubits that share it.
-    """
-    outcome = random.choice([0, 1])
-    q1 = Qubit([1.0, 0.0]) if outcome == 0 else Qubit([0.0, 1.0])
-    q2 = Qubit([1.0, 0.0]) if outcome == 0 else Qubit([0.0, 1.0])
-    return q1, q2
-
-def perform_handshake():
-    """
-    Simulate a quantum handshake between two parties.
-    Returns the measurement results and whether the handshake was successful.
-    """
-    alice_qubit, bob_qubit = create_entangled_pair()
-    alice_result = alice_qubit.measure()
-    bob_result = bob_qubit.measure()
-    handshake_success = (alice_result == bob_result)
-    return {
-        'alice_result': alice_result,
-        'bob_result': bob_result,
-        'handshake_success': handshake_success
-    }
+def handshake_cirq(noise_prob=0.0):
+    log = []
+    log.append("=== Quantum Handshake Simulation (Cirq Edition) ===")
+    q0, q1 = cirq.LineQubit.range(2)
+    circuit = cirq.Circuit()
+    circuit.append([cirq.H(q0), cirq.CNOT(q0, q1)])
+    log.append("Created Bell pair using H and CNOT.")
+    if noise_prob > 0:
+        circuit = add_noise(circuit, noise_prob)
+        log.append(f"Noise added with p = {noise_prob}.")
+    circuit.append([cirq.measure(q0, key='m0'), cirq.measure(q1, key='m1')])
+    simulator = cirq.Simulator()
+    result = simulator.run(circuit, repetitions=1)
+    m0 = int(result.measurements['m0'][0][0])
+    m1 = int(result.measurements['m1'][0][0])
+    log.append(f"Measurement outcomes: m0 = {m0}, m1 = {m1}.")
+    handshake_success = (m0 == m1)
+    log.append(f"Handshake success: {handshake_success}.")
+    return {'alice_result': m0, 'bob_result': m1, 'handshake_success': handshake_success, 'log': "\n".join(log)}
 
 if __name__ == '__main__':
-    result = perform_handshake()
-    print("Quantum Handshake Simulation Result:")
-    print("Alice measurement:", result['alice_result'])
-    print("Bob measurement:  ", result['bob_result'])
-    print("Handshake success:", result['handshake_success'])
+    result = handshake_cirq(noise_prob=0.02)
+    print("Cirq Handshake Simulation Result:")
+    print(result['log'])

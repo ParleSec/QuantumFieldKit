@@ -1,76 +1,62 @@
 """
-Quantum Teleportation Simulation Module
+High-Fidelity Quantum Teleportation using Google Cirq with Detailed Math Logging.
 
-This module simulates the quantum teleportation protocol.
-Alice has an unknown qubit state and shares an entangled pair with Bob.
-She performs a Bell measurement on her unknown qubit and her half of the entangled pair,
-then sends the classical bits to Bob, who applies corrections.
-After corrections, Bob's qubit is measured to collapse it into a classical basis state.
+Implements a three-qubit teleportation protocol. Logs operations, state evolution,
+and measurement outcomes, showing the mathematical effects of each gate.
 """
+import cirq
+import numpy as np
 
-import random
-import math
-from core.qubit import Qubit
+def add_noise(circuit, noise_prob):
+    noisy_ops = []
+    for op in circuit.all_operations():
+        noisy_ops.append(op)
+        for q in op.qubits:
+            noisy_ops.append(cirq.DepolarizingChannel(noise_prob).on(q))
+    return cirq.Circuit(noisy_ops)
 
-def create_bell_pair():
-    """
-    Simulate creation of a Bell pair (entangled pair in the state (|00> + |11>)/sqrt2).
-    Here, we use a simplified simulation: we create two qubits and assign a flag to indicate entanglement.
-    """
-    q1 = Qubit()
-    q2 = Qubit()
-    q1.apply_hadamard()
-    # In a full simulation, a CNOT would entangle the qubits.
-    # For our simulation, we simply note that they are entangled.
-    q1.entangled_with = q2
-    q2.entangled_with = q1
-    return q1, q2
-
-def bell_measurement(q_unknown, q_alice):
-    """
-    Simulate a Bell state measurement on two qubits.
-    Returns two classical bits (simulated as random bits).
-    """
-    return random.randint(0, 1), random.randint(0, 1)
-
-def apply_correction(q_bob, classical_bits):
-    """
-    Apply corrections to Bob's qubit based on the classical bits received.
-    For simulation:
-      - If classical_bits[0] is 1, apply Pauli-X.
-      - If classical_bits[1] is 1, apply Pauli-Z.
-    """
-    from core.gates import pauli_x, pauli_z
-    bit1, bit2 = classical_bits
-    if bit1 == 1:
-        pauli_x(q_bob)
-    if bit2 == 1:
-        pauli_z(q_bob)
-    return q_bob
-
-def teleport(q_unknown):
-    """
-    Simulate the quantum teleportation protocol.
-    :param q_unknown: The Qubit to be teleported.
-    :return: A dictionary with the classical bits and Bob's qubit state after correction.
-    """
-    # Create an entangled pair between Alice and Bob.
-    q_alice, q_bob = create_bell_pair()
-    # Alice performs a Bell measurement on her unknown qubit and her half of the Bell pair.
-    classical_bits = bell_measurement(q_unknown, q_alice)
-    # Simulate classical communication: Bob applies corrections based on the measurement.
-    q_bob = apply_correction(q_bob, classical_bits)
-    # Collapse Bob's qubit state by measuring it, ensuring a basis state outcome.
-    q_bob.measure()
-    return {
-        'classical_bits': classical_bits,
-        'bob_state': q_bob.state
-    }
+def teleportation_circuit(noise_prob=0.0):
+    log = []
+    log.append("=== Quantum Teleportation Simulation (Cirq Edition) ===")
+    q0, q1, q2 = cirq.LineQubit.range(3)
+    circuit = cirq.Circuit()
+    log.append("Preparing unknown state on q0 using H and Z gates.")
+    circuit.append([cirq.H(q0), cirq.Z(q0)])
+    log.append("Creating Bell pair between q1 and q2 using H and CNOT.")
+    circuit.append([cirq.H(q1), cirq.CNOT(q1, q2)])
+    if noise_prob > 0:
+        circuit = add_noise(circuit, noise_prob)
+        log.append(f"Noise added with probability {noise_prob} after Bell pair creation.")
+    log.append("Performing Bell measurement on q0 and q1.")
+    circuit.append(cirq.CNOT(q0, q1))
+    circuit.append(cirq.H(q0))
+    circuit.append([cirq.measure(q0, key='m0'), cirq.measure(q1, key='m1')])
+    if noise_prob > 0:
+        circuit = add_noise(circuit, noise_prob)
+        log.append(f"Noise added before measurement.")
+    simulator = cirq.Simulator()
+    result = simulator.run(circuit, repetitions=1)
+    m0 = int(result.measurements['m0'][0][0])
+    m1 = int(result.measurements['m1'][0][0])
+    log.append(f"Measurement outcomes: m0 = {m0}, m1 = {m1}.")
+    log.append("Applying conditional corrections to q2 based on measurements.")
+    correction_circuit = cirq.Circuit()
+    if m1 == 1:
+        correction_circuit.append(cirq.X(q2))
+        log.append("Applied X gate on q2 (m1=1).")
+    if m0 == 1:
+        correction_circuit.append(cirq.Z(q2))
+        log.append("Applied Z gate on q2 (m0=1).")
+    full_circuit = circuit + correction_circuit
+    final_state = simulator.simulate(full_circuit).final_state_vector
+    log.append(f"Final state vector of q2: {np.around(final_state, 3)}")
+    return final_state, (m0, m1), full_circuit, "\n".join(log)
 
 if __name__ == '__main__':
-    # Prepare an unknown qubit state, e.g., |ψ> = (sqrt(3)/2)|0> + (1/2)|1>
-    q_unknown = Qubit([math.sqrt(3)/2, 1/2])
-    result = teleport(q_unknown)
-    print("Quantum Teleportation Simulation Result:")
-    print("Classical bits sent:        ", result['classical_bits'])
-    print("Bob's qubit state after teleportation:", result['bob_state'])
+    state, measurements, circuit, log_str = teleportation_circuit(noise_prob=0.02)
+    print("Cirq Teleportation Simulation:")
+    print("Final state vector of q2:", state)
+    print("Measurement outcomes:", measurements)
+    print("Circuit:")
+    print(circuit)
+    print("\nDetailed Log:\n", log_str)
