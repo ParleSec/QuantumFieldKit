@@ -2,9 +2,10 @@
 
 ## Overview
 
-Quantum Field Kit is a basic quantum computing simulation toolkit designed to demonstrate and explore various quantum protocols and concepts in a binary environment. The toolkit provides both a command-line interface (CLI) and a graphical user interface (GUI) for running quantum simulations.
+Quantum Field Kit is a basic quantum computing simulation toolkit designed to demonstrate and explore various quantum protocols and concepts in a binary environment. 
 
-This is a simulation toolkit and does not represent a full quantum computing environment. It provides conceptual demonstrations of quantum protocols.
+This toolkit provides both a command-line interface (CLI) and a graphical user interface (GUI) for running quantum simulations to provide a conceptual demonstration of quantum protocols.
+
 
 ## Features
 
@@ -21,8 +22,7 @@ The Quantum Field Kit includes simulations of the following quantum protocols:
 ## Requirements
 
 - Python 3.8+
-- tkinter (for GUI)
-- unittest (for testing)
+- requirements.txt
 
 ## Installation
 
@@ -53,48 +53,86 @@ Launch the GUI:
 
 ```bash
 python -m ui.gui
-OR
-npm start
 ```
 
 ## Running Tests
 
 ```bash
-python -m unittest tests.test_core
 python -m unittest tests.test_plugins
-OR
-npm test
 ```
 
 ## Quantum Protocols Explained
 
-### BB84 Protocol
-- Demonstrates quantum key distribution
-- Alice prepares qubits in random bases
-- Bob measures qubits in random bases
-- They compare bases to create a shared secret key
+#### BB84 Protocol (bb84.py)
 
-### Quantum Handshake
-- Uses entangled qubit pairs
-- Parties measure their qubits
-- Successful handshake if measurements are correlated
+- Demonstrates quantum key distribution using the uncertainty principle: measuring a qubit in the wrong basis destroys its information
+- Shows how quantum superposition allows detection of eavesdropping, as any measurement disturbs the quantum state
+- Illustrates how quantum mechanics enables unconditionally secure communication through the no-cloning theorem
 
-### Quantum Teleportation
-- Transfers an unknown qubit state from Alice to Bob
-- Uses an entangled pair and Bell state measurement
-- Requires classical communication for state correction
+#### Quantum Handshake (handshake.py)
 
-### Quantum Network (Entanglement Swapping)
-- Demonstrates quantum entanglement across multiple nodes
-- Nodes A and B share an entangled pair
-- Nodes B and C share another entangled pair
-- Bell measurement at node B creates entanglement between A and C
+- Explores quantum entanglement through Bell pairs, where two qubits share a special correlation regardless of distance
+- Demonstrates Bell's theorem through measurements that show stronger correlations than possible with classical physics
+- Shows how quantum measurement collapses superposition, ensuring the handshake can't be intercepted without detection
 
-### Quantum Random Number Generator
-- Leverages quantum superposition and measurement
-- Generates truly random bits by measuring qubits in superposition
+#### Quantum Teleportation (teleport.py)
 
-### Quantum Authentication
-- Uses quantum fingerprinting for secure authentication
-- Generates a fingerprint from user data using quantum measurements
-- Provides a method to verify identity
+- Demonstrates how quantum information can be transmitted using entanglement and classical communication
+- Explores the concept of quantum state collapse through Bell measurements
+- Shows how entanglement enables the perfect transfer of quantum information without violating the no-cloning theorem
+
+#### Quantum Network (network.py)
+
+- Illustrates entanglement swapping, where entanglement can be extended across a network without direct interaction
+- Demonstrates the concept of quantum repeaters for long-distance quantum communication
+- Shows how local quantum operations and classical communication can establish quantum connections between distant points
+
+#### Quantum Random Number Generator (qrng.py)
+
+- Demonstrates how quantum superposition can generate true randomness, unlike classical limitations
+- Shows how quantum superposition states leads to unpredictable outcomes
+- Illustrates the relationship between base choice and quantum randomness
+
+#### Quantum Authentication (auth.py)
+
+- Shows how quantum superposition can create unforgeable quantum signatures
+- Demonstrates how the no-cloning theorem prevents copying of quantum authentication tokens
+- Explores how quantum measurement disturbs quantum states, making tampering detectable
+
+#### Grover's Algorithm (grover.py)
+
+- Demonstrates quantum speedup through amplitude amplification in search problems
+- Shows how quantum interference can be used to enhance desired solutions and suppress unwanted ones
+- Illustrates how quantum parallelism allows searching through all possibilities simultaneously
+
+#### Error Correction (shor_code.py)
+
+- Demonstrates how quantum error correction protects quantum information
+- Shows how quantum states can be resistant against both bit-flip and phase-flip errors
+- Illustrates the concept of 'syndrome measurement' to detect errors without degrading the quantum state
+
+#### Variational Quantum Eigensolver (vqe.py)
+
+- Shows potential of quantum-classical hybrid algorithms to solve optimization problems
+- Demonstrates the use of quantum observables to compute energy expectations
+- Illustrates how quantum entanglement represents complex quantum states
+
+##
+
+## Installation
+```bash
+git clone https://github.com/ParleSec/quantum-field-kit
+cd quantum-field-kit
+pip install -r requirements.txt
+```
+
+##
+## Graphical User Interface
+Launch the GUI:
+```bash
+python gui.py
+```
+
+##
+#### License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
