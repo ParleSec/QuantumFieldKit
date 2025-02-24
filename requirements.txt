@@ -1,0 +1,7 @@
+cirq>=0.17.0
+qiskit>=0.40.0
+sympy>=1.8
+PyQt5>=5.15.0
+qdarkstyle>=3.0.2
+matplotlib>=3.5.0
+numpy>=1.21.0
