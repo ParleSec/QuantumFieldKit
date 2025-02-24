@@ -1,322 +1,773 @@
-# ui/gui.py
 import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox, filedialog
-import math
-import datetime
+import qdarkstyle
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QTabWidget, QVBoxLayout,
+    QHBoxLayout, QPushButton, QLabel, QLineEdit, QTextEdit,
+    QFileDialog, QMessageBox, QDoubleSpinBox, QGroupBox, QSplitter
+)
+from PyQt5.QtCore import Qt
 
-# Import simulation functions from the plugins and core engine.
-from plugins.encryption_bb84.bb84 import run_bb84_protocol
-from plugins.handshake.handshake import perform_handshake
-from plugins.teleportation.teleport import teleport
-from plugins.network.network import entanglement_swapping
-from plugins.qrng.qrng import generate_random_number
-from plugins.authentication.auth import generate_quantum_fingerprint, verify_fingerprint
-from core.qubit import Qubit
+import matplotlib
+matplotlib.use("Qt5Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import numpy as np
 
-class QuantumFieldKitGUI(tk.Tk):
+# Plugin Modules
+from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
+from plugins.handshake.handshake import handshake_cirq
+from plugins.teleportation.teleport import teleportation_circuit
+from plugins.network.network import entanglement_swapping_cirq
+from plugins.qrng.qrng import generate_random_number_cirq
+from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
+from plugins.grover.grover import run_grover
+from plugins.error_correction.shor_code import run_shor_code
+from plugins.variational.vqe import run_vqe
+
+class BlochSphereCanvas(FigureCanvas):
+    def __init__(self, parent=None):
+        self.fig = plt.Figure(figsize=(4,4))
+        self.ax = self.fig.add_subplot(111, projection='3d')
+        super().__init__(self.fig)
+        self.setParent(parent)
+        self.plot_sphere()
+
+    def plot_sphere(self):
+        self.ax.clear()
+        u, v = np.mgrid[0:2*np.pi:100j, 0:np.pi:100j]
+        x = np.cos(u)*np.sin(v)
+        y = np.sin(u)*np.sin(v)
+        z = np.cos(v)
+        self.ax.plot_wireframe(x, y, z, color='gray', alpha=0.4)
+        self.ax.set_xlabel('X')
+        self.ax.set_ylabel('Y')
+        self.ax.set_zlabel('Z')
+        self.ax.set_title("Bloch Sphere (|+> state)")
+        self.draw()
+
+class QuantumFieldKitGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.title("Quantum Field Kit")
-        self.geometry("1000x700")
+        self.setWindowTitle("Quantum Field Kit")
+        self.resize(1500, 900)
+
+        # Minimal style, consistent with your existing design
+        self.setStyleSheet("""
+            QMainWindow { background-color: #fafafa; }
+            QLabel, QGroupBox {
+                font-size: 14px;
+                color: #333;
+            }
+            QPushButton {
+                font-size: 13px;
+                background-color: #e0e0e0;
+                border: 1px solid #ccc;
+                padding: 8px 16px;
+                margin: 4px;
+            }
+            QPushButton:hover {
+                background-color: #d8d8d8;
+            }
+            QLineEdit, QTextEdit, QDoubleSpinBox {
+                font-size: 13px;
+                color: #333;
+                background-color: #ffffff;
+                border: 1px solid #ccc;
+                margin: 4px;
+            }
+            QTabBar::tab {
+                font-size: 14px;
+                padding: 8px 16px;
+                color: #333;
+                background: #f3f3f3;
+                border: 1px solid #ccc;
+                margin: 2px;
+            }
+            QTabBar::tab:selected {
+                background: #e7e7e7;
+            }
+            QStatusBar {
+                font-size: 12px;
+                color: #333;
+            }
+        """)
+
+        self.noise_prob = 0.0
+        self.initUI()
+
+    def initUI(self):
+        self.tabs = QTabWidget()
+        self.setCentralWidget(self.tabs)
+
+        # Original tabs
+        self.tab_bb84 = QWidget()
+        self.tab_handshake = QWidget()
+        self.tab_teleport = QWidget()
+        self.tab_network = QWidget()
+        self.tab_qrng = QWidget()
+        self.tab_auth = QWidget()
+        self.tab_grover = QWidget()
+        self.tab_visuals = QWidget()
+        self.tab_error_correction = QWidget()
+        self.tab_variational = QWidget()
+
+        for tab, name in [
+            (self.tab_bb84, "BB84"),
+            (self.tab_handshake, "Handshake"),
+            (self.tab_teleport, "Teleportation"),
+            (self.tab_network, "Network"),
+            (self.tab_qrng, "QRNG"),
+            (self.tab_auth, "Authentication"),
+            (self.tab_grover, "Grover"),
+            (self.tab_visuals, "Visuals"),
+            (self.tab_error_correction, "Error Correction"),
+            (self.tab_variational, "Variational (VQE)"),
+        ]:
+            self.tabs.addTab(tab, name)
+
+        # Setup original tabs
+        self.setup_bb84_tab()
+        self.setup_handshake_tab()
+        self.setup_teleport_tab()
+        self.setup_network_tab()
+        self.setup_qrng_tab()
+        self.setup_auth_tab()
+        self.setup_grover_tab()
+        self.setup_visuals_tab()
+        self.setup_error_correction_tab()
+        self.setup_variational_tab()
+
         self.create_menu()
-        self.create_widgets()
-        self.create_status_bar()
+        self.statusBar().showMessage("Welcome to Quantum Field Kit!")
 
     def create_menu(self):
-        menubar = tk.Menu(self)
-        
-        # File menu
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Save Output", command=self.save_output)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.quit)
-        menubar.add_cascade(label="File", menu=file_menu)
-        
-        # Help menu
-        help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="User Guide", command=self.show_user_guide)
-        help_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(label="Help", menu=help_menu)
-        
-        self.config(menu=menubar)
+        menubar = self.menuBar()
+        fileMenu = menubar.addMenu("File")
+        helpMenu = menubar.addMenu("Help")
 
-    def create_widgets(self):
-        # Create a Notebook (tabbed interface)
-        self.notebook = ttk.Notebook(self)
-        self.notebook.pack(expand=True, fill='both')
-        
-        # Create frames for each simulation tab
-        self.frame_bb84 = ttk.Frame(self.notebook)
-        self.frame_handshake = ttk.Frame(self.notebook)
-        self.frame_teleportation = ttk.Frame(self.notebook)
-        self.frame_network = ttk.Frame(self.notebook)
-        self.frame_qrng = ttk.Frame(self.notebook)
-        self.frame_authentication = ttk.Frame(self.notebook)
-        
-        self.notebook.add(self.frame_bb84, text="BB84")
-        self.notebook.add(self.frame_handshake, text="Handshake")
-        self.notebook.add(self.frame_teleportation, text="Teleportation")
-        self.notebook.add(self.frame_network, text="Network")
-        self.notebook.add(self.frame_qrng, text="QRNG")
-        self.notebook.add(self.frame_authentication, text="Authentication")
-        
-        # Create UI for each tab
-        self.create_bb84_tab()
-        self.create_handshake_tab()
-        self.create_teleportation_tab()
-        self.create_network_tab()
-        self.create_qrng_tab()
-        self.create_authentication_tab()
+        saveAction = QtWidgets.QAction("Save Output", self)
+        saveAction.triggered.connect(self.save_output)
+        fileMenu.addAction(saveAction)
 
-    def create_status_bar(self):
-        self.status_var = tk.StringVar()
-        self.status_var.set("Welcome to Quantum Field Kit!")
-        self.status_bar = ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w")
-        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+        exitAction = QtWidgets.QAction("Exit", self)
+        exitAction.triggered.connect(self.close)
+        fileMenu.addAction(exitAction)
 
-    def log_status(self, message):
-        timestamp = datetime.datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
-        self.status_var.set(f"{timestamp} {message}")
-    
-    # Tab creation functions
-    def create_bb84_tab(self):
-        frame = self.frame_bb84
-        input_frame = ttk.LabelFrame(frame, text="Parameters")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(input_frame, text="Number of bits:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.bb84_bits_entry = ttk.Entry(input_frame, width=10)
-        self.bb84_bits_entry.insert(0, "10")
-        self.bb84_bits_entry.grid(row=0, column=1, padx=5, pady=5)
-        
-        run_button = ttk.Button(input_frame, text="Run BB84 Simulation", command=self.run_bb84)
-        run_button.grid(row=0, column=2, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.bb84_output))
-        clear_button.grid(row=0, column=3, padx=10, pady=5)
-        
-        self.bb84_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.bb84_output.pack(padx=10, pady=10)
-    
-    def create_handshake_tab(self):
-        frame = self.frame_handshake
-        input_frame = ttk.LabelFrame(frame, text="Quantum Handshake")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        run_button = ttk.Button(input_frame, text="Run Handshake Simulation", command=self.run_handshake)
-        run_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.handshake_output))
-        clear_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        self.handshake_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.handshake_output.pack(padx=10, pady=10)
-    
-    def create_teleportation_tab(self):
-        frame = self.frame_teleportation
-        input_frame = ttk.LabelFrame(frame, text="Quantum Teleportation")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        run_button = ttk.Button(input_frame, text="Run Teleportation Simulation", command=self.run_teleportation)
-        run_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.teleportation_output))
-        clear_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        self.teleportation_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.teleportation_output.pack(padx=10, pady=10)
-    
-    def create_network_tab(self):
-        frame = self.frame_network
-        input_frame = ttk.LabelFrame(frame, text="Quantum Network (Entanglement Swapping)")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        run_button = ttk.Button(input_frame, text="Run Network Simulation", command=self.run_network)
-        run_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.network_output))
-        clear_button.pack(side=tk.LEFT, padx=10, pady=5)
-        
-        self.network_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.network_output.pack(padx=10, pady=10)
-    
-    def create_qrng_tab(self):
-        frame = self.frame_qrng
-        input_frame = ttk.LabelFrame(frame, text="Quantum Random Number Generator")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(input_frame, text="Number of bits:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.qrng_bits_entry = ttk.Entry(input_frame, width=10)
-        self.qrng_bits_entry.insert(0, "8")
-        self.qrng_bits_entry.grid(row=0, column=1, padx=5, pady=5)
-        
-        run_button = ttk.Button(input_frame, text="Run QRNG Simulation", command=self.run_qrng)
-        run_button.grid(row=0, column=2, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.qrng_output))
-        clear_button.grid(row=0, column=3, padx=10, pady=5)
-        
-        self.qrng_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.qrng_output.pack(padx=10, pady=10)
-    
-    def create_authentication_tab(self):
-        frame = self.frame_authentication
-        input_frame = ttk.LabelFrame(frame, text="Quantum Authentication")
-        input_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Label(input_frame, text="Data for fingerprint:").grid(row=0, column=0, padx=5, pady=5, sticky="w")
-        self.auth_data_entry = ttk.Entry(input_frame, width=30)
-        self.auth_data_entry.insert(0, "example_user")
-        self.auth_data_entry.grid(row=0, column=1, padx=5, pady=5)
-        
-        run_button = ttk.Button(input_frame, text="Run Authentication Simulation", command=self.run_authentication)
-        run_button.grid(row=0, column=2, padx=10, pady=5)
-        
-        clear_button = ttk.Button(input_frame, text="Clear Output", command=lambda: self.clear_output(self.auth_output))
-        clear_button.grid(row=0, column=3, padx=10, pady=5)
-        
-        self.auth_output = scrolledtext.ScrolledText(frame, width=100, height=20)
-        self.auth_output.pack(padx=10, pady=10)
+        guideAction = QtWidgets.QAction("User Guide", self)
+        guideAction.triggered.connect(self.show_user_guide)
+        helpMenu.addAction(guideAction)
 
-    # Utility function to clear text outputs
-    def clear_output(self, widget):
-        widget.delete("1.0", tk.END)
+        aboutAction = QtWidgets.QAction("About", self)
+        aboutAction.triggered.connect(self.show_about)
+        helpMenu.addAction(aboutAction)
 
-    # Simulation functions integrated with the GUI
+
+    # --------------------- BB84 Tab ---------------------
+    def setup_bb84_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+        # Left side: input controls in a group box
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("BB84 Parameters")
+        group_layout = QVBoxLayout()
+
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(QLabel("Number of bits:"))
+        self.bb84_bits = QLineEdit("10")
+        hlayout.addWidget(self.bb84_bits)
+        group_layout.addLayout(hlayout)
+
+        btn_layout = QHBoxLayout()
+        run_btn = QPushButton("Run BB84")
+        run_btn.clicked.connect(self.run_bb84)
+        btn_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.bb84_output.clear())
+        btn_layout.addWidget(clear_btn)
+
+        group_layout.addLayout(btn_layout)
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        # Right side: text output
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.bb84_output = QTextEdit()
+        self.bb84_output.setReadOnly(True)
+        right_layout.addWidget(self.bb84_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_bb84.setLayout(main_layout)
+
     def run_bb84(self):
         try:
-            num_bits = int(self.bb84_bits_entry.get())
+            bits = int(self.bb84_bits.text())
         except ValueError:
-            num_bits = 10
-        result = run_bb84_protocol(num_bits)
-        output = (
-            f"BB84 Protocol Simulation:\n"
-            f"Alice bits:      {result['alice_bits']}\n"
-            f"Alice bases:     {result['alice_bases']}\n"
-            f"Bob bases:       {result['bob_bases']}\n"
-            f"Bob measurements:{result['bob_measurements']}\n"
-            f"Shared key:      {result['shared_key']}\n"
-        )
-        self.bb84_output.delete("1.0", tk.END)
-        self.bb84_output.insert(tk.END, output)
-        self.log_status("BB84 simulation completed.")
+            bits = 10
+        result = bb84_protocol_cirq(bits, noise_prob=self.noise_prob)
+        output = f"Shared key: {result['shared_key']}\n\nDetailed Log:\n{result['log']}"
+        self.bb84_output.setPlainText(output)
+        self.statusBar().showMessage("BB84 simulation completed.")
+
+    # --------------------- Handshake Tab ---------------------
+    def setup_handshake_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Handshake")
+        group_layout = QVBoxLayout()
+
+        run_btn = QPushButton("Run Handshake")
+        run_btn.clicked.connect(self.run_handshake)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.handshake_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.handshake_output = QTextEdit()
+        self.handshake_output.setReadOnly(True)
+        right_layout.addWidget(self.handshake_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_handshake.setLayout(main_layout)
 
     def run_handshake(self):
-        result = perform_handshake()
-        output = (
-            f"Quantum Handshake Simulation:\n"
-            f"Alice measurement: {result['alice_result']}\n"
-            f"Bob measurement:   {result['bob_result']}\n"
-            f"Handshake success: {result['handshake_success']}\n"
-        )
-        self.handshake_output.delete("1.0", tk.END)
-        self.handshake_output.insert(tk.END, output)
-        self.log_status("Handshake simulation completed.")
+        result = handshake_cirq(noise_prob=self.noise_prob)
+        output = f"Handshake success: {result['handshake_success']}\n\nDetailed Log:\n{result['log']}"
+        self.handshake_output.setPlainText(output)
+        self.statusBar().showMessage("Handshake simulation completed.")
+
+    # --------------------- Teleportation Tab ---------------------
+    def setup_teleport_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Teleportation")
+        group_layout = QVBoxLayout()
+
+        run_btn = QPushButton("Run Teleportation")
+        run_btn.clicked.connect(self.run_teleportation)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.teleport_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.teleport_output = QTextEdit()
+        self.teleport_output.setReadOnly(True)
+        right_layout.addWidget(self.teleport_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_teleport.setLayout(main_layout)
 
     def run_teleportation(self):
-        # Prepare an unknown qubit state, e.g., |ψ> = (sqrt(3)/2)|0> + (1/2)|1>
-        q_unknown = Qubit([math.sqrt(3)/2, 1/2])
-        result = teleport(q_unknown)
-        output = (
-            f"Quantum Teleportation Simulation:\n"
-            f"Classical bits sent: {result['classical_bits']}\n"
-            f"Bob's qubit state after teleportation: {result['bob_state']}\n"
-        )
-        self.teleportation_output.delete("1.0", tk.END)
-        self.teleportation_output.insert(tk.END, output)
-        self.log_status("Teleportation simulation completed.")
+        state, measurements, circuit, log_str = teleportation_circuit(noise_prob=self.noise_prob)
+        output = (f"Final state vector: {state}\n"
+                  f"Measurement outcomes: {measurements}\n"
+                  f"Circuit:\n{circuit}\n\nDetailed Log:\n{log_str}")
+        self.teleport_output.setPlainText(output)
+        self.statusBar().showMessage("Teleportation simulation completed.")
+
+    # --------------------- Network Tab ---------------------
+    def setup_network_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Network (Entanglement Swapping)")
+        group_layout = QVBoxLayout()
+
+        run_btn = QPushButton("Run Network Simulation")
+        run_btn.clicked.connect(self.run_network)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.network_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.network_output = QTextEdit()
+        self.network_output.setReadOnly(True)
+        right_layout.addWidget(self.network_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_network.setLayout(main_layout)
 
     def run_network(self):
-        result = entanglement_swapping()
-        output = (
-            f"Quantum Communication Network Simulation (Entanglement Swapping):\n"
-            f"Classical bits from swapping: {result['classical_bits']}\n"
-            f"Node A state: {result['node_A_state']}\n"
-            f"Node C state: {result['node_C_state']}\n"
-        )
-        self.network_output.delete("1.0", tk.END)
-        self.network_output.insert(tk.END, output)
-        self.log_status("Network simulation completed.")
+        result = entanglement_swapping_cirq(noise_prob=self.noise_prob)
+        output = (f"Intermediate measurements: {result['intermediate_measurements']}\n"
+                  f"Node A measurement: {result['node_A_measurement']}\n"
+                  f"Node C measurement: {result['node_C_measurement']}\n\nDetailed Log:\n{result['log']}")
+        self.network_output.setPlainText(output)
+        self.statusBar().showMessage("Network simulation completed.")
+
+    # --------------------- QRNG Tab ---------------------
+    def setup_qrng_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("QRNG Parameters")
+        group_layout = QVBoxLayout()
+
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(QLabel("Number of bits:"))
+        self.qrng_bits = QLineEdit("8")
+        hlayout.addWidget(self.qrng_bits)
+        group_layout.addLayout(hlayout)
+
+        run_btn = QPushButton("Run QRNG")
+        run_btn.clicked.connect(self.run_qrng)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.qrng_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.qrng_output = QTextEdit()
+        self.qrng_output.setReadOnly(True)
+        right_layout.addWidget(self.qrng_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_qrng.setLayout(main_layout)
 
     def run_qrng(self):
         try:
-            num_bits = int(self.qrng_bits_entry.get())
+            bits = int(self.qrng_bits.text())
         except ValueError:
-            num_bits = 8
-        number, bits = generate_random_number(num_bits)
-        output = (
-            f"Quantum Random Number Generator (QRNG) Simulation:\n"
-            f"Generated random number: {number}\n"
-            f"Bit sequence: {bits}\n"
-        )
-        self.qrng_output.delete("1.0", tk.END)
-        self.qrng_output.insert(tk.END, output)
-        self.log_status("QRNG simulation completed.")
+            bits = 8
+        number, bitseq, log_str = generate_random_number_cirq(bits)
+        output = f"Random number: {number}\nBit sequence: {bitseq}\n\nDetailed Log:\n{log_str}"
+        self.qrng_output.setPlainText(output)
+        self.statusBar().showMessage("QRNG simulation completed.")
+
+    # --------------------- Authentication Tab ---------------------
+    def setup_auth_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Quantum Authentication")
+        group_layout = QVBoxLayout()
+
+        hlayout = QHBoxLayout()
+        hlayout.addWidget(QLabel("Data for fingerprint:"))
+        self.auth_data = QLineEdit("example_user")
+        hlayout.addWidget(self.auth_data)
+        group_layout.addLayout(hlayout)
+
+        run_btn = QPushButton("Run Authentication")
+        run_btn.clicked.connect(self.run_authentication)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.auth_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.auth_output = QTextEdit()
+        self.auth_output.setReadOnly(True)
+        right_layout.addWidget(self.auth_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_auth.setLayout(main_layout)
 
     def run_authentication(self):
-        data = self.auth_data_entry.get()
-        fingerprint = generate_quantum_fingerprint(data, num_qubits=8)
-        valid = verify_fingerprint(data, fingerprint, num_qubits=8)
-        output = (
-            f"Quantum Authentication Simulation:\n"
-            f"Data: {data}\n"
-            f"Generated fingerprint: {fingerprint}\n"
-            f"Verification result: {valid}\n"
-        )
-        self.auth_output.delete("1.0", tk.END)
-        self.auth_output.insert(tk.END, output)
-        self.log_status("Authentication simulation completed.")
+        data = self.auth_data.text()
+        fingerprint, log_str = generate_quantum_fingerprint_cirq(data, num_qubits=8)
+        valid = verify_fingerprint_cirq(data, fingerprint, num_qubits=8)
+        output = f"Fingerprint: {fingerprint}\nVerification: {valid}\n\nDetailed Log:\n{log_str}"
+        self.auth_output.setPlainText(output)
+        self.statusBar().showMessage("Authentication simulation completed.")
 
-    # Menu command functions
+    # --------------------- Grover Tab ---------------------
+    def setup_grover_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Grover's Algorithm")
+        group_layout = QVBoxLayout()
+
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("Number of qubits:"))
+        self.grover_qubits = QLineEdit("3")
+        row1.addWidget(self.grover_qubits)
+        group_layout.addLayout(row1)
+
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("Target state:"))
+        self.grover_target = QLineEdit("101")
+        row2.addWidget(self.grover_target)
+        group_layout.addLayout(row2)
+
+        run_btn = QPushButton("Run Grover's Search")
+        run_btn.clicked.connect(self.run_grover)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.grover_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.grover_output = QTextEdit()
+        self.grover_output.setReadOnly(True)
+        right_layout.addWidget(self.grover_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_grover.setLayout(main_layout)
+
+    def run_grover(self):
+        try:
+            n = int(self.grover_qubits.text())
+        except ValueError:
+            n = 3
+        target = self.grover_target.text()
+        outcome, circuit, log_str = run_grover(n, target, noise_prob=self.noise_prob)
+        output = f"Outcome: {outcome}\n\nCircuit:\n{circuit}\n\nDetailed Log:\n{log_str}"
+        self.grover_output.setPlainText(output)
+        self.statusBar().showMessage("Grover simulation completed.")
+
+    #--------------------- Error Correction Tab ---------------------
+
+    def setup_error_correction_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Shor's Code Error Correction")
+        group_layout = QVBoxLayout()
+
+        row = QHBoxLayout()
+        label = QLabel("Noise Probability:")
+        self.shor_noise_spin = QDoubleSpinBox()
+        self.shor_noise_spin.setRange(0.0, 0.2)
+        self.shor_noise_spin.setSingleStep(0.005)
+        self.shor_noise_spin.setValue(0.01)
+        row.addWidget(label)
+        row.addWidget(self.shor_noise_spin)
+        group_layout.addLayout(row)
+
+        run_btn = QPushButton("Run Shor's Code")
+        run_btn.clicked.connect(self.run_shor_code)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.error_correction_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.error_correction_output = QTextEdit()
+        self.error_correction_output.setReadOnly(True)
+        right_layout.addWidget(self.error_correction_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_error_correction.setLayout(main_layout)
+
+    def run_shor_code(self):
+        noise_val = self.shor_noise_spin.value()
+        result = run_shor_code(noise_prob=noise_val)
+        output = (
+            f"Measurement results: {result['measurements']}\n\n"
+            f"Circuit:\n{result['circuit']}\n\n"
+            f"Detailed Log:\n{result['log']}"
+        )
+        self.error_correction_output.setPlainText(output)
+        self.statusBar().showMessage("Shor's code simulation completed.")
+
+
+    # --------------------- Variational (VQE) Tab ---------------------
+    def setup_variational_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Variational Quantum Eigensolver (VQE)")
+        group_layout = QVBoxLayout()
+
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("Number of qubits:"))
+        self.vqe_qubits = QLineEdit("2")
+        row1.addWidget(self.vqe_qubits)
+        group_layout.addLayout(row1)
+
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("Noise Probability:"))
+        self.vqe_noise_spin = QDoubleSpinBox()
+        self.vqe_noise_spin.setRange(0.0, 0.2)
+        self.vqe_noise_spin.setSingleStep(0.005)
+        self.vqe_noise_spin.setValue(0.01)
+        row2.addWidget(self.vqe_noise_spin)
+        group_layout.addLayout(row2)
+
+        row3 = QHBoxLayout()
+        row3.addWidget(QLabel("Max Iterations:"))
+        self.vqe_iterations = QLineEdit("5")
+        row3.addWidget(self.vqe_iterations)
+        group_layout.addLayout(row3)
+
+        run_btn = QPushButton("Run VQE")
+        run_btn.clicked.connect(self.run_vqe)
+        group_layout.addWidget(run_btn)
+
+        clear_btn = QPushButton("Clear")
+        clear_btn.clicked.connect(lambda: self.variational_output.clear())
+        group_layout.addWidget(clear_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.variational_output = QTextEdit()
+        self.variational_output.setReadOnly(True)
+        right_layout.addWidget(self.variational_output)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_variational.setLayout(main_layout)
+
+    def run_vqe(self):
+        try:
+            n = int(self.vqe_qubits.text())
+        except ValueError:
+            n = 2
+        noise_val = self.vqe_noise_spin.value()
+        try:
+            max_iter = int(self.vqe_iterations.text())
+        except ValueError:
+            max_iter = 5
+
+        result = run_vqe(num_qubits=n, noise_prob=noise_val, max_iter=max_iter)
+        output = (
+            f"Best energy found: {result['best_energy']}\n"
+            f"Best params: {result['best_params']}\n\n"
+            f"Circuit:\n{result['circuit']}\n\n"
+            f"Detailed Log:\n{result['log']}"
+        )
+        self.variational_output.setPlainText(output)
+        self.statusBar().showMessage("VQE simulation completed.")
+
+    # --------------------- Visuals Tab ---------------------
+    def setup_visuals_tab(self):
+        splitter = QSplitter(Qt.Horizontal)
+
+        left_widget = QWidget()
+        left_layout = QVBoxLayout()
+
+        group_box = QGroupBox("Global Settings & Bloch Sphere")
+        group_layout = QVBoxLayout()
+
+        row = QHBoxLayout()
+        row.addWidget(QLabel("Noise Probability:"))
+        self.noise_spin = QDoubleSpinBox()
+        self.noise_spin.setRange(0.0, 0.2)
+        self.noise_spin.setSingleStep(0.005)
+        self.noise_spin.setValue(0.0)
+        self.noise_spin.valueChanged.connect(self.update_noise_prob)
+        row.addWidget(self.noise_spin)
+        group_layout.addLayout(row)
+
+        refresh_btn = QPushButton("Refresh Bloch Sphere")
+        refresh_btn.clicked.connect(self.refresh_bloch_sphere)
+        group_layout.addWidget(refresh_btn)
+
+        tut_btn = QPushButton("Show Tutorial")
+        tut_btn.clicked.connect(self.show_tutorial)
+        group_layout.addWidget(tut_btn)
+
+        group_box.setLayout(group_layout)
+        left_layout.addWidget(group_box)
+        left_layout.addStretch(1)
+        left_widget.setLayout(left_layout)
+
+        right_widget = QWidget()
+        right_layout = QVBoxLayout()
+        self.bloch_canvas = BlochSphereCanvas(self)
+        right_layout.addWidget(self.bloch_canvas)
+        right_widget.setLayout(right_layout)
+
+        splitter.addWidget(left_widget)
+        splitter.addWidget(right_widget)
+        splitter.setStretchFactor(1, 1)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+        self.tab_visuals.setLayout(main_layout)
+
+    def update_noise_prob(self, val):
+        self.noise_prob = val
+        self.statusBar().showMessage(f"Noise probability set to {val:.3f}")
+
+    def refresh_bloch_sphere(self):
+        self.bloch_canvas.plot_sphere()
+        self.statusBar().showMessage("Bloch sphere refreshed.")
+
+    # --------------------- Menu Actions ---------------------
     def save_output(self):
-        # Save output from current active tab's scrolled text widget to a file
-        current_tab = self.notebook.select()
-        current_frame = self.nametowidget(current_tab)
-        output_widget = None
-        for child in current_frame.winfo_children():
-            if isinstance(child, scrolledtext.ScrolledText):
-                output_widget = child
-                break
-        if output_widget:
-            content = output_widget.get("1.0", tk.END)
+        current_widget = self.tabs.currentWidget().findChild(QTextEdit)
+        if current_widget:
+            content = current_widget.toPlainText()
             if content.strip():
-                file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text Files", "*.txt")])
-                if file_path:
-                    with open(file_path, "w") as file:
-                        file.write(content)
-                    messagebox.showinfo("Save Output", f"Output saved to {file_path}")
+                fname, _ = QFileDialog.getSaveFileName(self, "Save Output", "", "Text Files (*.txt)")
+                if fname:
+                    with open(fname, "w", encoding="utf-8") as f:
+                        f.write(content)
+                    QMessageBox.information(self, "Save Output", f"Output saved to {fname}")
             else:
-                messagebox.showwarning("Save Output", "No output to save.")
+                QMessageBox.warning(self, "Save Output", "No output to save.")
         else:
-            messagebox.showwarning("Save Output", "Could not determine output widget.")
+            QMessageBox.warning(self, "Save Output", "No output widget found in current tab.")
 
     def show_user_guide(self):
         guide_text = (
-            "Quantum Field Kit User Guide\n\n"
-            "This application simulates various quantum protocols:\n"
-            "1. BB84: Quantum key distribution simulation.\n"
-            "2. Handshake: Quantum handshake simulation using entangled pairs.\n"
-            "3. Teleportation: Simulates quantum teleportation of an unknown qubit state.\n"
-            "4. Network: Simulates entanglement swapping for quantum communication networks.\n"
-            "5. QRNG: Quantum Random Number Generator simulation.\n"
-            "6. Authentication: Quantum fingerprinting for authentication simulation.\n\n"
-            "Use the input fields to set parameters, click the corresponding simulation button, "
-            "and view results in the output area. You can save outputs using the File menu."
+            "Quantum Field Kit - User Guide\n\n"
+            "Use the tabs to run each protocol or feature.\n"
+            "Adjust noise probability or parameters, then click 'Run'.\n"
+            "Check logs for detailed quantum operations.\n"
         )
-        messagebox.showinfo("User Guide", guide_text)
+        QMessageBox.information(self, "User Guide", guide_text)
 
     def show_about(self):
         about_text = (
-            "Quantum Field Kit\n"
-            "Version 0.1\n"
-            "A simulation toolkit for quantum concepts in a binary environment.\n"
+            "Quantum Field Kit V1\n"
+            "https://github.com/parlesec\n"
         )
-        messagebox.showinfo("About", about_text)
+        QMessageBox.information(self, "About", about_text)
+
+    def show_tutorial(self):
+        tutorial_text = (
+            "Tutorial:\n\n"
+            "1. Select a protocol tab (BB84, Teleportation, etc.) on the top.\n"
+            "2. On the left, set parameters and click 'Run'.\n"
+            "3. Output logs and results appear on the right side.\n"
+            "4. For Bloch sphere visualization and noise settings, go to 'Visuals'.\n"
+            "5. Save logs using 'File → Save Output'.\n"
+        )
+        QMessageBox.information(self, "Tutorial", tutorial_text)
 
 if __name__ == '__main__':
-    app = QuantumFieldKitGUI()
-    app.mainloop()
+    app = QApplication(sys.argv)
+    gui = QuantumFieldKitGUI()
+    gui.show()
+    sys.exit(app.exec_())
