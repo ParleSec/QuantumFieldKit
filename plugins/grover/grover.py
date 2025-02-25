@@ -69,7 +69,7 @@ def grover_circuit(n, target_state, iterations, noise_prob=0.0):
 def run_grover(n, target_state, noise_prob=0.0):
     iterations = int(np.floor(np.pi/4 * np.sqrt(2**n)))
     log = []
-    log.append("=== Grover's Algorithm Simulation (Cirq Edition) ===")
+    log.append("=== Grover's Algorithm Simulation ===")
     log.append(f"Number of qubits: {n}, target state: {target_state}, iterations: {iterations}")
     circuit = grover_circuit(n, target_state, iterations, noise_prob)
     log.append("Final circuit:")

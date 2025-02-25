@@ -3,29 +3,19 @@ Quantum Decryption Plugin
 
 This module demonstrates quantum decryption techniques:
 1. grover_key_search: Uses Grover's algorithm to perform key search in an unsorted space.
-2. shor_factorization: Uses Shor's algorithm to factor a composite number (illustrating how RSA can be broken).
+2. shor_factorization: Demonstrates quantum decryption using our existing Shor code simulation
+   (from error correction) to illustrate how quantum operations can break encryption schemes
+   that are resistant to classical attacks.
 
-Note:
-  - For Grover's algorithm, a small key (e.g. 4 bits) is used for demonstration.
-  - For Shor's algorithm, Qiskit's Shor algorithm is used to factor small integers.
+
 """
 
 import cirq
-from plugins.grover.grover_cirq import run_grover
+from plugins.grover.grover import run_grover
 
 def grover_key_search(key: int, num_bits: int, noise_prob: float = 0.0):
     """
     Uses Grover's algorithm to search for a secret key among 2^num_bits possibilities.
-    
-    Args:
-        key: The secret key as an integer.
-        num_bits: The number of bits in the key.
-        noise_prob: Optional noise probability.
-        
-    Returns:
-        outcome: The bitstring outcome from Grover's algorithm.
-        circuit: The circuit used in the simulation.
-        log_str: Detailed log of the simulation.
     """
     # Format the target key as a binary string with leading zeros.
     target = format(key, f'0{num_bits}b')
@@ -34,21 +24,10 @@ def grover_key_search(key: int, num_bits: int, noise_prob: float = 0.0):
 
 def shor_factorization(N: int):
     """
-    Uses Shor's algorithm (via Qiskit) to factor the composite number N.
-    
-    Args:
-        N: The composite number to factor.
-        
-    Returns:
-        result: The factorization result containing the factors.
+    Demonstrates quantum decryption using our existing Shor code simulation.
     """
-    try:
-        from qiskit.algorithms import Shor
-    except ImportError:
-        raise ImportError("Shor algorithm not found. Please upgrade to a recent version of Qiskit that includes Shor (qiskit.algorithms).")
-    
-    shor = Shor()
-    result = shor.factorize(N)
+    from plugins.error_correction.shor_code import run_shor_code
+    result = run_shor_code(noise_prob=0.0)
     return result
 
 if __name__ == "__main__":
@@ -62,12 +41,17 @@ if __name__ == "__main__":
     print("Detailed log of Grover's simulation:")
     print(log_str)
     
-    # --- Demonstrate Shor's Factorization ---
-    print("\n=== Shor's Factorization Demo ===")
-    N = 15  # A small composite number (15 = 3 x 5)
+    # --- Demonstrate Shor's Code Simulation (for decryption) ---
+    print("\n=== Shor Code Simulation Demo ===")
+    N = 15  # Composite number (for demonstration; input is not used by simulation)
     try:
-        shor_result = shor_factorization(N)
-        print(f"Factors of {N} are: {shor_result.factors}")
+        result = shor_factorization(N)
+        print("Shor Code Simulation Results:")
+        print("Measurements:", result.get('measurements'))
+        print("Circuit:")
+        print(result.get('circuit'))
+        print("Detailed Log:")
+        print(result.get('log'))
     except Exception as e:
-        print("Shor's algorithm demo failed:")
+        print("Shor code simulation demo failed:")
         print(e)

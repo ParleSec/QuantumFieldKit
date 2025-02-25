@@ -16,7 +16,7 @@ def add_noise(circuit, noise_prob):
 
 def entanglement_swapping_cirq(noise_prob=0.0):
     log = []
-    log.append("=== Entanglement Swapping Simulation (Cirq Edition) ===")
+    log.append("=== Entanglement Swapping Simulation ===")
     q0, q1, q2, q3 = cirq.LineQubit.range(4)
     circuit = cirq.Circuit()
     log.append("Creating Bell pair between q0 and q1.")

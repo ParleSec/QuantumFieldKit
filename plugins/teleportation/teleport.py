@@ -17,7 +17,7 @@ def add_noise(circuit, noise_prob):
 
 def teleportation_circuit(noise_prob=0.0):
     log = []
-    log.append("=== Quantum Teleportation Simulation (Cirq Edition) ===")
+    log.append("=== Quantum Teleportation Simulation ===")
     q0, q1, q2 = cirq.LineQubit.range(3)
     circuit = cirq.Circuit()
     log.append("Preparing unknown state on q0 using H and Z gates.")

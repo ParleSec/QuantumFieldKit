@@ -9,7 +9,7 @@ import hashlib
 
 def generate_quantum_fingerprint_cirq(data, num_qubits=4):
     log = []
-    log.append("=== Quantum Authentication Simulation (Cirq Edition) ===")
+    log.append("=== Quantum Authentication Simulation ===")
     hash_digest = hashlib.sha256(data.encode()).hexdigest()
     binary_string = bin(int(hash_digest, 16))[2:].zfill(256)[:num_qubits]
     log.append(f"Data hash (binary): {binary_string}")

@@ -15,7 +15,7 @@ def generate_random_bit_cirq():
     return int(result.measurements['m'][0][0]), circuit
 
 def generate_random_number_cirq(num_bits=8):
-    log = ["=== QRNG Simulation (Cirq Edition) ==="]
+    log = ["=== QRNG Simulation ==="]
     bits = []
     circuits = []
     for _ in range(num_bits):

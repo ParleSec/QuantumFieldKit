@@ -18,7 +18,7 @@ def add_noise(circuit, noise_prob=0.01):
 
 def bb84_protocol_cirq(num_bits=10, noise_prob=0.0):
     log = []
-    log.append("=== BB84 Protocol Simulation (Cirq Edition) ===")
+    log.append("=== BB84 Protocol Simulation ===")
     alice_bits = [random.randint(0, 1) for _ in range(num_bits)]
     alice_bases = [random.choice(['Z', 'X']) for _ in range(num_bits)]
     bob_bases = [random.choice(['Z', 'X']) for _ in range(num_bits)]

@@ -15,7 +15,7 @@ def add_noise(circuit, noise_prob):
 
 def handshake_cirq(noise_prob=0.0):
     log = []
-    log.append("=== Quantum Handshake Simulation (Cirq Edition) ===")
+    log.append("=== Quantum Handshake Simulation ===")
     q0, q1 = cirq.LineQubit.range(2)
     circuit = cirq.Circuit()
     circuit.append([cirq.H(q0), cirq.CNOT(q0, q1)])
