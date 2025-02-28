@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title">{{ plugin.name }}</h2>
+      <p class="card-text">{{ plugin.description }}</p>
+      <form method="post" class="row g-3">
+        {% for param in plugin.parameters %}
+          <div class="col-md-6">
+            <label for="{{ param.name }}" class="form-label">{{ param.description }} ({{ param.type }})</label>
+            <input type="text" class="form-control" name="{{ param.name }}" id="{{ param.name }}" value="{{ param.default }}">
+          </div>
+        {% endfor %}
+        <div class="col-12">
+          <button type="submit" class="btn btn-success">Run Plugin</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  {% if result is defined and result %}
+    <div class="card">
+      <div class="card-header">Result</div>
+      <div class="card-body">
+        <pre class="mb-0">{{ result }}</pre>
+      </div>
+    </div>
+  {% endif %}
+  <a href="{{ url_for('index') }}" class="btn btn-link mt-3">&larr; Back to Plugins</a>
+{% endblock %}

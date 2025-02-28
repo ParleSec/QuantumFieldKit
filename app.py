@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, render_template_string, abort
+from flask import Flask, request, render_template, abort
 
 # Import your existing simulation functions from the plugins folder.
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq
@@ -15,12 +15,7 @@ from plugins.variational.vqe import run_vqe
 
 app = Flask(__name__)
 
-# Define a mapping for each plugin that you wish to expose on the web.
-# Each entry maps a unique key (used in the URL) to a dictionary containing:
-#   - name: Display name
-#   - description: Brief description
-#   - parameters: A list of parameters (each a dict with name, type, default, and description)
-#   - run: A lambda that accepts a params dict and calls the plugin's simulation function.
+# Mapping of plugins.
 PLUGINS = {
     "auth": {
         "name": "Quantum Authentication",
@@ -120,74 +115,9 @@ PLUGINS = {
     }
 }
 
-# Inline HTML templates (to keep additional files minimal)
-INDEX_TEMPLATE = """
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Quantum Field Kit Plugins</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #004080; }
-      a { text-decoration: none; color: #0066cc; }
-      a:hover { text-decoration: underline; }
-    </style>
-  </head>
-  <body>
-    <h1>Available Plugins</h1>
-    <ul>
-      {% for key, plugin in plugins.items() %}
-        <li>
-          <a href="/plugin/{{ key }}">{{ plugin.name }}</a> – {{ plugin.description }}
-        </li>
-      {% endfor %}
-    </ul>
-  </body>
-</html>
-"""
-
-PLUGIN_TEMPLATE = """
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>{{ plugin.name }}</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 20px; }
-      h1 { color: #004080; }
-      form div { margin-bottom: 10px; }
-      label { display: inline-block; width: 150px; }
-      input[type="text"] { padding: 5px; width: 200px; }
-      button { padding: 8px 12px; background-color: #004080; color: #fff; border: none; cursor: pointer; }
-      button:hover { background-color: #003060; }
-      pre { background: #f4f4f4; padding: 10px; border: 1px solid #ddd; }
-    </style>
-  </head>
-  <body>
-    <h1>{{ plugin.name }}</h1>
-    <p>{{ plugin.description }}</p>
-    <form method="post">
-      {% for param in plugin.parameters %}
-        <div>
-          <label for="{{ param.name }}">{{ param.name }} ({{ param.type }}):</label>
-          <input type="text" name="{{ param.name }}" id="{{ param.name }}" value="{{ param.default }}">
-        </div>
-      {% endfor %}
-      <button type="submit">Run Plugin</button>
-    </form>
-    {% if result is defined %}
-      <h2>Result</h2>
-      <pre>{{ result }}</pre>
-    {% endif %}
-    <p><a href="/">Back to Plugins</a></p>
-  </body>
-</html>
-"""
-
 @app.route("/")
 def index():
-    return render_template_string(INDEX_TEMPLATE, plugins=PLUGINS)
+    return render_template("index.html", plugins=PLUGINS)
 
 @app.route("/plugin/<plugin_key>", methods=["GET", "POST"])
 def plugin_view(plugin_key):
@@ -197,20 +127,15 @@ def plugin_view(plugin_key):
     result = None
     if request.method == "POST":
         params = {}
-        # Process each expected parameter.
         for param in plugin["parameters"]:
             value = request.form.get(param["name"], param.get("default"))
-            # Convert to proper type.
             if param["type"] == "int":
                 value = int(value)
             elif param["type"] == "float":
                 value = float(value)
-            # For strings, no conversion needed.
             params[param["name"]] = value
-        # Run the plugin's simulation.
         result = plugin["run"](params)
-    return render_template_string(PLUGIN_TEMPLATE, plugin=plugin, result=result)
+    return render_template("plugin.html", plugin=plugin, result=result)
 
 if __name__ == "__main__":
-    # Run the web app (debug=True for development)
     app.run(debug=True)
