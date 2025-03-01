@@ -2,44 +2,59 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Quantum Field Kit</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   </head>
   <body>
     <!-- Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="{{ url_for('index') }}">Quantum Field Kit</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
-                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-transparent fixed-top" id="mainNav">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+          Quantum Field Kit
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#navbarContent" aria-controls="navbarContent" 
+                aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarContent">
-          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+          <ul class="navbar-nav ms-auto">
             <li class="nav-item"><a class="nav-link" href="{{ url_for('index') }}">Home</a></li>
-            <!-- Additional navigation items can be added here -->
+            <!-- Additional nav items can go here -->
           </ul>
         </div>
       </div>
     </nav>
-    
+
+    <!-- Particles.js Container (Behind Hero) -->
+    <div id="particles-js"></div>
+
     <!-- Main Content -->
-    <main class="container mt-5 pt-4">
+    <main>
       {% block content %}{% endblock %}
     </main>
-    
+
     <!-- Footer -->
-    <footer class="bg-light text-center py-3 mt-5">
+    <footer class="text-center text-light py-4 mt-5">
       <div class="container">
-        <span class="text-muted">&copy; 2025 Quantum Field Kit</span>
+        <small>&copy; {{ "2025" }} Quantum Field Kit. All Rights Reserved.</small>
       </div>
     </footer>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Particles.js -->
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+    <!-- Optional: VanillaTilt.js for card tilt effect -->
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
   </body>
 </html>

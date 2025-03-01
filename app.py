@@ -1,8 +1,11 @@
+### Web Application for Quantum Computing Simulations - easier to maintain than the GUI
 import os
+import json
+import traceback
 from flask import Flask, request, render_template, abort
 
-# Import your existing simulation functions from the plugins folder.
-from plugins.authentication.auth import generate_quantum_fingerprint_cirq
+# Import your simulation functions from your plugins.
+from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
 from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
 from plugins.error_correction.shor_code import run_shor_code
 from plugins.grover.grover import run_grover
@@ -15,7 +18,64 @@ from plugins.variational.vqe import run_vqe
 
 app = Flask(__name__)
 
-# Mapping of plugins.
+# --- Helper function to make objects JSON-safe ---
+
+def json_safe(obj):
+    """
+    Recursively convert non-JSON-serializable objects to strings.
+    """
+    try:
+        json.dumps(obj)
+        return obj
+    except TypeError:
+        if isinstance(obj, dict):
+            return {k: json_safe(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [json_safe(item) for item in obj]
+        else:
+            return str(obj)
+
+# --- Helper functions for wrapping plugin results ---
+
+def wrap_result(sim_result):
+    """
+    Wrap the simulation result into a dict with keys:
+      - output: the final result (converted to JSON-safe format)
+      - process: the detailed log or process steps
+      - error: None if no error, or the error message if an exception occurred.
+    """
+    if isinstance(sim_result, dict):
+        if 'log' in sim_result:
+            output = {k: v for k, v in sim_result.items() if k != 'log'}
+            process = sim_result['log']
+            output = json_safe(output)
+            return {"output": output, "process": process, "error": None}
+        else:
+            return {"output": json_safe(sim_result), "process": "", "error": None}
+    elif isinstance(sim_result, tuple):
+        if len(sim_result) > 1:
+            *outputs, log = sim_result
+            output = outputs[0] if len(outputs) == 1 else outputs
+            output = json_safe(output)
+            return {"output": output, "process": log, "error": None}
+        else:
+            return {"output": json_safe(sim_result[0]), "process": "", "error": None}
+    else:
+        return {"output": json_safe(sim_result), "process": "", "error": None}
+
+def run_plugin(sim_func, **params):
+    """
+    Calls the simulation function with the given parameters,
+    then wraps its result. If an exception is raised, returns an error message.
+    """
+    try:
+        sim_result = sim_func(**params)
+        return wrap_result(sim_result)
+    except Exception as e:
+        traceback.print_exc()
+        return {"output": None, "process": None, "error": f"{str(e)}\n{traceback.format_exc()}"}
+
+# --- Updated PLUGINS mapping ---
 PLUGINS = {
     "auth": {
         "name": "Quantum Authentication",
@@ -24,7 +84,7 @@ PLUGINS = {
             {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate"},
             {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use"}
         ],
-        "run": lambda params: generate_quantum_fingerprint_cirq(params["data"], num_qubits=params["num_qubits"])
+        "run": lambda params: run_plugin(generate_quantum_fingerprint_cirq, data=params["data"], num_qubits=params["num_qubits"])
     },
     "bb84": {
         "name": "BB84 Protocol Simulation",
@@ -33,7 +93,7 @@ PLUGINS = {
             {"name": "num_bits", "type": "int", "default": 10, "description": "Number of bits to simulate"},
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: bb84_protocol_cirq(params["num_bits"], noise_prob=params["noise"])
+        "run": lambda params: run_plugin(bb84_protocol_cirq, num_bits=params["num_bits"], noise_prob=params["noise"])
     },
     "shor": {
         "name": "Shor's Code Simulation",
@@ -41,7 +101,7 @@ PLUGINS = {
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"}
         ],
-        "run": lambda params: run_shor_code(noise_prob=params["noise"])
+        "run": lambda params: run_plugin(run_shor_code, noise_prob=params["noise"])
     },
     "grover": {
         "name": "Grover's Algorithm Simulation",
@@ -51,7 +111,7 @@ PLUGINS = {
             {"name": "target_state", "type": "str", "default": "101", "description": "Target state (binary)"},
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: run_grover(params["n"], params["target_state"], noise_prob=params["noise"])
+        "run": lambda params: run_plugin(run_grover, n=params["n"], target_state=params["target_state"], noise_prob=params["noise"])
     },
     "handshake": {
         "name": "Quantum Handshake Simulation",
@@ -59,7 +119,7 @@ PLUGINS = {
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: handshake_cirq(noise_prob=params["noise"])
+        "run": lambda params: run_plugin(handshake_cirq, noise_prob=params["noise"])
     },
     "network": {
         "name": "Entanglement Swapping Simulation",
@@ -67,7 +127,7 @@ PLUGINS = {
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: entanglement_swapping_cirq(noise_prob=params["noise"])
+        "run": lambda params: run_plugin(entanglement_swapping_cirq, noise_prob=params["noise"])
     },
     "qrng": {
         "name": "Quantum Random Number Generator",
@@ -75,7 +135,7 @@ PLUGINS = {
         "parameters": [
             {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits"}
         ],
-        "run": lambda params: generate_random_number_cirq(params["num_bits"])
+        "run": lambda params: run_plugin(generate_random_number_cirq, num_bits=params["num_bits"])
     },
     "teleport": {
         "name": "Quantum Teleportation Simulation",
@@ -83,7 +143,7 @@ PLUGINS = {
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: teleportation_circuit(noise_prob=params["noise"])
+        "run": lambda params: run_plugin(teleportation_circuit, noise_prob=params["noise"])
     },
     "vqe": {
         "name": "Variational Quantum Eigensolver (VQE)",
@@ -93,7 +153,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"},
             {"name": "max_iter", "type": "int", "default": 5, "description": "Maximum iterations"}
         ],
-        "run": lambda params: run_vqe(num_qubits=params["num_qubits"], noise_prob=params["noise"], max_iter=params["max_iter"])
+        "run": lambda params: run_plugin(run_vqe, num_qubits=params["num_qubits"], noise_prob=params["noise"], max_iter=params["max_iter"])
     },
     "quantum_decryption_grover": {
         "name": "Quantum Decryption via Grover Key Search",
@@ -103,7 +163,7 @@ PLUGINS = {
             {"name": "num_bits", "type": "int", "default": 4, "description": "Number of bits (search space)"},
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
-        "run": lambda params: grover_key_search(params["key"], params["num_bits"], noise_prob=params["noise"])
+        "run": lambda params: run_plugin(grover_key_search, key=params["key"], num_bits=params["num_bits"], noise_prob=params["noise"])
     },
     "quantum_decryption_shor": {
         "name": "Quantum Decryption via Shor Factorization",
@@ -111,7 +171,7 @@ PLUGINS = {
         "parameters": [
             {"name": "N", "type": "int", "default": 15, "description": "Composite number"}
         ],
-        "run": lambda params: shor_factorization(params["N"])
+        "run": lambda params: run_plugin(shor_factorization, N=params["N"])
     }
 }
 

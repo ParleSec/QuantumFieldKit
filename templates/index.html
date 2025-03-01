@@ -1,17 +1,38 @@
 {% extends "base.html" %}
 {% block content %}
-  <h1 class="mb-4">Available Plugins</h1>
+
+<!-- Hero Section (Reduced Height & Padding) -->
+<div class="hero-section d-flex align-items-center justify-content-center text-white text-center">
+  <div class="hero-content">
+    <h1 class="display-4 fw-bold hero-title mb-3 animate-fade-in-up">
+      Explore Quantum Simulations
+    </h1>
+    <p class="lead hero-subtitle animate-fade-in-up-delayed">
+      Dive into a world of quantum computing with interactive plugins.
+    </p>
+    <a href="#pluginGrid" class="btn btn-lg btn-outline-light mt-3 animate-fade-in-up-delayed2 smooth-scroll">
+      Get Started <i class="fas fa-arrow-down"></i>
+    </a>
+  </div>
+</div>
+
+<!-- Plugin Grid -->
+<div class="container py-4" id="pluginGrid">
   <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
     {% for key, plugin in plugins.items() %}
       <div class="col">
-        <div class="card h-100">
-          <div class="card-body">
-            <h5 class="card-title">{{ plugin.name }}</h5>
-            <p class="card-text">{{ plugin.description }}</p>
-            <a href="{{ url_for('plugin_view', plugin_key=key) }}" class="btn btn-primary">Try It</a>
+        <div class="card plugin-card tilt-card h-100">
+          <div class="card-body d-flex flex-column">
+            <h5 class="card-title text-primary">{{ plugin.name }}</h5>
+            <p class="card-text text-muted flex-grow-1">{{ plugin.description }}</p>
+            <a href="{{ url_for('plugin_view', plugin_key=key) }}" class="btn btn-primary btn-lg mt-auto w-100">
+              Try It Now
+            </a>
           </div>
         </div>
       </div>
     {% endfor %}
   </div>
+</div>
+
 {% endblock %}

@@ -1,29 +1,80 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="card mb-4">
+<div class="container my-4">
+  <!-- Plugin Header & Form -->
+  <div class="card output-card mb-3 shadow-sm" style="background-color: #1e1e1e;">
     <div class="card-body">
-      <h2 class="card-title">{{ plugin.name }}</h2>
-      <p class="card-text">{{ plugin.description }}</p>
+      <h2 class="card-title text-primary fw-bold">{{ plugin.name }}</h2>
+      <p class="card-text text-muted">{{ plugin.description }}</p>
       <form method="post" class="row g-3">
         {% for param in plugin.parameters %}
           <div class="col-md-6">
-            <label for="{{ param.name }}" class="form-label">{{ param.description }} ({{ param.type }})</label>
-            <input type="text" class="form-control" name="{{ param.name }}" id="{{ param.name }}" value="{{ param.default }}">
+            <label for="{{ param.name }}" class="form-label text-light">
+              <i class="fas fa-sliders-h"></i> {{ param.description }} ({{ param.type }})
+            </label>
+            <input type="text" class="form-control form-control-lg" 
+                   style="background-color: #2a2a2a; color: #fff; border: 1px solid #444;" 
+                   name="{{ param.name }}" id="{{ param.name }}" 
+                   value="{{ param.default }}" required>
           </div>
         {% endfor %}
         <div class="col-12">
-          <button type="submit" class="btn btn-success">Run Plugin</button>
+          <button type="submit" class="btn btn-success btn-lg w-100 mt-2">
+            <i class="fas fa-play"></i> Run Simulation
+          </button>
         </div>
       </form>
     </div>
   </div>
-  {% if result is defined and result %}
-    <div class="card">
-      <div class="card-header">Result</div>
-      <div class="card-body">
-        <pre class="mb-0">{{ result }}</pre>
+
+  {% if result is defined %}
+    {% if result.error %}
+      <!-- Error Panel -->
+      <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
+        <div class="card-header bg-danger text-light">
+          <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Error Occurred</h5>
+        </div>
+        <div class="card-body" style="background-color: #1e1e1e;">
+          <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">{{ result.error | safe }}</pre>
+        </div>
       </div>
-    </div>
+    {% else %}
+      {% if result.output %}
+        <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
+          <div class="card-header bg-secondary text-light">
+            <h5 class="mb-0"><i class="fas fa-check-circle"></i> Final Output</h5>
+          </div>
+          <div class="card-body" style="background-color: #1e1e1e;">
+            <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
+{{ result.output|string|safe }}
+            </pre>
+          </div>
+        </div>
+      {% endif %}
+      {% if result.process %}
+        <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
+          <div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-tasks"></i> Process Steps</h5>
+            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#processCollapse" aria-expanded="false" aria-controls="processCollapse">
+              Toggle
+            </button>
+          </div>
+          <div id="processCollapse" class="collapse">
+            <div class="card-body" style="background-color: #1e1e1e;">
+              <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
+{{ result.process|string|safe }}
+              </pre>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
   {% endif %}
-  <a href="{{ url_for('index') }}" class="btn btn-link mt-3">&larr; Back to Plugins</a>
+
+  <div class="mt-4 text-center">
+    <a href="{{ url_for('index') }}" class="btn btn-link text-light">
+      <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+  </div>
+</div>
 {% endblock %}
