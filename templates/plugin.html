@@ -35,7 +35,9 @@
           <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Error Occurred</h5>
         </div>
         <div class="card-body" style="background-color: #1e1e1e;">
-          <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">{{ result.error | string | safe }}</pre>
+          <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
+{{ result.error | string | safe }}
+          </pre>
         </div>
       </div>
     {% else %}
@@ -45,23 +47,30 @@
             <h5 class="mb-0"><i class="fas fa-check-circle"></i> Final Output</h5>
           </div>
           <div class="card-body" style="background-color: #1e1e1e;">
-            {% if result.output.measurements is defined %}
-              <h6 class="text-primary">Measurements</h6>
+            {% if result.output is mapping %}
+              {% for key, value in result.output.items() %}
+                {% if key == "circuit_svg" %}
+                  <h6 class="text-primary">Circuit Diagram</h6>
+                  <div class="result-svg" style="background-color: #fff; padding: 1rem;">
+                    {{ value | safe }}
+                  </div>
+                {% else %}
+                  <h6 class="text-primary">{{ key | capitalize }}</h6>
+                  <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
+{{ value | string | safe }}
+                  </pre>
+                {% endif %}
+              {% endfor %}
+            {% else %}
               <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ result.output.measurements | string | safe }}
+{{ result.output | string | safe }}
               </pre>
-            {% endif %}
-            {% if result.output.circuit_svg is defined %}
-              <h6 class="text-primary mt-3">Circuit Diagram</h6>
-              <div class="result-svg" style="background-color: #fff; padding: 1rem;">
-                {{ result.output.circuit_svg | safe }}
-              </div>
             {% endif %}
           </div>
         </div>
       {% endif %}
 
-      {% if result.process %}
+      {% if result.log %}
         <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
           <div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
             <h5 class="mb-0"><i class="fas fa-tasks"></i> Process Steps</h5>
@@ -72,7 +81,7 @@
           <div id="processCollapse" class="collapse">
             <div class="card-body" style="background-color: #1e1e1e;">
               <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ result.process | string | safe }}
+{{ result.log | string | safe }}
               </pre>
             </div>
           </div>
