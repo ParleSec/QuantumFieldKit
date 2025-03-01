@@ -1,10 +1,6 @@
-"""
-High-Fidelity Grover's Algorithm Simulation using Cirq with Detailed Math Logging.
-
-This module implements Grover's search algorithm for an unsorted database and logs the steps.
-"""
 import cirq
 import numpy as np
+from cirq.contrib.svg import circuit_to_svg
 
 def add_noise(circuit, noise_prob):
     noisy_ops = []
@@ -16,22 +12,16 @@ def add_noise(circuit, noise_prob):
 
 def oracle(qubits, target_state):
     n = len(qubits)
-    # Automatically adjust target_state to have length n.
     if len(target_state) < n:
-        # Pad with zeros on the left if it's too short.
         target_state = target_state.zfill(n)
     elif len(target_state) > n:
-        # Truncate if it's too long.
         target_state = target_state[:n]
     ops = []
-    # Apply X gate to qubits where target_state is '0'
     for i in range(n):
         if target_state[i] == '0':
             ops.append(cirq.X(qubits[i]))
-    # For demonstration, apply a Z gate to an ancilla qubit.
     ancilla = cirq.NamedQubit("ancilla")
     ops.append(cirq.Z(ancilla))
-    # Revert the earlier X gates.
     for i in range(n):
         if target_state[i] == '0':
             ops.append(cirq.X(qubits[i]))
@@ -51,12 +41,9 @@ def diffuser(qubits):
 
 def grover_circuit(n, target_state, iterations, noise_prob=0.0):
     qubits = [cirq.NamedQubit(f'q{i}') for i in range(n)]
-    # Ancilla for oracle
     ancilla = cirq.NamedQubit("ancilla")
     circuit = cirq.Circuit()
-    # Initialize qubits in uniform superposition.
     circuit.append([cirq.H(q) for q in qubits])
-    # Initialize ancilla in |-> state
     circuit.append([cirq.X(ancilla), cirq.H(ancilla)])
     for _ in range(iterations):
         circuit += oracle(qubits, target_state)
@@ -72,18 +59,17 @@ def run_grover(n, target_state, noise_prob=0.0):
     log.append("=== Grover's Algorithm Simulation ===")
     log.append(f"Number of qubits: {n}, target state: {target_state}, iterations: {iterations}")
     circuit = grover_circuit(n, target_state, iterations, noise_prob)
-    log.append("Final circuit:")
-    log.append(str(circuit))
+    log.append("Final circuit generated as SVG.")
+    circuit_svg = circuit_to_svg(circuit)
     simulator = cirq.Simulator()
     result = simulator.run(circuit, repetitions=1)
     outcome = "".join(str(int(result.measurements[f'm{i}'][0][0])) for i in range(n))
     log.append(f"Outcome: {outcome}")
-    return outcome, circuit, "\n".join(log)
+    return outcome, circuit_svg, "\n".join(log)
 
 if __name__ == '__main__':
-    # Ensure that the target state has the same length as the number of qubits.
-    outcome, circuit, log_str = run_grover(3, '101', noise_prob=0.01)
+    outcome, circuit_svg, log_str = run_grover(3, '101', noise_prob=0.01)
     print("Grover's algorithm outcome:", outcome)
-    print("Circuit:")
-    print(circuit)
+    print("Circuit SVG:")
+    print(circuit_svg)
     print("\nDetailed Log:\n", log_str)
