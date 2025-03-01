@@ -1,10 +1,9 @@
-### Web Application for Quantum Computing Simulations - easier to maintain than the GUI
 import os
-import json
 import traceback
+import json
 from flask import Flask, request, render_template, abort
 
-# Import your simulation functions from your plugins.
+# Import simulation functions from your plugins.
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
 from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
 from plugins.error_correction.shor_code import run_shor_code
@@ -16,40 +15,43 @@ from plugins.quantum_decryption.quantum_decryption import grover_key_search, sho
 from plugins.teleportation.teleport import teleportation_circuit
 from plugins.variational.vqe import run_vqe
 
-app = Flask(__name__)
 
-# --- Helper function to make objects JSON-safe ---
+app = Flask(__name__)
 
 def json_safe(obj):
     """
     Recursively convert non-JSON-serializable objects to strings.
+    Preserve raw SVG (under the key "circuit_svg") so it is not altered.
     """
     try:
         json.dumps(obj)
         return obj
-    except TypeError:
+    except (TypeError, OverflowError):
         if isinstance(obj, dict):
-            return {k: json_safe(v) for k, v in obj.items()}
+            new_dict = {}
+            for k, v in obj.items():
+                if k == "circuit_svg":
+                    new_dict[k] = v  # Do not alter SVG markup.
+                else:
+                    new_dict[k] = json_safe(v)
+            return new_dict
         elif isinstance(obj, (list, tuple)):
             return [json_safe(item) for item in obj]
         else:
             return str(obj)
 
-# --- Helper functions for wrapping plugin results ---
-
 def wrap_result(sim_result):
     """
-    Wrap the simulation result into a dict with keys:
-      - output: the final result (converted to JSON-safe format)
-      - process: the detailed log or process steps
-      - error: None if no error, or the error message if an exception occurred.
+    Wraps the simulation result into a dict with keys:
+      - output: all keys except 'log'
+      - process: the detailed log (if any)
+      - error: None if no error, or the error message.
     """
     if isinstance(sim_result, dict):
         if 'log' in sim_result:
             output = {k: v for k, v in sim_result.items() if k != 'log'}
-            process = sim_result['log']
             output = json_safe(output)
-            return {"output": output, "process": process, "error": None}
+            return {"output": output, "process": sim_result['log'], "error": None}
         else:
             return {"output": json_safe(sim_result), "process": "", "error": None}
     elif isinstance(sim_result, tuple):
@@ -65,17 +67,18 @@ def wrap_result(sim_result):
 
 def run_plugin(sim_func, **params):
     """
-    Calls the simulation function with the given parameters,
-    then wraps its result. If an exception is raised, returns an error message.
+    Calls the simulation function with the given parameters.
+    Wraps the result; if an exception is raised, returns an error message.
     """
     try:
         sim_result = sim_func(**params)
         return wrap_result(sim_result)
     except Exception as e:
         traceback.print_exc()
-        return {"output": None, "process": None, "error": f"{str(e)}\n{traceback.format_exc()}"}
+        return {"output": None, "process": None, "error": str(e) + "\n" + traceback.format_exc()}
 
-# --- Updated PLUGINS mapping ---
+# --- Plugin Mapping ---
+# Each plugin's "run" lambda calls run_plugin() with the proper arguments.
 PLUGINS = {
     "auth": {
         "name": "Quantum Authentication",
@@ -188,12 +191,12 @@ def plugin_view(plugin_key):
     if request.method == "POST":
         params = {}
         for param in plugin["parameters"]:
-            value = request.form.get(param["name"], param.get("default"))
+            raw_val = request.form.get(param["name"], param.get("default"))
             if param["type"] == "int":
-                value = int(value)
+                raw_val = int(raw_val)
             elif param["type"] == "float":
-                value = float(value)
-            params[param["name"]] = value
+                raw_val = float(raw_val)
+            params[param["name"]] = raw_val
         result = plugin["run"](params)
     return render_template("plugin.html", plugin=plugin, result=result)
 
