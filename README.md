@@ -4,7 +4,9 @@
 #### The next release will inlcude a feature-rich web ui, more accurate and visual components, and a (more) modular code structure
 #
 #### Docker Containerization will also be used, I have been learning Docker in other projects (DIDentity) and look to transition projects towards containerized releases
+#### As always, this project will remain open source, but will likely be publically hosted as well.
 #
+![Target State](image.png)
 #
 #
 ## Overview
