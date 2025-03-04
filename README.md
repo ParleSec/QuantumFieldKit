@@ -1,5 +1,12 @@
 # Quantum Field Kit
-
+## CURRENTLY UNDERGOING A MAJOR CODEBASE OVERHAUL
+#### The GUI model is difficult to maintain, lacks modularity and is restricted in its usability
+#### The next release will inlcude a feature-rich web ui, more accurate and visual components, and a (more) modular code structure
+#
+#### Docker Containerization will also be used, I have been learning Docker in other projects (DIDentity) and look to transition projects towards containerized releases
+#
+#
+#
 ## Overview
 
 Quantum Field Kit is a basic quantum computing simulation toolkit designed to demonstrate and explore various quantum protocols and concepts in a binary environment. 
