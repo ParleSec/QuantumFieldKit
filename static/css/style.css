@@ -1,78 +1,216 @@
-/* Global Base */
-body {
-    background-color: #121212;
-    color: #e0e0e0;
-    font-family: 'Poppins', sans-serif;
-    margin: 0;
-    padding: 0;
+/* Quantum Field Kit - Modern CSS Styles
+ * A comprehensive styling system for the quantum simulation web interface
+ */
+
+/* =====================
+   Base Styles
+   ===================== */
+   :root {
+    /* Color Palette */
+    --primary: #3c56b0;
+    --primary-dark: #273875;
+    --primary-light: #6d83d3;
+    --secondary: #2e3047;
+    --accent: #7c3aed;
+    --success: #10b981;
+    --info: #3b82f6;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --dark: #111827;
+    --gray-dark: #1f2937;
+    --gray-medium: #6b7280;
+    --gray-light: #e5e7eb;
+    --light: #f9fafb;
+    
+    /* Typography */
+    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-mono: 'Space Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2.5rem;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    
+    /* Borders */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.375rem;
+    --border-radius-lg: 0.5rem;
+    --border-radius-xl: 0.75rem;
+    --border-radius-full: 9999px;
   }
   
-  /* Navbar */
-  #mainNav {
-    transition: background-color 0.4s ease;
-  }
-  #mainNav.scrolled {
-    background-color: rgba(0,0,0,0.8);
-  }
-  
-  /* Particles.js container */
-  #particles-js {
-    position: fixed;
-    width: 100%;
-    height: 100vh;
-    z-index: -1; /* behind everything */
-    top: 0;
-    left: 0;
-  }
-  
-  /* Hero Section */
-  .hero-section {
-    position: relative;
+  body {
+    font-family: var(--font-primary);
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
     min-height: 100vh;
-    z-index: 1; /* above the particle background */
-    padding: 0 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+    position: relative;
   }
-  .hero-content {
-    max-width: 800px;
-    animation: fadeInUp 1s ease forwards;
+  
+  main {
+    flex-grow: 1;
+    padding-top: 56px; /* Navbar height */
   }
-  .hero-title {
-    font-size: 3rem;
+  
+  a {
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  
+  a:hover {
+    text-decoration: none;
+  }
+  
+  pre, code {
+    font-family: var(--font-mono);
+  }
+  
+  /* Typography enhancements */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
     line-height: 1.2;
   }
-  .gradient-text {
-    background: linear-gradient(45deg, #42a5f5, #ab47bc);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+  
+  .lead {
+    font-weight: 300;
   }
+  
+  .text-gradient {
+    background: linear-gradient(45deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback */
+  }
+  
+  /* =====================
+     Navigation
+     ===================== */
+  #mainNav {
+    transition: background-color 0.3s ease;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: var(--shadow-md);
+  }
+  
+  #mainNav.scrolled {
+    background-color: var(--dark);
+  }
+  
+  #mainNav .navbar-brand {
+    font-weight: 700;
+    font-size: 1.25rem;
+  }
+  
+  #mainNav .navbar-brand i {
+    font-size: 1.5rem;
+  }
+  
+  #mainNav .nav-link {
+    padding: 0.5rem 1rem;
+    position: relative;
+  }
+  
+  #mainNav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background-color: var(--primary-light);
+    transition: width 0.3s ease;
+  }
+  
+  #mainNav .nav-link:hover::after {
+    width: 80%;
+  }
+  
+  .dropdown-menu {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    background-color: rgba(20, 20, 30, 0.95);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-md);
+    padding: 0.5rem;
+  }
+  
+  .dropdown-item {
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s ease;
+  }
+  
+  .dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+    color: var(--primary-light);
+  }
+  
+  /* =====================
+     Hero Section
+     ===================== */
+  .hero-container {
+    height: 100vh;
+    min-height: 500px;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  #quantum-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+  
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    padding: 0 1rem;
+  }
+  
   .hero-subtitle {
-    font-size: 1.3rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .hero-title {
+    background: linear-gradient(45deg, #a78bfa, #4f46e5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+    font-size: 3.5rem;
+    text-shadow: 0 0 20px rgba(167, 139, 250, 0.5);
+  }
+  
+  .hero-subtitle {
+    font-size: 1.25rem;
     max-width: 600px;
     margin: 0 auto 2rem;
   }
   
-  /* Plugin Cards */
-  .plugin-card {
-    background-color: #1f1f1f;
-    border: none;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease;
-  }
-  .plugin-card .card-body {
-    display: flex;
-    flex-direction: column;
-  }
-  .plugin-card:hover {
-    transform: translateY(-3px);
-  }
-  
-  /* 3D Tilt effect for plugin cards */
-  .tilt-card {
-    transform-style: preserve-3d;
-  }
-  
-  /* Animations */
+  /* Animation keyframes */
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -83,45 +221,207 @@ body {
       transform: translateY(0);
     }
   }
+  
   .animate-fade-in-up {
     animation: fadeInUp 0.8s ease forwards;
   }
+  
   .animate-fade-in-up-delayed {
     animation: fadeInUp 1.2s ease forwards;
   }
+  
   .animate-fade-in-up-delayed2 {
     animation: fadeInUp 1.6s ease forwards;
   }
   
-  /* Footer */
-  footer {
-    background-color: #1f1f1f;
-    position: relative;
-    z-index: 1;
+  /* =====================
+     Cards & Plugins
+     ===================== */
+  .plugin-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background-color: #fff;
+    overflow: hidden;
+    border-radius: var(--border-radius-lg);
   }
   
-  /* Utility */
+  .plugin-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+  }
+  
+  .plugin-card .card-body {
+    padding: 1.5rem;
+  }
+  
+  .icon-wrapper {
+    transition: transform 0.3s ease;
+    width: 48px;
+    height: 48px;
+  }
+  
+  .plugin-card:hover .icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+  }
+  
+  .tilt-card {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  /* =====================
+     Simulation Controls
+     ===================== */
+  .form-range::-webkit-slider-thumb {
+    background-color: var(--primary);
+  }
+  
+  .form-range::-moz-range-thumb {
+    background-color: var(--primary);
+  }
+  
+  .form-label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .terminal-log {
+    background-color: var(--gray-dark);
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  
+  /* Stylized tabs */
+  .nav-tabs {
+    border-bottom: 1px solid #dee2e6;
+  }
+  
+  .nav-tabs .nav-link {
+    border: none;
+    color: var(--gray-medium);
+    padding: 0.75rem 1.25rem;
+    font-weight: 600;
+    border-radius: 0;
+    transition: color 0.2s ease;
+  }
+  
+  .nav-tabs .nav-link:hover {
+    color: var(--primary);
+    border-color: transparent;
+  }
+  
+  .nav-tabs .nav-link.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+    background-color: transparent;
+  }
+  
+  /* =====================
+     Visualizations
+     ===================== */
+  .circuit-svg {
+    max-width: 100%;
+    overflow-x: auto;
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+  }
+  
+  .chart-container {
+    height: 300px;
+  }
+  
+  #bloch-sphere-container, 
+  #circuit-demo-container {
+    background-color: #141414;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+  }
+  
+  .demo-container {
+    height: 400px;
+  }
+  
+  /* =====================
+     Utility Classes
+     ===================== */
+  .bg-gradient-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  }
+  
+  .bg-gradient-dark {
+    background: linear-gradient(135deg, #0f172a, #1e1b4b);
+  }
+  
+  .shadow-hover {
+    transition: box-shadow 0.3s ease;
+  }
+  
+  .shadow-hover:hover {
+    box-shadow: var(--shadow-lg);
+  }
+  
   .smooth-scroll {
     cursor: pointer;
   }
   
-  /* Plugin Output Pre Blocks */
-   .result-output {
-    font-family: "Consolas", monospace;
-    padding: 1rem;
-    border-radius: 5px;
-    max-height: 400px;
-    overflow-y: auto;
-    line-height: 1.3;
-    white-space: pre-wrap;
-    word-break: break-word;
+  /* Back to top button */
+  .back-to-top-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 99;
+    display: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
   
-  /* Make sure form controls remain visible on dark background */
-  .form-control:focus {
-    background-color: #2a2a2a !important;
-    border-color: #007bff !important;
-    outline: none;
-    box-shadow: none;
+  .back-to-top-btn:hover {
+    background-color: var(--primary-dark);
   }
   
+  /* =====================
+     Media Queries
+     ===================== */
+  @media (max-width: 767.98px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 991.98px) {
+    #mainNav .navbar-nav {
+      padding: 1rem 0;
+    }
+    
+    #mainNav .nav-link::after {
+      display: none;
+    }
+  }
+  
+  @media (min-width: 992px) {
+    .hero-content {
+      padding: 0 2rem;
+    }
+    
+    .plugin-card .card-body {
+      padding: 2rem;
+    }
+  }
