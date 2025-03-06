@@ -1,9 +1,12 @@
 import os
 import traceback
 import json
-from flask import Flask, request, render_template, abort
+import logging
+from flask import Flask, request, render_template, jsonify, session, abort
+from flask_socketio import SocketIO, emit
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-# Import simulation functions from your plugins.
+# Import simulation functions from plugins
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
 from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
 from plugins.error_correction.shor_code import run_shor_code
@@ -15,8 +18,25 @@ from plugins.quantum_decryption.quantum_decryption import grover_key_search, sho
 from plugins.teleportation.teleport import teleportation_circuit
 from plugins.variational.vqe import run_vqe
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler()]
+)
+logger = logging.getLogger(__name__)
 
+# Initialize Flask application
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
+
+# Add proxy fix for proper IP handling behind reverse proxies
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+# Initialize Socket.IO for real-time communication
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 def json_safe(obj):
     """
@@ -34,6 +54,8 @@ def json_safe(obj):
             return new_obj
         elif isinstance(obj, (list, tuple)):
             return [json_safe(item) for item in obj]
+        elif hasattr(obj, 'tolist'):  # For numpy arrays
+            return obj.tolist()
         else:
             return str(obj)
 
@@ -68,17 +90,23 @@ def run_plugin(sim_func, **params):
     Returns a standardized result dictionary.
     """
     try:
+        logger.info(f"Running simulation with parameters: {params}")
         sim_result = sim_func(**params)
         return wrap_result(sim_result)
     except Exception as e:
-        traceback.print_exc()
-        return {"output": None, "log": None, "error": str(e) + "\n" + traceback.format_exc()}
+        error_msg = str(e)
+        stack_trace = traceback.format_exc()
+        logger.error(f"Simulation error: {error_msg}\n{stack_trace}")
+        return {"output": None, "log": None, "error": f"{error_msg}\n\n{stack_trace}"}
 
-# --- Plugin Mapping ---
+# --- Plugin Registry ---
+# Define all available quantum simulation plugins
 PLUGINS = {
     "auth": {
         "name": "Quantum Authentication",
         "description": "Simulate quantum fingerprint authentication using Cirq.",
+        "icon": "fa-fingerprint",
+        "category": "security",
         "parameters": [
             {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate"},
             {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use"}
@@ -88,6 +116,8 @@ PLUGINS = {
     "bb84": {
         "name": "BB84 Protocol Simulation",
         "description": "Simulate the BB84 quantum key distribution protocol.",
+        "icon": "fa-key",
+        "category": "cryptography",
         "parameters": [
             {"name": "num_bits", "type": "int", "default": 10, "description": "Number of bits to simulate"},
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
@@ -97,6 +127,8 @@ PLUGINS = {
     "shor": {
         "name": "Shor's Code Simulation",
         "description": "Simulate quantum error correction using Shor's code.",
+        "icon": "fa-shield-alt",
+        "category": "error-correction",
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"}
         ],
@@ -105,6 +137,8 @@ PLUGINS = {
     "grover": {
         "name": "Grover's Algorithm Simulation",
         "description": "Simulate Grover's search algorithm.",
+        "icon": "fa-search",
+        "category": "algorithms",
         "parameters": [
             {"name": "n", "type": "int", "default": 3, "description": "Number of qubits"},
             {"name": "target_state", "type": "str", "default": "101", "description": "Target state (binary)"},
@@ -115,6 +149,8 @@ PLUGINS = {
     "handshake": {
         "name": "Quantum Handshake Simulation",
         "description": "Simulate a quantum handshake using entangled Bell pairs.",
+        "icon": "fa-handshake",
+        "category": "protocols",
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
@@ -123,6 +159,8 @@ PLUGINS = {
     "network": {
         "name": "Entanglement Swapping Simulation",
         "description": "Simulate a quantum network using entanglement swapping.",
+        "icon": "fa-network-wired",
+        "category": "protocols",
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
@@ -131,6 +169,8 @@ PLUGINS = {
     "qrng": {
         "name": "Quantum Random Number Generator",
         "description": "Generate a random number using quantum superposition.",
+        "icon": "fa-dice",
+        "category": "utilities",
         "parameters": [
             {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits"}
         ],
@@ -139,6 +179,8 @@ PLUGINS = {
     "teleport": {
         "name": "Quantum Teleportation Simulation",
         "description": "Simulate quantum teleportation protocol.",
+        "icon": "fa-atom",
+        "category": "protocols",
         "parameters": [
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
@@ -147,6 +189,8 @@ PLUGINS = {
     "vqe": {
         "name": "Variational Quantum Eigensolver (VQE)",
         "description": "Simulate VQE to find the ground state energy of a Hamiltonian.",
+        "icon": "fa-wave-square",
+        "category": "algorithms",
         "parameters": [
             {"name": "num_qubits", "type": "int", "default": 2, "description": "Number of qubits"},
             {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"},
@@ -157,6 +201,8 @@ PLUGINS = {
     "quantum_decryption_grover": {
         "name": "Quantum Decryption via Grover Key Search",
         "description": "Use Grover's algorithm to search for a secret key.",
+        "icon": "fa-unlock",
+        "category": "cryptography",
         "parameters": [
             {"name": "key", "type": "int", "default": 5, "description": "Secret key (integer)"},
             {"name": "num_bits", "type": "int", "default": 4, "description": "Number of bits (search space)"},
@@ -167,6 +213,8 @@ PLUGINS = {
     "quantum_decryption_shor": {
         "name": "Quantum Decryption via Shor Factorization",
         "description": "Simulate quantum decryption using Shor's code simulation.",
+        "icon": "fa-key",
+        "category": "cryptography",
         "parameters": [
             {"name": "N", "type": "int", "default": 15, "description": "Composite number"}
         ],
@@ -174,27 +222,163 @@ PLUGINS = {
     }
 }
 
+# --- Route handlers ---
 @app.route("/")
 def index():
-    return render_template("index.html", plugins=PLUGINS)
+    """Render the homepage with a list of available plugins."""
+    # Group plugins by category for better organization
+    categories = {}
+    for key, plugin in PLUGINS.items():
+        category = plugin.get("category", "other")
+        if category not in categories:
+            categories[category] = []
+        categories[category].append({"key": key, **plugin})
+    
+    return render_template("index.html", plugins=PLUGINS, categories=categories)
 
 @app.route("/plugin/<plugin_key>", methods=["GET", "POST"])
 def plugin_view(plugin_key):
+    """Handle individual plugin pages and simulation requests."""
     if plugin_key not in PLUGINS:
         abort(404)
+    
     plugin = PLUGINS[plugin_key]
     result = None
+    
     if request.method == "POST":
         params = {}
         for param in plugin["parameters"]:
             raw_val = request.form.get(param["name"], param.get("default"))
             if param["type"] == "int":
-                raw_val = int(raw_val)
+                try:
+                    raw_val = int(raw_val)
+                except ValueError:
+                    return jsonify({"error": f"Invalid integer value for {param['name']}"})
             elif param["type"] == "float":
-                raw_val = float(raw_val)
+                try:
+                    raw_val = float(raw_val)
+                except ValueError:
+                    return jsonify({"error": f"Invalid float value for {param['name']}"})
             params[param["name"]] = raw_val
+        
+        # Execute the plugin with the provided parameters
         result = plugin["run"](params)
+        
+        # If this is an AJAX request, return JSON
+        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            return jsonify(result)
+    
     return render_template("plugin.html", plugin=plugin, result=result)
 
+@app.route("/api/plugins", methods=["GET"])
+def api_plugins():
+    """API endpoint to get a list of all available plugins."""
+    return jsonify({
+        "plugins": {k: {
+            "name": v["name"],
+            "description": v["description"],
+            "category": v["category"],
+            "parameters": v["parameters"]
+        } for k, v in PLUGINS.items()}
+    })
+
+@app.route("/api/run/<plugin_key>", methods=["POST"])
+def api_run_plugin(plugin_key):
+    """API endpoint to run a plugin with JSON parameters."""
+    if plugin_key not in PLUGINS:
+        return jsonify({"error": f"Plugin '{plugin_key}' not found"}), 404
+    
+    plugin = PLUGINS[plugin_key]
+    
+    # Parse JSON parameters
+    try:
+        params = request.json or {}
+    except Exception:
+        return jsonify({"error": "Invalid JSON data"}), 400
+    
+    # Validate and convert parameters
+    for param in plugin["parameters"]:
+        if param["name"] not in params and "default" in param:
+            params[param["name"]] = param["default"]
+        
+        if param["name"] in params:
+            if param["type"] == "int":
+                try:
+                    params[param["name"]] = int(params[param["name"]])
+                except (ValueError, TypeError):
+                    return jsonify({"error": f"Invalid integer value for {param['name']}"}), 400
+            elif param["type"] == "float":
+                try:
+                    params[param["name"]] = float(params[param["name"]])
+                except (ValueError, TypeError):
+                    return jsonify({"error": f"Invalid float value for {param['name']}"}), 400
+    
+    # Run the plugin
+    result = plugin["run"](params)
+    return jsonify(result)
+
+# --- Socket.IO event handlers for real-time updates ---
+@socketio.on('connect')
+def handle_connect():
+    """Handle client connection."""
+    logger.info(f"Client connected: {request.sid}")
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection."""
+    logger.info(f"Client disconnected: {request.sid}")
+
+@socketio.on('run_plugin')
+def handle_run_plugin(data):
+    """Run a plugin and emit progress updates."""
+    plugin_key = data.get('plugin_key')
+    params = data.get('params', {})
+    
+    if plugin_key not in PLUGINS:
+        emit('plugin_error', {'error': f"Plugin '{plugin_key}' not found"})
+        return
+    
+    plugin = PLUGINS[plugin_key]
+    
+    # Convert parameters to the correct types
+    for param in plugin["parameters"]:
+        name = param["name"]
+        if name in params:
+            try:
+                if param["type"] == "int":
+                    params[name] = int(params[name])
+                elif param["type"] == "float":
+                    params[name] = float(params[name])
+            except (ValueError, TypeError):
+                emit('plugin_error', {'error': f"Invalid {param['type']} value for {name}"})
+                return
+    
+    # Run the plugin and emit the result
+    try:
+        emit('plugin_start', {'plugin_key': plugin_key})
+        result = plugin["run"](params)
+        emit('plugin_result', {'plugin_key': plugin_key, 'result': result})
+    except Exception as e:
+        emit('plugin_error', {'plugin_key': plugin_key, 'error': str(e)})
+
+# --- Error handling ---
+@app.errorhandler(404)
+def page_not_found(e):
+    """Handle 404 errors."""
+    return render_template("error.html", error="Page not found"), 404
+
+@app.errorhandler(500)
+def server_error(e):
+    """Handle 500 errors."""
+    return render_template("error.html", error="Server error"), 500
+
+# --- Main entry point ---
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    debug = os.environ.get("FLASK_ENV") == "development"
+    
+    logger.info(f"Starting Quantum Field Kit Web Server on port {port}")
+    logger.info(f"Debug mode: {debug}")
+    logger.info(f"Available plugins: {', '.join(PLUGINS.keys())}")
+    
+    socketio.run(app, host="0.0.0.0", port=port, debug=debug)
