@@ -1,99 +1,368 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="container my-4">
-  <!-- Plugin Header & Form -->
-  <div class="card output-card mb-3 shadow-sm" style="background-color: #1e1e1e;">
-    <div class="card-body">
-      <h2 class="card-title text-primary fw-bold">{{ plugin.name }}</h2>
-      <p class="card-text text-muted">{{ plugin.description }}</p>
-      <form method="post" class="row g-3">
-        {% for param in plugin.parameters %}
-          <div class="col-md-6">
-            <label for="{{ param.name }}" class="form-label text-light">
-              <i class="fas fa-sliders-h"></i> {{ param.description }} ({{ param.type }})
-            </label>
-            <input type="text" class="form-control form-control-lg" 
-                   style="background-color: #2a2a2a; color: #fff; border: 1px solid #444;" 
-                   name="{{ param.name }}" id="{{ param.name }}" 
-                   value="{{ param.default }}" required>
-          </div>
-        {% endfor %}
-        <div class="col-12">
-          <button type="submit" class="btn btn-success btn-lg w-100 mt-2">
-            <i class="fas fa-play"></i> Run Simulation
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
 
-  {% if result is defined %}
-    {% if result.error %}
-      <!-- Error Panel -->
-      <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
-        <div class="card-header bg-danger text-light">
-          <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Error Occurred</h5>
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- Sidebar: Simulation Controls -->
+    <div class="col-lg-3">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas {{ plugin.icon }} me-2"></i>
+            {{ plugin.name }}
+          </h5>
         </div>
-        <div class="card-body" style="background-color: #1e1e1e;">
-          <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ result.error | string | safe }}
-          </pre>
+        <div class="card-body">
+          <p class="text-muted mb-4">{{ plugin.description }}</p>
+          
+          <form method="post" id="simulation-form" class="needs-validation" novalidate>
+            {% for param in plugin.parameters %}
+              <div class="mb-3">
+                <label for="{{ param.name }}" class="form-label">
+                  {{ param.description }}
+                </label>
+                
+                {% if param.type == "float" %}
+                  <div class="input-group">
+                    <input type="range" class="form-range w-75" 
+                           id="{{ param.name }}_range" 
+                           min="0" max="{% if param.name == 'noise' %}0.2{% else %}1{% endif %}" 
+                           step="0.01" 
+                           value="{{ param.default }}"
+                           aria-label="{{ param.description }} slider">
+                    <input type="number" class="form-control w-25" 
+                           name="{{ param.name }}" 
+                           id="{{ param.name }}" 
+                           value="{{ param.default }}"
+                           step="0.01"
+                           min="0"
+                           aria-label="{{ param.description }} value"
+                           required>
+                  </div>
+                {% elif param.type == "int" %}
+                  <input type="number" class="form-control" 
+                         name="{{ param.name }}" 
+                         id="{{ param.name }}" 
+                         value="{{ param.default }}"
+                         min="1"
+                         aria-label="{{ param.description }}"
+                         required>
+                {% else %}
+                  <input type="{{ 'text' if param.type == 'str' else param.type }}" 
+                         class="form-control"
+                         name="{{ param.name }}" 
+                         id="{{ param.name }}" 
+                         value="{{ param.default }}"
+                         aria-label="{{ param.description }}"
+                         required>
+                {% endif %}
+                
+                <div class="form-text">
+                  {{ param.type }} {% if param.min is defined %}(min: {{ param.min }}){% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary" id="run-simulation">
+                <i class="fas fa-play me-2"></i> Run Simulation
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="reset-form">
+                <i class="fas fa-undo me-2"></i> Reset Parameters
+              </button>
+            </div>
+          </form>
         </div>
       </div>
-    {% else %}
-      {% if result.output %}
-        <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
-          <div class="card-header bg-secondary text-light">
-            <h5 class="mb-0"><i class="fas fa-check-circle"></i> Final Output</h5>
-          </div>
-          <div class="card-body" style="background-color: #1e1e1e;">
-            {% if result.output is mapping %}
-              {% for key, value in result.output.items() %}
-                {% if key == "circuit_svg" %}
-                  <h6 class="text-primary">Circuit Diagram</h6>
-                  <div class="result-svg" style="background-color: #fff; padding: 1rem;">
-                    {{ value | safe }}
-                  </div>
-                {% else %}
-                  <h6 class="text-primary">{{ key | capitalize }}</h6>
-                  <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ value | string | safe }}
-                  </pre>
-                {% endif %}
-              {% endfor %}
-            {% else %}
-              <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ result.output | string | safe }}
-              </pre>
-            {% endif %}
-          </div>
+      
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0">Navigation</h5>
         </div>
-      {% endif %}
-
-      {% if result.log %}
-        <div class="card shadow-sm mb-3" style="background-color: #2a2a2a;">
-          <div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="fas fa-tasks"></i> Process Steps</h5>
-            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#processCollapse" aria-expanded="false" aria-controls="processCollapse">
-              Toggle
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+              <i class="fas fa-home me-2"></i> Back to Home
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#helpModal">
+              <i class="fas fa-question-circle me-2"></i> Documentation
             </button>
           </div>
-          <div id="processCollapse" class="collapse">
-            <div class="card-body" style="background-color: #1e1e1e;">
-              <pre class="result-output" style="background-color: #2f2f2f; color: #eee;">
-{{ result.log | string | safe }}
-              </pre>
-            </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content: Simulation Results -->
+    <div class="col-lg-9">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+          <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Simulation Results</h5>
+          <div class="simulation-status">
+            <span class="badge bg-secondary" id="status-badge">Ready</span>
           </div>
         </div>
-      {% endif %}
-    {% endif %}
-  {% endif %}
-
-  <div class="mt-4 text-center">
-    <a href="{{ url_for('index') }}" class="btn btn-link text-light">
-      <i class="fas fa-arrow-left"></i> Back to Home
-    </a>
+        <div class="card-body" id="results-container">
+          {% if not result %}
+            <div class="text-center py-5 text-muted">
+              <i class="fas fa-atom fa-3x mb-3"></i>
+              <h4>Quantum Simulation</h4>
+              <p>Configure parameters and run the simulation to see results.</p>
+            </div>
+          {% endif %}
+          
+          {% if result %}
+            {% if result.error %}
+              <div class="alert alert-danger">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Error Occurred</h5>
+                <hr>
+                <pre class="mt-3 mb-0">{{ result.error }}</pre>
+              </div>
+            {% else %}
+              <div class="result-container">
+                <!-- Visualization tabs -->
+                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="visualization-tab" data-bs-toggle="tab" 
+                            data-bs-target="#visualization" type="button" role="tab" 
+                            aria-controls="visualization" aria-selected="true">
+                      <i class="fas fa-chart-bar me-2"></i> Visualization
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="raw-data-tab" data-bs-toggle="tab" 
+                            data-bs-target="#raw-data" type="button" role="tab" 
+                            aria-controls="raw-data" aria-selected="false">
+                      <i class="fas fa-table me-2"></i> Raw Data
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="log-tab" data-bs-toggle="tab" 
+                            data-bs-target="#log" type="button" role="tab" 
+                            aria-controls="log" aria-selected="false">
+                      <i class="fas fa-terminal me-2"></i> Process Log
+                    </button>
+                  </li>
+                </ul>
+                
+                <div class="tab-content p-3 border border-top-0 rounded-bottom" id="resultTabsContent">
+                  <!-- Visualization Tab -->
+                  <div class="tab-pane fade show active" id="visualization" role="tabpanel" aria-labelledby="visualization-tab">
+                    {% if result.output is mapping and result.output.circuit_svg %}
+                      <h5 class="mb-3">Circuit Diagram</h5>
+                      <div class="circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto">
+                        {{ result.output.circuit_svg | safe }}
+                      </div>
+                    {% endif %}
+                    
+                    <!-- Specific visualizations based on plugin type -->
+                    <div class="row">
+                      {% if plugin.key == 'qrng' or plugin.key == 'bb84' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Bit Distribution</div>
+                            <div class="card-body">
+                              <canvas id="bit-distribution-chart" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'teleport' or plugin.key == 'handshake' or plugin.key == 'auth' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Quantum State</div>
+                            <div class="card-body">
+                              <div id="quantum-state-viz" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'grover' or plugin.key == 'quantum_decryption_grover' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Probability Distribution</div>
+                            <div class="card-body">
+                              <canvas id="probability-distribution" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'vqe' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Energy Convergence</div>
+                            <div class="card-body">
+                              <canvas id="energy-convergence" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Raw Data Tab -->
+                  <div class="tab-pane fade" id="raw-data" role="tabpanel" aria-labelledby="raw-data-tab">
+                    <div class="row">
+                      {% if result.output is mapping %}
+                        {% for key, value in result.output.items() %}
+                          {% if key != 'circuit_svg' %}
+                            <div class="col-md-6 mb-4">
+                              <div class="card">
+                                <div class="card-header">{{ key | replace('_', ' ') | title }}</div>
+                                <div class="card-body">
+                                  <pre class="mb-0">{{ value | pprint }}</pre>
+                                </div>
+                              </div>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      {% else %}
+                        <div class="col-12">
+                          <pre class="mb-0">{{ result.output | pprint }}</pre>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Log Tab -->
+                  <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
+                    <div class="bg-dark text-light p-3 rounded">
+                      <pre class="mb-0 terminal-log">{{ result.log }}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Quantum Explanation Card -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i> Quantum Explanation</h5>
+        </div>
+        <div class="card-body">
+          {% if plugin.key == 'bb84' %}
+            <h5>BB84 Quantum Key Distribution Protocol</h5>
+            <p>BB84 is the first quantum cryptography protocol, developed by Charles Bennett and Gilles Brassard in 1984. It allows two parties (traditionally called Alice and Bob) to establish a shared random secret key using quantum communication.</p>
+            <p>Key aspects:</p>
+            <ul>
+              <li><strong>Quantum States:</strong> Information is encoded in quantum states (qubits) using two different bases.</li>
+              <li><strong>No-Cloning Theorem:</strong> Quantum mechanics prevents perfect copying of unknown quantum states.</li>
+              <li><strong>Eavesdropper Detection:</strong> Any measurement by an eavesdropper will disturb the quantum states, revealing their presence.</li>
+            </ul>
+          {% elif plugin.key == 'teleport' %}
+            <h5>Quantum Teleportation</h5>
+            <p>Quantum teleportation is a process by which quantum information can be transmitted from one location to another, with the help of classical communication and previously shared quantum entanglement.</p>
+            <p>Key aspects:</p>
+            <ul>
+              <li><strong>Entanglement:</strong> Relies on pre-shared entangled qubits between sender and receiver.</li>
+              <li><strong>Bell Measurement:</strong> The sender performs a joint measurement on their qubit and one half of the entangled pair.</li>
+              <li><strong>Classical Communication:</strong> Measurement results are sent via classical channels.</li>
+              <li><strong>Quantum Reconstruction:</strong> The receiver applies corrections based on the classical information.</li>
+            </ul>
+          {% elif plugin.key == 'grover' %}
+            <h5>Grover's Search Algorithm</h5>
+            <p>Grover's algorithm provides a quadratic speedup for unstructured search problems. It can find a marked item in a database of N items with approximately √N queries, compared to the classical O(N) requirement.</p>
+            <p>Key aspects:</p>
+            <ul>
+              <li><strong>Oracle Function:</strong> Marks the target state by flipping its phase.</li>
+              <li><strong>Amplitude Amplification:</strong> Iteratively increases the probability of measuring the target state.</li>
+              <li><strong>Quantum Interference:</strong> Uses constructive and destructive interference to amplify the correct answer.</li>
+            </ul>
+          {% else %}
+            <h5>{{ plugin.name }}</h5>
+            <p>This simulation demonstrates key quantum computing concepts including superposition, entanglement, and measurement.</p>
+            <p>Quantum simulations provide insight into the behavior of quantum systems without requiring actual quantum hardware, allowing for exploration of quantum phenomena and algorithm development.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
   </div>
 </div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="helpModalLabel">
+          <i class="fas fa-question-circle me-2"></i> {{ plugin.name }} Documentation
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Parameters</h5>
+            <dl>
+              {% for param in plugin.parameters %}
+                <dt>{{ param.name }}</dt>
+                <dd>{{ param.description }} <span class="badge bg-secondary">{{ param.type }}</span></dd>
+              {% endfor %}
+            </dl>
+          </div>
+          <div class="col-md-6">
+            <h5>Output</h5>
+            <p>The simulation produces:</p>
+            <ul>
+              {% if plugin.key == 'bb84' %}
+                <li>Shared key between Alice and Bob</li>
+                <li>Information about bases used</li>
+                <li>Quantum circuit diagram</li>
+              {% elif plugin.key == 'teleport' %}
+                <li>Final quantum state after teleportation</li>
+                <li>Measurement outcomes</li>
+                <li>Quantum circuit diagram</li>
+              {% elif plugin.key == 'grover' %}
+                <li>Search outcome (target state)</li>
+                <li>Probability distribution</li>
+                <li>Quantum circuit diagram</li>
+              {% else %}
+                <li>Simulation results specific to this quantum protocol</li>
+                <li>Quantum state information</li>
+                <li>Detailed process log</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+        <hr>
+        <h5>How It Works</h5>
+        <p>This simulation uses Google Cirq, a Python framework for creating, editing, and invoking Noisy Intermediate Scale Quantum (NISQ) circuits. The backend performs these steps:</p>
+        <ol>
+          <li>Constructs quantum circuit based on your parameters</li>
+          <li>Applies specified quantum gates and operations</li>
+          <li>Simulates quantum behavior with high fidelity</li>
+          <li>Performs measurements and collects results</li>
+          <li>Renders visualizations of the quantum behavior</li>
+        </ol>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+<script src="{{ url_for('static', filename='js/OrbitControls.js') }}"></script>
+<script src="{{ url_for('static', filename='js/quantum-visualization.js') }}"></script>
+<script src="{{ url_for('static', filename='js/plugin-visualizations.js') }}"></script>
+
+<script>
+  // Pass plugin data to the visualization module
+  document.addEventListener('DOMContentLoaded', function() {
+    {% if result and not result.error %}
+      // Initialize visualizations with plugin data
+      QuantumVisualizer.init('{{ plugin.key }}', {{ result|tojson }});
+    {% endif %}
+  });
+</script>
 {% endblock %}
