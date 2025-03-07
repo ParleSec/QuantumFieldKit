@@ -135,7 +135,7 @@ THREE.OrbitControls = function (object, domElement) {
 
         if (update || zoomChanged) {
             lastPosition.copy(position);
-            scope.dispatchEvent(changeEvent);
+            scope.dispatchEvent(scope.changeEvent);
             zoomChanged = false;
             return true;
         }
@@ -201,6 +201,35 @@ THREE.OrbitControls = function (object, domElement) {
         scope.update();
     }
 
+    // Handle keyboard arrow keys for panning
+    function handleKeyDown(event) {
+        let needsUpdate = false;
+
+        switch (event.keyCode) {
+            case scope.keys.UP:
+                pan(0, scope.keyPanSpeed);
+                needsUpdate = true;
+                break;
+            case scope.keys.BOTTOM:
+                pan(0, -scope.keyPanSpeed);
+                needsUpdate = true;
+                break;
+            case scope.keys.LEFT:
+                pan(scope.keyPanSpeed, 0);
+                needsUpdate = true;
+                break;
+            case scope.keys.RIGHT:
+                pan(-scope.keyPanSpeed, 0);
+                needsUpdate = true;
+                break;
+        }
+
+        if (needsUpdate) {
+            event.preventDefault();
+            scope.update();
+        }
+    }
+
     function pan(deltaX, deltaY) {
         const element = scope.domElement === document ? scope.domElement.body : scope.domElement;
 
@@ -231,7 +260,7 @@ THREE.OrbitControls = function (object, domElement) {
         if (scope.object.isPerspectiveCamera) {
             scale /= dollyScale;
         } else if (scope.object.isOrthographicCamera) {
-            scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom * dollyScale));
+            scope.object.zoom = Math.max(scope.minZoom || 0, Math.min(scope.maxZoom || Infinity, scope.object.zoom * dollyScale));
             scope.object.updateProjectionMatrix();
             zoomChanged = true;
         } else {
@@ -244,7 +273,7 @@ THREE.OrbitControls = function (object, domElement) {
         if (scope.object.isPerspectiveCamera) {
             scale *= dollyScale;
         } else if (scope.object.isOrthographicCamera) {
-            scope.object.zoom = Math.max(scope.minZoom, Math.min(scope.maxZoom, scope.object.zoom / dollyScale));
+            scope.object.zoom = Math.max(scope.minZoom || 0, Math.min(scope.maxZoom || Infinity, scope.object.zoom / dollyScale));
             scope.object.updateProjectionMatrix();
             zoomChanged = true;
         } else {
@@ -324,7 +353,7 @@ THREE.OrbitControls = function (object, domElement) {
         if (state !== scope.STATE.NONE) {
             document.addEventListener('mousemove', onMouseMove, false);
             document.addEventListener('mouseup', onMouseUp, false);
-            scope.dispatchEvent(startEvent);
+            scope.dispatchEvent(scope.startEvent);
         }
     };
 
@@ -351,7 +380,7 @@ THREE.OrbitControls = function (object, domElement) {
     const onMouseUp = function(event) {
         document.removeEventListener('mousemove', onMouseMove, false);
         document.removeEventListener('mouseup', onMouseUp, false);
-        scope.dispatchEvent(endEvent);
+        scope.dispatchEvent(scope.endEvent);
         state = scope.STATE.NONE;
     };
 
@@ -359,9 +388,9 @@ THREE.OrbitControls = function (object, domElement) {
         if (scope.enabled === false || scope.enableZoom === false || (state !== scope.STATE.NONE && state !== scope.STATE.ROTATE)) return;
         event.preventDefault();
         event.stopPropagation();
-        scope.dispatchEvent(startEvent);
+        scope.dispatchEvent(scope.startEvent);
         handleMouseWheel(event);
-        scope.dispatchEvent(endEvent);
+        scope.dispatchEvent(scope.endEvent);
     };
 
     const onKeyDown = function(event) {
@@ -377,8 +406,6 @@ THREE.OrbitControls = function (object, domElement) {
     scope.domElement.addEventListener('contextmenu', onContextMenu, false);
     scope.domElement.addEventListener('mousedown', onMouseDown, false);
     scope.domElement.addEventListener('wheel', onMouseWheel, false);
-    scope.domElement.addEventListener('mousemove', onMouseMove, false);
-    scope.domElement.addEventListener('mouseup', onMouseUp, false);
     window.addEventListener('keydown', onKeyDown, false);
 
     // Initial setup

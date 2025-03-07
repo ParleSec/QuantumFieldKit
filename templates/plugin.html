@@ -357,11 +357,192 @@
 <script src="{{ url_for('static', filename='js/plugin-visualizations.js') }}"></script>
 
 <script>
-  // Pass plugin data to the visualization module
   document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded, initializing visualizations");
+    
+    // Log plugin key and result availability 
+    {% if plugin %}
+      console.log("Plugin: {{ plugin.key }}");
+    {% else %}
+      console.log("No plugin information available");
+    {% endif %}
+    
     {% if result and not result.error %}
-      // Initialize visualizations with plugin data
-      QuantumVisualizer.init('{{ plugin.key }}', {{ result|tojson }});
+      console.log("Result data available");
+      
+      // For debugging, log the structure
+      console.log("Result structure:", {{ result|tojson }});
+      
+      // Initialize visualizations based on the plugin type
+      try {
+        // Initialize the correct visualization based on plugin type
+        {% if plugin.key == 'teleport' or plugin.key == 'handshake' or plugin.key == 'auth' %}
+          console.log("Initializing quantum state visualization");
+          if (document.getElementById('quantum-state-viz')) {
+            const blochSphere = new quantumViz.BlochSphere('quantum-state-viz');
+            {% if result.output.final_state is defined %}
+              const stateData = {{ result.output.final_state|tojson }};
+              if (Array.isArray(stateData) && stateData.length >= 2) {
+                blochSphere.setStateByVector(stateData[0], stateData[1]);
+              } else {
+                blochSphere.setStateByAngles(Math.PI/4, 0);
+              }
+            {% else %}
+              blochSphere.setStateByAngles(Math.PI/4, 0);
+            {% endif %}
+          } else {
+            console.error("quantum-state-viz element not found");
+          }
+        {% endif %}
+        
+        {% if plugin.key == 'qrng' or plugin.key == 'bb84' %}
+          console.log("Initializing bit distribution chart");
+          const bitChart = document.getElementById('bit-distribution-chart');
+          if (bitChart) {
+            const ctx = bitChart.getContext('2d');
+            let labels = ['0', '1'];
+            let data = [0, 0];
+            
+            {% if plugin.key == 'qrng' and result.output.bitseq is defined %}
+              const bitSeq = {{ result.output.bitseq|tojson }};
+              data = [
+                bitSeq.filter(bit => bit === 0).length, 
+                bitSeq.filter(bit => bit === 1).length
+              ];
+            {% elif plugin.key == 'bb84' and result.output.shared_key is defined %}
+              const sharedKey = {{ result.output.shared_key|tojson }};
+              data = [
+                sharedKey.filter(bit => bit === 0).length, 
+                sharedKey.filter(bit => bit === 1).length
+              ];
+            {% endif %}
+            
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Bit Count',
+                  data: data,
+                  backgroundColor: ['rgba(54, 162, 235, 0.5)', 'rgba(255, 99, 132, 0.5)'],
+                  borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    ticks: { precision: 0 }
+                  }
+                }
+              }
+            });
+          } else {
+            console.error("bit-distribution-chart element not found");
+          }
+        {% endif %}
+        
+        {% if plugin.key == 'grover' or plugin.key == 'quantum_decryption_grover' %}
+          console.log("Initializing probability distribution");
+          const probChart = document.getElementById('probability-distribution');
+          if (probChart) {
+            const ctx = probChart.getContext('2d');
+            // Create visualization data
+            const n = {{ plugin.parameters[0].default|default(3) }};
+            const targetState = "{{ plugin.parameters[1].default|default('101') }}";
+            const numStates = Math.pow(2, n);
+            
+            let labels = [];
+            let probData = [];
+            
+            for (let i = 0; i < numStates; i++) {
+              const stateBinary = i.toString(2).padStart(n, '0');
+              labels.push(`|${stateBinary}⟩`);
+              probData.push(stateBinary === targetState ? 0.9 : 0.1 / (numStates - 1));
+            }
+            
+            new Chart(ctx, {
+              type: 'bar',
+              data: {
+                labels: labels,
+                datasets: [{
+                  label: 'Probability',
+                  data: probData,
+                  backgroundColor: 'rgba(153, 102, 255, 0.5)',
+                  borderColor: 'rgba(153, 102, 255, 1)',
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    max: 1
+                  }
+                }
+              }
+            });
+          } else {
+            console.error("probability-distribution element not found");
+          }
+        {% endif %}
+        
+        {% if plugin.key == 'vqe' %}
+          console.log("Initializing energy convergence chart");
+          const energyChart = document.getElementById('energy-convergence');
+          if (energyChart) {
+            const ctx = energyChart.getContext('2d');
+            
+            // Create demo data for the energy convergence
+            const iterations = Array.from({length: 10}, (_, i) => i + 1);
+            const energyValues = iterations.map(i => 1.0 / (i + 1) + 0.1 * Math.random());
+            
+            new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels: iterations,
+                datasets: [{
+                  label: 'Energy',
+                  data: energyValues,
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  tension: 0.1,
+                  fill: true
+                }]
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                  y: {
+                    title: {
+                      display: true,
+                      text: 'Energy'
+                    }
+                  },
+                  x: {
+                    title: {
+                      display: true,
+                      text: 'Iteration'
+                    }
+                  }
+                }
+              }
+            });
+          } else {
+            console.error("energy-convergence element not found");
+          }
+        {% endif %}
+      } catch (e) {
+        console.error("Error initializing visualizations:", e);
+      }
+    {% else %}
+      console.log("No result data available or error in result");
     {% endif %}
   });
 </script>

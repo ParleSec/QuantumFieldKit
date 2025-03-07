@@ -21,6 +21,24 @@
   
   <!-- Custom CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Three.js library - must be loaded first -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- OrbitControls for Three.js -->
+  <script src="{{ url_for('static', filename='js/OrbitControls.js') }}"></script>
+
+  <!-- Quantum visualization components -->
+  <script src="{{ url_for('static', filename='js/quantum_visualizations.js') }}"></script>
+
+  <!-- Visualization adapter (optional helper) -->
+  <script src="{{ url_for('static', filename='js/visualization_adapter.js') }}"></script>
+
+  <!-- Plugin visualizations -->
+  <script src="{{ url_for('static', filename='js/plugin_visualizations.js') }}"></script>
+
+  <!-- Main script -->
+  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
   
   {% block extra_head %}{% endblock %}
 </head>
