@@ -344,6 +344,14 @@
     overflow: hidden;
   }
   
+  #bloch-sphere-container, #quantum-state-viz {
+    height: 400px !important;
+    width: 100%;
+    background-color: #141424;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
   .demo-container {
     height: 400px;
   }

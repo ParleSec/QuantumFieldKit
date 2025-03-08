@@ -1,104 +1,179 @@
-/**
- * Quantum Visualization Adapter
- * This script helps initialize the visualizations and connect them to UI controls
- */
-
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Quantum visualization adapter loaded');
+    console.log('Simple visualization adapter loaded');
     
-    // Initialize Bloch sphere if container exists
-    initializeBlochSphere();
+    // Initialize a simple Bloch sphere visualization
+    const container = document.getElementById('bloch-sphere-container') || 
+                      document.getElementById('quantum-state-viz');
     
-    // Initialize buttons for state changes
+    if (!container) {
+      console.log('No visualization container found');
+      return;
+    }
+    
+    // Create a simple Bloch sphere without OrbitControls
+    createSimpleBlochSphere(container);
+    
+    // Setup state change buttons
     setupStateButtons();
     
-    // Initialize circuit demo if needed
-    initializeCircuitDemo();
-    
-    function initializeBlochSphere() {
-      // Look for either of the possible container IDs
-      const container = document.getElementById('bloch-sphere-container') || 
-                        document.getElementById('quantum-state-viz');
-      
-      if (!container) {
-        console.log('No Bloch sphere container found');
-        return;
-      }
-      
-      console.log('Initializing Bloch sphere in:', container.id);
-      
+    function createSimpleBlochSphere(container) {
       try {
-        // Create new Bloch sphere visualization
-        const blochSphere = new quantumViz.BlochSphere(container.id);
+        if (typeof THREE === 'undefined') {
+          throw new Error('THREE.js is not loaded');
+        }
+        
+        console.log('Creating simple Bloch sphere in:', container.id);
+        
+        // Set up scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#141424');
+        
+        // Set up camera
+        const width = container.clientWidth;
+        const height = container.clientHeight || 400;
+        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+        camera.position.set(0, 0, 2.5);
+        
+        // Set up renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(width, height);
+        container.appendChild(renderer.domElement);
+        
+        // Add lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        scene.add(directionalLight);
+        
+        // Add sphere
+        const sphereGeometry = new THREE.SphereGeometry(1, 32, 32);
+        const sphereMaterial = new THREE.MeshPhongMaterial({
+          color: '#2a2a4a',
+          transparent: true,
+          opacity: 0.3,
+          wireframe: false
+        });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        scene.add(sphere);
+        
+        // Add wireframe
+        const wireGeometry = new THREE.SphereGeometry(1.001, 16, 16);
+        const wireMaterial = new THREE.MeshBasicMaterial({
+          color: '#2a2a4a',
+          wireframe: true,
+          transparent: true,
+          opacity: 0.3
+        });
+        const wireframe = new THREE.Mesh(wireGeometry, wireMaterial);
+        scene.add(wireframe);
+        
+        // Add state vector
+        const arrowDirection = new THREE.Vector3(0, 0, 1);
+        const arrowOrigin = new THREE.Vector3(0, 0, 0);
+        const arrowLength = 1;
+        const arrowColor = 0xff3366;
+        const stateVector = new THREE.ArrowHelper(
+          arrowDirection, arrowOrigin, arrowLength, arrowColor, 0.1, 0.05
+        );
+        scene.add(stateVector);
+        
+        // Add circle guides
+        const circleGeometry = new THREE.CircleGeometry(1, 32);
+        const circleMaterial = new THREE.MeshBasicMaterial({
+          color: '#2a2a4a',
+          transparent: true,
+          opacity: 0.3,
+          side: THREE.DoubleSide
+        });
+        
+        const equator = new THREE.Mesh(circleGeometry, circleMaterial);
+        equator.rotation.x = Math.PI / 2;
+        scene.add(equator);
+        
+        // Animation loop with auto-rotation
+        function animate() {
+          requestAnimationFrame(animate);
+          
+          // Auto-rotate the sphere
+          sphere.rotation.y += 0.005;
+          wireframe.rotation.y += 0.005;
+          
+          renderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Add window resize handler
+        window.addEventListener('resize', () => {
+          const width = container.clientWidth;
+          const height = container.clientHeight || 400;
+          camera.aspect = width / height;
+          camera.updateProjectionMatrix();
+          renderer.setSize(width, height);
+        });
+        
+        // Create the interface for state changes
+        window.blochSphere = {
+          setStateByAngles: function(theta, phi) {
+            // Convert spherical coordinates to Cartesian
+            const x = Math.sin(theta) * Math.cos(phi);
+            const y = Math.sin(theta) * Math.sin(phi);
+            const z = Math.cos(theta);
+            
+            // Update arrow direction
+            stateVector.setDirection(new THREE.Vector3(x, y, z));
+          },
+          setToState0: function() { this.setStateByAngles(0, 0); },
+          setToState1: function() { this.setStateByAngles(Math.PI, 0); },
+          setToStatePlus: function() { this.setStateByAngles(Math.PI/2, 0); },
+          setToStateMinus: function() { this.setStateByAngles(Math.PI/2, Math.PI); },
+          setToPlusI: function() { this.setStateByAngles(Math.PI/2, Math.PI/2); },
+          setToMinusI: function() { this.setStateByAngles(Math.PI/2, -Math.PI/2); }
+        };
         
         // Set initial state to |+⟩
-        blochSphere.setStateByAngles(Math.PI/2, 0);
+        window.blochSphere.setStateByAngles(Math.PI/2, 0);
         
-        // Store in window for debugging and access from other scripts
-        window.blochSphere = blochSphere;
-        
-        console.log('Bloch sphere initialized successfully');
+        console.log('Simple Bloch sphere created successfully');
       } catch (error) {
-        console.error('Error initializing Bloch sphere:', error);
+        console.error('Error creating Bloch sphere:', error);
         container.innerHTML = `
-          <div class="p-3 bg-danger text-white rounded">
-            Error initializing visualization: ${error.message}
+          <div class="p-3 bg-danger text-white rounded text-center">
+            Error: ${error.message}<br>
+            <small>Check console for details</small>
           </div>`;
       }
     }
     
     function setupStateButtons() {
-      // Map button IDs to state methods
+      // Define button mappings
       const buttonMappings = [
-        { id: 'setState-plus', state: [Math.PI/2, 0] },          // |+⟩
-        { id: 'setState-minus', state: [Math.PI/2, Math.PI] },   // |-⟩
-        { id: 'setState-zero', state: [0, 0] },                  // |0⟩
-        { id: 'setState-one', state: [Math.PI, 0] },             // |1⟩
-        { id: 'setState-plus-i', state: [Math.PI/2, Math.PI/2] },// |+i⟩
-        { id: 'setState-minus-i', state: [Math.PI/2, -Math.PI/2] }// |-i⟩
+        { selector: '[id="setState-plus"], button:contains("|+⟩")', method: 'setToStatePlus' },
+        { selector: '[id="setState-minus"], button:contains("|-⟩")', method: 'setToStateMinus' },
+        { selector: '[id="setState-zero"], button:contains("|0⟩")', method: 'setToState0' },
+        { selector: '[id="setState-one"], button:contains("|1⟩")', method: 'setToState1' },
+        { selector: '[id="setState-plus-i"], button:contains("|+i⟩")', method: 'setToPlusI' },
+        { selector: '[id="setState-minus-i"], button:contains("|-i⟩")', method: 'setToMinusI' }
       ];
       
-      // Add click handlers to buttons
+      // Find all buttons
       buttonMappings.forEach(mapping => {
-        const button = document.getElementById(mapping.id);
-        if (button) {
-          button.addEventListener('click', function() {
-            if (window.blochSphere) {
-              window.blochSphere.setStateByAngles(mapping.state[0], mapping.state[1]);
-              console.log(`Set state to ${button.textContent.trim()}`);
-            } else {
-              console.warn('Bloch sphere not initialized');
-            }
+        try {
+          // Try various methods to find buttons
+          document.querySelectorAll(mapping.selector.split(',')[0]).forEach(button => {
+            button.addEventListener('click', function() {
+              if (window.blochSphere && window.blochSphere[mapping.method]) {
+                window.blochSphere[mapping.method]();
+                console.log(`Set state using ${mapping.method}`);
+              }
+            });
+            console.log(`Added event listener to button: ${button.textContent.trim()}`);
           });
+        } catch (e) {
+          console.warn(`Error setting up button for ${mapping.method}:`, e);
         }
       });
-    }
-    
-    function initializeCircuitDemo() {
-      const container = document.getElementById('circuit-demo-container');
-      if (!container) return;
-      
-      try {
-        console.log('Initializing circuit demo');
-        const renderer = new quantumViz.QuantumCircuitRenderer(container.id);
-        
-        // Create a simple demo circuit
-        const demoCircuit = {
-          qubits: ['q0', 'q1', 'q2'],
-          gates: [
-            { type: 'H', qubit: 0, time: 0 },
-            { type: 'H', qubit: 1, time: 0 },
-            { type: 'CNOT', control: 1, target: 2, time: 1 }
-          ]
-        };
-        
-        renderer.render(demoCircuit);
-      } catch (error) {
-        console.error('Error initializing circuit demo:', error);
-        container.innerHTML = `
-          <div class="p-3 bg-danger text-white rounded">
-            Error initializing circuit demo: ${error.message}
-          </div>`;
-      }
     }
   });

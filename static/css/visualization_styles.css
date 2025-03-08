@@ -1,0 +1,29 @@
+/* Chart containers */
+.chart-container {
+    height: 300px !important;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Bloch sphere container */
+  #quantum-state-viz {
+    height: 300px !important;
+    width: 100%;
+    background-color: #141414;
+    border-radius: var(--border-radius-md);
+  }
+  
+  /* Circuit visualization */
+  .circuit-svg {
+    max-width: 100%;
+    overflow-x: auto;
+    background-color: #fff;
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+  }
+  
+  /* Make sure Canvas elements expand properly */
+  canvas.chart-container {
+    height: 300px !important;
+    width: 100% !important;
+  }
