@@ -7,7 +7,7 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="ParleSec",
-    url="https://github.com/ParleSec/quantum-field-kit",
+    url="https://github.com/ParleSec/QuantumFieldKit",
     packages=find_packages(),
     install_requires=[
         "cirq>=0.17.0",

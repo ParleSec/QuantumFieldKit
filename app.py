@@ -374,7 +374,7 @@ def server_error(e):
 
 # --- Main entry point ---
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", 5001))
     debug = os.environ.get("FLASK_ENV") == "development"
     
     logger.info(f"Starting Quantum Field Kit Web Server on port {port}")
