@@ -7,7 +7,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize Socket.IO connection if enabled
   let socket;
   try {
+    console.log("Attempting to initialize Socket.IO");
     socket = io();
+    console.log("Socket.IO initialized successfully:", socket);
   } catch (e) {
     console.warn('Socket.IO not available:', e);
   }
@@ -77,35 +79,40 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Plugin start event
     socket.on('plugin_start', function(data) {
+      console.log('Plugin started:', data.plugin_key);
       const statusBadge = document.getElementById('status-badge');
       if (statusBadge) {
         statusBadge.textContent = 'Running...';
         statusBadge.className = 'badge bg-warning';
       }
-      console.log('Plugin started:', data.plugin_key);
     });
     
     // Plugin result event
     socket.on('plugin_result', function(data) {
+      console.log('Plugin result received:', data);
       const statusBadge = document.getElementById('status-badge');
       if (statusBadge) {
         statusBadge.textContent = 'Completed';
         statusBadge.className = 'badge bg-success';
       }
-      console.log('Plugin result:', data.plugin_key);
       
-      // Reload the page to display results
-      window.location.reload();
+      // Display results without reloading
+      if (typeof displayResults === 'function') {
+        displayResults(data.result);
+      } else {
+        console.warn('displayResults function not found, reloading page');
+        window.location.reload();
+      }
     });
     
     // Plugin error event
     socket.on('plugin_error', function(data) {
+      console.error('Plugin error:', data.error);
       const statusBadge = document.getElementById('status-badge');
       if (statusBadge) {
         statusBadge.textContent = 'Error';
         statusBadge.className = 'badge bg-danger';
       }
-      console.error('Plugin error:', data.error);
       
       // Show error message
       alert(`Error running simulation: ${data.error}`);

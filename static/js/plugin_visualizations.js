@@ -7,35 +7,42 @@
 const QuantumVisualizer = {
     // Initialize all visualizations based on plugin data
     init: function(pluginKey, resultData) {
-      if (!resultData || resultData.error) {
-        console.log('No valid result data available for visualization');
-        return;
+        console.log('Initializing visualizations for plugin:', pluginKey);
+        console.log('Result data:', resultData);
+        
+        if (!resultData || resultData.error) {
+          console.log('No valid result data available for visualization');
+          return;
+        }
+        
+        // Initialize visualizations based on the plugin type
+        switch(pluginKey) {
+          case 'teleport':
+          case 'handshake':
+          case 'auth':
+            console.log('Initializing quantum state visualization');
+            this.initQuantumStateViz(resultData);
+            break;
+          case 'qrng':
+          case 'bb84':
+            console.log('Initializing bit distribution visualization');
+            this.initBitDistribution(resultData, pluginKey);
+            break;
+          case 'grover':
+          case 'quantum_decryption_grover':
+            console.log('Initializing probability distribution visualization');
+            this.initProbabilityDistribution(resultData, pluginKey);
+            break;
+          case 'vqe':
+            console.log('Initializing energy convergence visualization');
+            this.initEnergyConvergence(resultData);
+            break;
+          default:
+            // For other plugins, just log that no specific visualization is available
+            console.log('No specific visualization for plugin type: ' + pluginKey);
+        }
       }
-      
-      // Initialize visualizations based on the plugin type
-      switch(pluginKey) {
-        case 'teleport':
-        case 'handshake':
-        case 'auth':
-          this.initQuantumStateViz(resultData);
-          break;
-        case 'qrng':
-        case 'bb84':
-          this.initBitDistribution(resultData, pluginKey);
-          break;
-        case 'grover':
-        case 'quantum_decryption_grover':
-          this.initProbabilityDistribution(resultData, pluginKey);
-          break;
-        case 'vqe':
-          this.initEnergyConvergence(resultData);
-          break;
-        default:
-          // For other plugins, just log that no specific visualization is available
-          console.log('No specific visualization for plugin type: ' + pluginKey);
-      }
-    },
-    
+    ,
     // Initialize Bloch sphere for quantum state visualization
     initQuantumStateViz: function(resultData) {
       const vizContainer = document.getElementById('quantum-state-viz');
@@ -255,80 +262,213 @@ const QuantumVisualizer = {
   document.addEventListener('DOMContentLoaded', function() {
     // Handle form submission via AJAX
     const setupFormHandling = () => {
-      const form = document.getElementById('simulation-form');
-      const statusBadge = document.getElementById('status-badge');
-      const resetBtn = document.getElementById('reset-form');
-      
-      if (form) {
-        form.addEventListener('submit', function(e) {
-          e.preventDefault();
-          
-          // Update status badge
-          if (statusBadge) {
-            statusBadge.textContent = 'Running...';
-            statusBadge.className = 'badge bg-warning';
-          }
-          
-          // Create FormData from form
-          const formData = new FormData(form);
-          const url = window.location.href;
-          
-          // Submit form via AJAX
-          fetch(url, {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            // Update status badge based on result
+        const form = document.getElementById('simulation-form');
+        const statusBadge = document.getElementById('status-badge');
+        const resetBtn = document.getElementById('reset-form');
+        
+        if (form) {
+          form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            console.log("Form submitted"); // Debug log
+            
+            // Update status badge
             if (statusBadge) {
-              if (data.error) {
+              statusBadge.textContent = 'Running...';
+              statusBadge.className = 'badge bg-warning';
+            }
+            
+            // Create FormData from form
+            const formData = new FormData(form);
+            const url = window.location.href;
+            
+            // Submit form via AJAX
+            fetch(url, {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            })
+            .then(response => {
+              console.log("Response received", response); // Debug log
+              return response.json();
+            })
+            .then(data => {
+              console.log("Data received", data); // Debug log
+              // Update status badge based on result
+              if (statusBadge) {
+                if (data.error) {
+                  statusBadge.textContent = 'Error';
+                  statusBadge.className = 'badge bg-danger';
+                  alert('Error: ' + data.error);
+                } else {
+                  statusBadge.textContent = 'Completed';
+                  statusBadge.className = 'badge bg-success';
+                  // Instead of reloading, display results directly
+                  displayResults(data);
+                }
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              if (statusBadge) {
                 statusBadge.textContent = 'Error';
                 statusBadge.className = 'badge bg-danger';
-                alert('Error: ' + data.error);
-              } else {
-                statusBadge.textContent = 'Completed';
-                statusBadge.className = 'badge bg-success';
-                // Reload the page to show results
-                window.location.reload();
               }
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            if (statusBadge) {
-              statusBadge.textContent = 'Error';
-              statusBadge.className = 'badge bg-danger';
-            }
-            alert('Network error occurred. Please try again.');
-          });
-        });
-      }
-      
-      // Handle form reset
-      if (resetBtn) {
-        resetBtn.addEventListener('click', function() {
-          if (form) {
-            form.reset();
-            // Reset range inputs which might have custom handling
-            document.querySelectorAll('input[type="range"]').forEach(range => {
-              const targetInput = document.getElementById(range.id.replace('_range', ''));
-              if (targetInput) {
-                targetInput.value = targetInput.defaultValue;
-                range.value = targetInput.defaultValue;
-              }
+              alert('Network error occurred. Please try again.');
             });
-          }
-        });
-      }
-    };
-    
+          });
+        }
+        
+        // Handle form reset
+        if (resetBtn) {
+          resetBtn.addEventListener('click', function() {
+            if (form) {
+              form.reset();
+              // Reset range inputs which might have custom handling
+              document.querySelectorAll('input[type="range"]').forEach(range => {
+                const targetInput = document.getElementById(range.id.replace('_range', ''));
+                if (targetInput) {
+                  targetInput.value = targetInput.defaultValue;
+                  range.value = targetInput.defaultValue;
+                }
+              });
+            }
+          });
+        }
+      };
+
     // Initialize form handling
     setupFormHandling();
     
+    function displayResults(data) {
+        // Get the results container
+        const resultsContainer = document.getElementById('results-container');
+        if (!resultsContainer) return;
+        
+        // Extract the plugin key from the URL
+        const urlParts = window.location.pathname.split('/');
+        const pluginKey = urlParts[urlParts.length - 1];
+        
+        // Create visualization tabs structure
+        const tabsHTML = `
+          <div class="result-container">
+            <!-- Visualization tabs -->
+            <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="visualization-tab" data-bs-toggle="tab" 
+                        data-bs-target="#visualization" type="button" role="tab" 
+                        aria-controls="visualization" aria-selected="true">
+                  <i class="fas fa-chart-bar me-2"></i> Visualization
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="raw-data-tab" data-bs-toggle="tab" 
+                        data-bs-target="#raw-data" type="button" role="tab" 
+                        aria-controls="raw-data" aria-selected="false">
+                  <i class="fas fa-table me-2"></i> Raw Data
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="log-tab" data-bs-toggle="tab" 
+                        data-bs-target="#log" type="button" role="tab" 
+                        aria-controls="log" aria-selected="false">
+                  <i class="fas fa-terminal me-2"></i> Process Log
+                </button>
+              </li>
+            </ul>
+            
+            <div class="tab-content p-3 border border-top-0 rounded-bottom" id="resultTabsContent">
+              <!-- Visualization Tab -->
+              <div class="tab-pane fade show active" id="visualization" role="tabpanel" aria-labelledby="visualization-tab">
+                ${data.output && data.output.circuit_svg ? `
+                  <h5 class="mb-3">Circuit Diagram</h5>
+                  <div class="circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto">
+                    ${data.output.circuit_svg}
+                  </div>
+                ` : ''}
+                
+                <!-- Specific visualizations based on plugin type -->
+                <div class="row">
+                  ${pluginKey === 'qrng' || pluginKey === 'bb84' ? `
+                    <div class="col-md-6 mb-4">
+                      <div class="card">
+                        <div class="card-header">Bit Distribution</div>
+                        <div class="card-body">
+                          <canvas id="bit-distribution-chart" class="chart-container"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  ${pluginKey === 'teleport' || pluginKey === 'handshake' || pluginKey === 'auth' ? `
+                    <div class="col-md-6 mb-4">
+                      <div class="card">
+                        <div class="card-header">Quantum State</div>
+                        <div class="card-body">
+                          <div id="quantum-state-viz" class="chart-container"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  ${pluginKey === 'grover' || pluginKey === 'quantum_decryption_grover' ? `
+                    <div class="col-md-6 mb-4">
+                      <div class="card">
+                        <div class="card-header">Probability Distribution</div>
+                        <div class="card-body">
+                          <canvas id="probability-distribution" class="chart-container"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+                  
+                  ${pluginKey === 'vqe' ? `
+                    <div class="col-md-6 mb-4">
+                      <div class="card">
+                        <div class="card-header">Energy Convergence</div>
+                        <div class="card-body">
+                          <canvas id="energy-convergence" class="chart-container"></canvas>
+                        </div>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              </div>
+              
+              <!-- Raw Data Tab -->
+              <div class="tab-pane fade" id="raw-data" role="tabpanel" aria-labelledby="raw-data-tab">
+                <div class="row">
+                  <div class="col-12">
+                    <pre class="mb-0">${JSON.stringify(data.output, null, 2)}</pre>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Log Tab -->
+              <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
+                <div class="bg-dark text-light p-3 rounded">
+                  <pre class="mb-0 terminal-log">${data.log || 'No log data available'}</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Replace existing content
+        resultsContainer.innerHTML = tabsHTML;
+        
+        // Initialize visualization components
+        QuantumVisualizer.init(pluginKey, data);
+        
+        // Initialize Bootstrap tabs if needed
+        if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+          document.querySelectorAll('#resultTabs button').forEach(button => {
+            new bootstrap.Tab(button);
+          });
+        }
+      }
+
     // Initialize range input synchronization
     const syncRangeInputs = () => {
       document.querySelectorAll('input[type="range"]').forEach(range => {
@@ -353,7 +493,6 @@ const QuantumVisualizer = {
         }
       });
     };
-    
     // Initialize range inputs
     syncRangeInputs();
   });
