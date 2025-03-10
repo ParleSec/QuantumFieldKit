@@ -1,7 +1,10 @@
-// Quantum Visualization Components for Web UI
-// Provides interactive visualizations for quantum states and circuits
+// Create namespace to avoid conflicts
+if (!window.QuantumViz) {
+  window.QuantumViz = {};
+}
 
-class BlochSphere {
+// Bloch Sphere Visualization
+QuantumViz.BlochSphere = class {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.width = this.container.clientWidth || 400;
@@ -58,8 +61,14 @@ class BlochSphere {
     this.scene.add(this.sphere);
     
     // Add equator circle
-    const equatorGeometry = new THREE.CircleGeometry(1, 64);
-    equatorGeometry.vertices.shift(); // Remove center vertex
+    // Create points for circle manually to avoid using deprecated vertices property
+    const points = [];
+    const segments = 64;
+    for (let i = 0; i < segments; i++) {
+      const theta = (i / segments) * Math.PI * 2;
+      points.push(new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0));
+    }
+    const equatorGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const equatorMaterial = new THREE.LineBasicMaterial({ color: this.options.sphereColor });
     this.equator = new THREE.LineLoop(equatorGeometry, equatorMaterial);
     this.equator.rotation.x = Math.PI/2;
@@ -204,10 +213,10 @@ class BlochSphere {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
-}
+};
 
 // Quantum Circuit Renderer
-class QuantumCircuitRenderer {
+QuantumViz.QuantumCircuitRenderer = class {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.options = Object.assign({
@@ -444,10 +453,10 @@ class QuantumCircuitRenderer {
     text.textContent = 'M';
     this.svg.appendChild(text);
   }
-}
+};
 
 // Probability Distribution Visualizer
-class QuantumStateProbability {
+QuantumViz.QuantumStateProbability = class {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.options = Object.assign({
@@ -592,11 +601,4 @@ class QuantumStateProbability {
       }
     });
   }
-}
-
-// Export visualization components
-window.quantumViz = {
-  BlochSphere,
-  QuantumCircuitRenderer,
-  QuantumStateProbability
 };
