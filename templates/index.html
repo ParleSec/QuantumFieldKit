@@ -183,56 +183,64 @@
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bloch sphere
-    const blochSphere = new quantumViz.BlochSphere('bloch-sphere-container');
-    
-    // Set up state buttons
-    document.getElementById('setState-plus').addEventListener('click', () => {
-      blochSphere.setStateByAngles(Math.PI/2, 0); // |+⟩ state
-    });
-    
-    document.getElementById('setState-minus').addEventListener('click', () => {
-      blochSphere.setStateByAngles(Math.PI/2, Math.PI); // |-⟩ state
-    });
-    
-    document.getElementById('setState-zero').addEventListener('click', () => {
-      blochSphere.setStateByAngles(0, 0); // |0⟩ state
-    });
-    
-    document.getElementById('setState-one').addEventListener('click', () => {
-      blochSphere.setStateByAngles(Math.PI, 0); // |1⟩ state
-    });
-    
-    document.getElementById('setState-plus-i').addEventListener('click', () => {
-      blochSphere.setStateByAngles(Math.PI/2, Math.PI/2); // |+i⟩ state
-    });
-    
-    document.getElementById('setState-minus-i').addEventListener('click', () => {
-      blochSphere.setStateByAngles(Math.PI/2, -Math.PI/2); // |-i⟩ state
-    });
-    
-    // Initialize with |+⟩ state
-    blochSphere.setStateByAngles(Math.PI/2, 0);
+    if (window.QuantumViz && QuantumViz.BlochSphere) {
+      const blochSphere = new QuantumViz.BlochSphere('bloch-sphere-container');
+      
+      // Set up state buttons
+      document.getElementById('setState-plus').addEventListener('click', () => {
+        blochSphere.setStateByAngles(Math.PI/2, 0); // |+⟩ state
+      });
+      
+      document.getElementById('setState-minus').addEventListener('click', () => {
+        blochSphere.setStateByAngles(Math.PI/2, Math.PI); // |-⟩ state
+      });
+      
+      document.getElementById('setState-zero').addEventListener('click', () => {
+        blochSphere.setStateByAngles(0, 0); // |0⟩ state
+      });
+      
+      document.getElementById('setState-one').addEventListener('click', () => {
+        blochSphere.setStateByAngles(Math.PI, 0); // |1⟩ state
+      });
+      
+      document.getElementById('setState-plus-i').addEventListener('click', () => {
+        blochSphere.setStateByAngles(Math.PI/2, Math.PI/2); // |+i⟩ state
+      });
+      
+      document.getElementById('setState-minus-i').addEventListener('click', () => {
+        blochSphere.setStateByAngles(Math.PI/2, -Math.PI/2); // |-i⟩ state
+      });
+      
+      // Initialize with |+⟩ state
+      blochSphere.setStateByAngles(Math.PI/2, 0);
+    } else {
+      console.warn('QuantumViz library not found or BlochSphere not available');
+    }
     
     // Initialize circuit demo
-    const circuitDemo = new quantumViz.QuantumCircuitRenderer('circuit-demo-container');
-    
-    // Create a simple teleportation circuit for demonstration
-    const demoCircuit = {
-      qubits: ['q0', 'q1', 'q2'],
-      gates: [
-        { type: 'H', qubit: 0, time: 0 },
-        { type: 'H', qubit: 1, time: 0 },
-        { type: 'CNOT', control: 1, target: 2, time: 1 },
-        { type: 'CNOT', control: 0, target: 1, time: 2 },
-        { type: 'H', qubit: 0, time: 3 },
-        { type: 'M', qubit: 0, time: 4 },
-        { type: 'M', qubit: 1, time: 4 },
-        { type: 'X', qubit: 2, time: 5 },
-        { type: 'Z', qubit: 2, time: 6 }
-      ]
-    };
-    
-    circuitDemo.render(demoCircuit);
+    if (window.QuantumViz && QuantumViz.QuantumCircuitRenderer) {
+      const circuitDemo = new QuantumViz.QuantumCircuitRenderer('circuit-demo-container');
+      
+      // Create a simple teleportation circuit for demonstration
+      const demoCircuit = {
+        qubits: ['q0', 'q1', 'q2'],
+        gates: [
+          { type: 'H', qubit: 0, time: 0 },
+          { type: 'H', qubit: 1, time: 0 },
+          { type: 'CNOT', control: 1, target: 2, time: 1 },
+          { type: 'CNOT', control: 0, target: 1, time: 2 },
+          { type: 'H', qubit: 0, time: 3 },
+          { type: 'M', qubit: 0, time: 4 },
+          { type: 'M', qubit: 1, time: 4 },
+          { type: 'X', qubit: 2, time: 5 },
+          { type: 'Z', qubit: 2, time: 6 }
+        ]
+      };
+      
+      circuitDemo.render(demoCircuit);
+    } else {
+      console.warn('QuantumViz library not found or QuantumCircuitRenderer not available');
+    }
     
     // Initialize particles background
     initQuantumParticles();
@@ -242,7 +250,12 @@
     const canvas = document.createElement('canvas');
     canvas.width = window.innerWidth;
     canvas.height = 500;
-    document.getElementById('quantum-particles').appendChild(canvas);
+    const container = document.getElementById('quantum-particles');
+    if (!container) {
+      console.warn('Quantum particles container not found');
+      return;
+    }
+    container.appendChild(canvas);
     
     const ctx = canvas.getContext('2d');
     const particles = [];

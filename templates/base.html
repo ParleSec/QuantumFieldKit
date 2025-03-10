@@ -25,6 +25,8 @@
   <!-- Three.js library - must be loaded first -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+
   <!-- OrbitControls from Three.js examples -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
@@ -34,11 +36,14 @@
   <!-- Quantum visualization components -->
   <script src="{{ url_for('static', filename='js/quantum_visualizations.js') }}"></script>
 
-  <!-- Visualization adapter (optional helper) -->
-  <script src="{{ url_for('static', filename='js/visualization_adapter.js') }}"></script>
-
   <!-- Plugin visualizations -->
   <script src="{{ url_for('static', filename='js/plugin_visualizations.js') }}"></script>
+
+  <!-- Visualization adapter (optional helper) -->
+  <script src="{{ url_for('static', filename='js/visualization_adapter.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/visualization_integration.js') }}"></script>
+
+
 
   <!-- Main script -->
   <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
