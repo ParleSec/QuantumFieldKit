@@ -1,10 +1,7 @@
-// Create namespace to avoid conflicts
-if (!window.QuantumViz) {
-  window.QuantumViz = {};
-}
+// Quantum Visualization Components for Web UI
+// Provides interactive visualizations for quantum states and circuits
 
-// Bloch Sphere Visualization
-QuantumViz.BlochSphere = class {
+class BlochSphere {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.width = this.container.clientWidth || 400;
@@ -61,16 +58,20 @@ QuantumViz.BlochSphere = class {
     this.scene.add(this.sphere);
     
     // Add equator circle
-    // Create points for circle manually to avoid using deprecated vertices property
+    // Fix for newer versions of Three.js where CircleGeometry no longer has vertices property
+    const equatorGeometry = new THREE.CircleGeometry(1, 64);
     const points = [];
-    const segments = 64;
-    for (let i = 0; i < segments; i++) {
-      const theta = (i / segments) * Math.PI * 2;
-      points.push(new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0));
+    // Create points for the circle manually
+    for (let i = 0; i < 64; i++) {
+      const angle = (i / 64) * Math.PI * 2;
+      const x = Math.cos(angle);
+      const y = Math.sin(angle);
+      points.push(new THREE.Vector3(x, y, 0));
     }
-    const equatorGeometry = new THREE.BufferGeometry().setFromPoints(points);
+    
+    const equatorBufferGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const equatorMaterial = new THREE.LineBasicMaterial({ color: this.options.sphereColor });
-    this.equator = new THREE.LineLoop(equatorGeometry, equatorMaterial);
+    this.equator = new THREE.LineLoop(equatorBufferGeometry, equatorMaterial);
     this.equator.rotation.x = Math.PI/2;
     this.scene.add(this.equator);
   }
@@ -213,10 +214,10 @@ QuantumViz.BlochSphere = class {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
-};
+}
 
 // Quantum Circuit Renderer
-QuantumViz.QuantumCircuitRenderer = class {
+class QuantumCircuitRenderer {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.options = Object.assign({
@@ -453,10 +454,10 @@ QuantumViz.QuantumCircuitRenderer = class {
     text.textContent = 'M';
     this.svg.appendChild(text);
   }
-};
+}
 
 // Probability Distribution Visualizer
-QuantumViz.QuantumStateProbability = class {
+class QuantumStateProbability {
   constructor(containerId, options = {}) {
     this.container = document.getElementById(containerId);
     this.options = Object.assign({
@@ -601,4 +602,11 @@ QuantumViz.QuantumStateProbability = class {
       }
     });
   }
+}
+
+// Export visualization components
+window.quantumViz = {
+  BlochSphere,
+  QuantumCircuitRenderer,
+  QuantumStateProbability
 };

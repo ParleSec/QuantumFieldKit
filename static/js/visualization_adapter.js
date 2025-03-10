@@ -1,5 +1,5 @@
 /**
- * Quantum Field Kit - Enhanced Visualization Adapter
+ * Quantum Field Kit - Visualization Adapter
  * Fixed version that ensures Bloch sphere and circuit visualizations render properly
  */
 
@@ -53,6 +53,35 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   
   function createBlochSphere(container) {
+    // Check if we should use the QuantumViz namespace implementation
+    if (window.QuantumViz && window.QuantumViz.BlochSphere) {
+      try {
+        // Use the namespaced version
+        console.log('Using QuantumViz.BlochSphere implementation');
+        const blochSphere = new QuantumViz.BlochSphere(container.id);
+        
+        // Store reference to the created instance
+        window.blochSphere = {
+          setStateByAngles: function(theta, phi) {
+            blochSphere.setStateByAngles(theta, phi);
+          },
+          setToState0: function() { this.setStateByAngles(0, 0); },
+          setToState1: function() { this.setStateByAngles(Math.PI, 0); },
+          setToStatePlus: function() { this.setStateByAngles(Math.PI/2, 0); },
+          setToStateMinus: function() { this.setStateByAngles(Math.PI/2, Math.PI); },
+          setToPlusI: function() { this.setStateByAngles(Math.PI/2, Math.PI/2); },
+          setToMinusI: function() { this.setStateByAngles(Math.PI/2, -Math.PI/2); }
+        };
+        
+        // Set initial state to |+⟩
+        window.blochSphere.setStateByAngles(Math.PI/2, 0);
+        return;
+      } catch (e) {
+        console.error('Error using QuantumViz implementation:', e);
+        // Fall back to custom implementation
+      }
+    }
+  
     // Clean container first
     container.innerHTML = '';
     
@@ -157,7 +186,14 @@ document.addEventListener('DOMContentLoaded', function() {
     scene.add(stateVector);
     
     // Add equator circle
-    const equatorGeometry = new THREE.CircleGeometry(1, 32);
+    // Create points for circle manually to avoid using deprecated vertices property
+    const points = [];
+    const segments = 64;
+    for (let i = 0; i < segments; i++) {
+      const theta = (i / segments) * Math.PI * 2;
+      points.push(new THREE.Vector3(Math.cos(theta), Math.sin(theta), 0));
+    }
+    const equatorGeometry = new THREE.BufferGeometry().setFromPoints(points);
     const equatorMaterial = new THREE.MeshBasicMaterial({
       color: '#4a4a8a',
       transparent: true,
@@ -283,7 +319,33 @@ document.addEventListener('DOMContentLoaded', function() {
     
     console.log('Initializing circuit visualizer');
     
-    // SVG-based circuit visualizer
+    // Check if we should use the QuantumViz namespace implementation
+    if (window.QuantumViz && window.QuantumViz.QuantumCircuitRenderer) {
+      try {
+        console.log('Using QuantumViz.QuantumCircuitRenderer implementation');
+        const circuit = {
+          qubits: ['q0', 'q1', 'q2'],
+          gates: [
+            { type: 'H', qubit: 0, time: 0 },
+            { type: 'X', qubit: 1, time: 0 },
+            { type: 'CNOT', control: 0, target: 1, time: 1 },
+            { type: 'H', qubit: 0, time: 2 },
+            { type: 'CNOT', control: 1, target: 2, time: 2 },
+            { type: 'M', qubit: 0, time: 3 },
+            { type: 'M', qubit: 1, time: 3 }
+          ]
+        };
+        
+        const circuitVisualizer = new QuantumViz.QuantumCircuitRenderer(container.id);
+        circuitVisualizer.render(circuit);
+        return;
+      } catch (e) {
+        console.error('Error using QuantumViz circuit implementation:', e);
+        // Fall back to custom implementation
+      }
+    }
+    
+    // SVG-based circuit visualizer (fallback)
     createCircuitVisualizer(container);
   }
   
@@ -511,26 +573,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     buttonMappings.forEach(mapping => {
       try {
-        // Handle both id selectors and contains selectors
-        let buttons = [];
-        
-        // Try id selector
+        // Find buttons by ID
         const idSelector = mapping.selector.split(',')[0].trim();
-        const idButtons = document.querySelectorAll(idSelector);
-        if (idButtons.length > 0) {
-          buttons = buttons.concat(Array.from(idButtons));
-        }
+        const buttons = document.querySelectorAll(idSelector);
         
         // Add click handlers
         buttons.forEach(button => {
-          button.addEventListener('click', function() {
-            if (window.blochSphere && window.blochSphere[mapping.method]) {
-              window.blochSphere[mapping.method]();
-              console.log(`Set state using ${mapping.method}`);
-            } else {
-              console.warn(`blochSphere.${mapping.method} not available`);
-            }
-          });
+          if (button) {
+            button.addEventListener('click', function() {
+              if (window.blochSphere && typeof window.blochSphere[mapping.method] === 'function') {
+                window.blochSphere[mapping.method]();
+                console.log(`Set state using ${mapping.method}`);
+              } else {
+                console.warn(`blochSphere.${mapping.method} not available`);
+              }
+            });
+          }
         });
       } catch (e) {
         console.warn(`Error setting up button for ${mapping.method}:`, e);
