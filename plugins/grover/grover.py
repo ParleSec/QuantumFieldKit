@@ -11,6 +11,7 @@ def add_noise(circuit, noise_prob):
     return cirq.Circuit(ops)
 
 def oracle(qubits, target_state):
+    """Creates a phase oracle that marks the target state by flipping its phase."""
     n = len(qubits)
     # Pad or truncate target_state to length n
     if len(target_state) < n:
@@ -18,29 +19,50 @@ def oracle(qubits, target_state):
     elif len(target_state) > n:
         target_state = target_state[:n]
 
-    ops = []
-    # For bits that are '0', apply X
+    circuit = cirq.Circuit()
+    # For bits that are '0', apply X to flip qubits
     for i in range(n):
         if target_state[i] == '0':
-            ops.append(cirq.X(qubits[i]))
-    # Ancilla qubit for demonstration
-    ancilla = cirq.NamedQubit("ancilla")
-    ops.append(cirq.Z(ancilla))
-    # Revert the X gates
+            circuit.append(cirq.X(qubits[i]))
+    
+    # Multi-controlled Z gate to flip the phase of the target state
+    if n > 1:
+        circuit.append(cirq.ControlledOperation(
+            qubits[:-1], cirq.Z(qubits[-1]), [1] * (n-1)))
+    else:
+        circuit.append(cirq.Z(qubits[0]))
+    
+    # Revert the X gates to return to computational basis
     for i in range(n):
         if target_state[i] == '0':
-            ops.append(cirq.X(qubits[i]))
-    return ops
+            circuit.append(cirq.X(qubits[i]))
+    
+    return circuit
 
 def diffuser(qubits):
+    """Applies the diffusion operator that amplifies the amplitude of the target state."""
+    n = len(qubits)
     circuit = cirq.Circuit()
+    
+    # Apply H to all qubits
     circuit.append([cirq.H(q) for q in qubits])
+    
+    # Apply X to all qubits
     circuit.append([cirq.X(q) for q in qubits])
-    circuit.append(cirq.H(qubits[-1]))
-    circuit.append(cirq.CNOT(qubits[-2], qubits[-1]))
-    circuit.append(cirq.H(qubits[-1]))
+    
+    # Apply multi-controlled Z gate (Reflection about |11...1>)
+    if n > 1:
+        circuit.append(cirq.ControlledOperation(
+            qubits[:-1], cirq.Z(qubits[-1]), [1] * (n-1)))
+    else:
+        circuit.append(cirq.Z(qubits[0]))
+    
+    # Revert X gates
     circuit.append([cirq.X(q) for q in qubits])
+    
+    # Revert H gates
     circuit.append([cirq.H(q) for q in qubits])
+    
     return circuit
 
 def grover_circuit(n, target_state, iterations, noise_prob=0.0):

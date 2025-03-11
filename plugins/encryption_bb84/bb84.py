@@ -7,8 +7,19 @@ while logging the mathematical operations and intermediate state vectors.
 import cirq
 import random
 import numpy as np
+from cirq.contrib.svg import circuit_to_svg
 
 def add_noise(circuit, noise_prob=0.01):
+    """
+    Adds realistic quantum noise to the circuit.
+    
+    Args:
+        circuit: A Cirq circuit
+        noise_prob: Probability of depolarizing noise
+        
+    Returns:
+        A circuit with added noise operations
+    """
     noisy_ops = []
     for op in circuit.all_operations():
         noisy_ops.append(op)
@@ -23,8 +34,23 @@ def bb84_protocol_cirq(num_bits=10, noise_prob=0.0):
     alice_bases = [random.choice(['Z', 'X']) for _ in range(num_bits)]
     bob_bases = [random.choice(['Z', 'X']) for _ in range(num_bits)]
     
+    log.append(f"Alice's random bits: {alice_bits}")
+    log.append(f"Alice's random bases: {alice_bases}")
+    log.append(f"Bob's random bases: {bob_bases}")
+    
     circuits = []
     qubits = [cirq.NamedQubit(f'q{i}') for i in range(num_bits)]
+    
+    # Create a sample circuit visualization using only the first qubit
+    # This ensures we always have a valid circuit for SVG generation
+    sample_circuit = cirq.Circuit()
+    sample_q = cirq.NamedQubit('q0')
+    
+    # Add representative operations to sample circuit
+    sample_circuit.append(cirq.H(sample_q))
+    sample_circuit.append(cirq.measure(sample_q))
+    
+    circuit_svg = circuit_to_svg(sample_circuit)
     
     for i in range(num_bits):
         log.append(f"\n-- Bit {i} --")
@@ -68,14 +94,30 @@ def bb84_protocol_cirq(num_bits=10, noise_prob=0.0):
         bob_measurements.append(meas)
         log.append(f"Bob's measurement for bit {i}: {meas}")
     
-    shared_key = [alice_bits[i] for i in range(num_bits) if alice_bases[i] == bob_bases[i]]
-    log.append(f"\nFinal shared key: {shared_key}")
+    # Sift key - keep only bits where Alice and Bob used the same basis
+    matching_bases = [i for i in range(num_bits) if alice_bases[i] == bob_bases[i]]
+    shared_key = [alice_bits[i] for i in matching_bases]
+    bob_key = [bob_measurements[i] for i in matching_bases]
+    
+    # Calculate error rate to detect eavesdropping
+    errors = sum(shared_key[i] != bob_key[i] for i in range(len(shared_key))) if shared_key else 0
+    error_rate = errors / len(shared_key) if shared_key else 0
+    
+    log.append(f"\nMatching bases indices: {matching_bases}")
+    log.append(f"Alice's sifted key: {shared_key}")
+    log.append(f"Bob's measured key: {bob_key}")
+    log.append(f"Error rate: {error_rate:.2%}")
+    
     return {
         'alice_bits': alice_bits,
         'alice_bases': alice_bases,
         'bob_bases': bob_bases,
         'bob_measurements': bob_measurements,
+        'matching_bases': matching_bases,
         'shared_key': shared_key,
+        'bob_key': bob_key,
+        'error_rate': error_rate,
+        'circuit_svg': circuit_svg,
         'log': "\n".join(log)
     }
 
@@ -83,4 +125,5 @@ if __name__ == '__main__':
     result = bb84_protocol_cirq(5, noise_prob=0.02)
     print("Cirq BB84 Simulation Result:")
     print("Shared key:", result['shared_key'])
+    print("Error rate:", f"{result['error_rate']:.2%}")
     print("\nDetailed Log:\n", result['log'])
