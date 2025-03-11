@@ -6,41 +6,82 @@ Deterministic seeding ensures reproducibility. Logs the entire process.
 """
 import cirq
 import hashlib
+from cirq.contrib.svg import circuit_to_svg
 
 def generate_quantum_fingerprint_cirq(data, num_qubits=4):
     log = []
     log.append("=== Quantum Authentication Simulation ===")
+    
+    # Generate deterministic hash from data
     hash_digest = hashlib.sha256(data.encode()).hexdigest()
+    
+    # Convert hash to binary and take first num_qubits bits
     binary_string = bin(int(hash_digest, 16))[2:].zfill(256)[:num_qubits]
     log.append(f"Data hash (binary): {binary_string}")
-    fingerprint = []
-    for i, bit in enumerate(binary_string):
-        q = cirq.NamedQubit(f"q{i}")
-        circuit = cirq.Circuit()
-        circuit.append(cirq.H(q))
-        if bit == '1':
-            circuit.append(cirq.X(q))
-            log.append(f"Bit {i}: '1' → Applied X gate after H.")
+    
+    # Create entangled state based on hash
+    qubits = [cirq.NamedQubit(f"q{i}") for i in range(num_qubits)]
+    circuit = cirq.Circuit()
+    
+    # Apply Hadamard to create superposition
+    circuit.append([cirq.H(q) for q in qubits])
+    
+    # Entangle qubits based on hash
+    for i in range(num_qubits-1):
+        if binary_string[i] == '1':
+            circuit.append(cirq.CNOT(qubits[i], qubits[i+1]))
+            log.append(f"Bit {i}: '1' → Applied CNOT from q{i} to q{i+1}")
         else:
-            log.append(f"Bit {i}: '0' → No X gate applied.")
-        circuit.append(cirq.measure(q, key='m'))
-        seed = int(hashlib.sha256((data + str(i)).encode()).hexdigest(), 16) % (2**32)
-        simulator = cirq.Simulator(seed=seed)
-        result = simulator.run(circuit, repetitions=1)
-        meas = int(result.measurements['m'][0][0])
-        fingerprint.append(meas)
-        log.append(f"Qubit {i} measurement: {meas}")
+            log.append(f"Bit {i}: '0' → No CNOT applied")
+    
+    # Apply additional rotations based on hash
+    for i, bit in enumerate(binary_string):
+        if bit == '1':
+            circuit.append(cirq.Z(qubits[i]))
+            log.append(f"Applied Z rotation to q{i}")
+    
+    # Measure all qubits
+    circuit.append([cirq.measure(q, key=f'm{i}') for i, q in enumerate(qubits)])
+    
+    # Use deterministic seed based on data for reproducibility
+    seed = int(hashlib.sha256(data.encode()).hexdigest(), 16) % (2**32)
+    simulator = cirq.Simulator(seed=seed)
+    result = simulator.run(circuit, repetitions=1)
+    
+    # Collect measurements as fingerprint
+    fingerprint = [int(result.measurements[f'm{i}'][0][0]) for i in range(num_qubits)]
+    
     log.append(f"Final fingerprint: {fingerprint}")
-    return fingerprint, "\n".join(log)
+    circuit_svg = circuit_to_svg(circuit)  # Add SVG visualization
+    
+    return {
+        'fingerprint': fingerprint,
+        'circuit_svg': circuit_svg,
+        'log': "\n".join(log)
+    }
 
 def verify_fingerprint_cirq(data, fingerprint, num_qubits=4):
-    generated, _ = generate_quantum_fingerprint_cirq(data, num_qubits)
-    return generated == fingerprint
+    """
+    Verifies if a given fingerprint matches the one generated from data.
+    
+    Args:
+        data: The input data string
+        fingerprint: The fingerprint to verify
+        num_qubits: Number of qubits used in the fingerprint
+        
+    Returns:
+        Boolean indicating whether verification succeeded
+    """
+    result = generate_quantum_fingerprint_cirq(data, num_qubits)
+    return result['fingerprint'] == fingerprint
 
 if __name__ == '__main__':
     data = "example_user"
-    fp, log_str = generate_quantum_fingerprint_cirq(data, num_qubits=8)
-    valid = verify_fingerprint_cirq(data, fp, num_qubits=8)
-    print("Cirq Authentication Fingerprint:", fp)
+    result = generate_quantum_fingerprint_cirq(data, num_qubits=8)
+    fingerprint = result['fingerprint']
+    valid = verify_fingerprint_cirq(data, fingerprint, num_qubits=8)
+    
+    print("Cirq Authentication Fingerprint:", fingerprint)
     print("Verification:", valid)
-    print("\nDetailed Log:\n", log_str)
+    print("\nCircuit SVG:\n", result['circuit_svg'])
+    print("\nDetailed Log:\n", result['log'])
