@@ -25,24 +25,23 @@
   <!-- Three.js library - must be loaded first -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 
+  <!-- Bootstrap & Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
-
-  <!-- OrbitControls from Three.js examples -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-
-  <!-- OrbitControls for Three.js -->
+  
+  <!-- Socket.IO -->
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4/dist/socket.io.min.js"></script>
+  
+  <!-- Quantum Field Kit Custom Scripts -->
   <script src="{{ url_for('static', filename='js/OrbitControls.js') }}"></script>
-
-  <!-- Quantum visualization components -->
+  
+  <!-- Main application scripts -->
   <script src="{{ url_for('static', filename='js/quantum_visualizations.js') }}"></script>
-
-  <!-- Plugin visualizations -->
   <script src="{{ url_for('static', filename='js/plugin_visualizations.js') }}"></script>
-
-  <!-- Visualization adapter (optional helper) -->
+  <script src="{{ url_for('static', filename='js/scripts.js') }}"></script>
+  
+  <!-- Load visualization adapter last to prevent conflicts -->
   <script src="{{ url_for('static', filename='js/visualization_adapter.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/visualization_integration.js') }}"></script>
-
 
 
   <!-- Main script -->
