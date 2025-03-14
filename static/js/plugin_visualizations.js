@@ -467,10 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
   syncRangeInputs();
 });
 
-/**
- * FIXED FUNCTION: Safely injects SVG content by creating a new div and using the DOM parser
- * instead of innerHTML directly to prevent double-escaping of SVG attributes.
- */
+// Safely injects SVG content by creating a new div and using the DOM parser
 function displayResults(data) {
   // Get the results container
   const resultsContainer = document.getElementById('results-container');
