@@ -36,7 +36,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Initialize Socket.IO for real-time communication
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
 
 def json_safe(obj):
     """
@@ -270,6 +270,99 @@ def plugin_view(plugin_key):
     
     return render_template("plugin.html", plugin=plugin, result=result)
 
+@app.route("/learn/<plugin_key>", methods=["GET", "POST"])
+def learn_plugin_view(plugin_key):
+    """
+    Handle individual plugin pages with enhanced educational content.
+    This route serves the same functionality as plugin_view but uses
+    the enhanced template with detailed learning materials.
+    """
+    # Check if the requested plugin exists
+    if plugin_key not in PLUGINS:
+        logger.error(f"Learn route: Plugin '{plugin_key}' not found")
+        abort(404)
+    
+    plugin = PLUGINS[plugin_key]
+    result = None
+    
+    # Handle form submission (POST request)
+    if request.method == "POST":
+        try:
+            # Collect and validate parameters from the form
+            params = {}
+            for param in plugin["parameters"]:
+                raw_val = request.form.get(param["name"], param.get("default"))
+                
+                # Convert parameters to the right type
+                if param["type"] == "int":
+                    try:
+                        raw_val = int(raw_val)
+                    except ValueError:
+                        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                            return jsonify({"error": f"Invalid integer value for {param['name']}"})
+                        else:
+                            flash(f"Invalid integer value for {param['name']}", "danger")
+                            return render_template("enhanced_plugin.html", plugin=plugin, result=None, error=f"Invalid integer value for {param['name']}")
+                
+                elif param["type"] == "float":
+                    try:
+                        raw_val = float(raw_val)
+                    except ValueError:
+                        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                            return jsonify({"error": f"Invalid float value for {param['name']}"})
+                        else:
+                            flash(f"Invalid float value for {param['name']}", "danger")
+                            return render_template("enhanced_plugin.html", plugin=plugin, result=None, error=f"Invalid float value for {param['name']}")
+                
+                # Store the parameter
+                params[param["name"]] = raw_val
+            
+            # Log the simulation request
+            logger.info(f"Learn route: Running {plugin_key} simulation with parameters: {params}")
+            
+            # Execute the plugin with the provided parameters
+            result = plugin["run"](params)
+            
+            # If this is an AJAX request, return JSON response
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(result)
+                
+        except Exception as e:
+            # Handle unexpected errors
+            error_msg = f"Error processing simulation request: {str(e)}"
+            logger.error(f"Learn route error: {error_msg}\n{traceback.format_exc()}")
+            
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify({"error": error_msg})
+            else:
+                flash(error_msg, "danger")
+                return render_template("enhanced_plugin.html", plugin=plugin, result=None, error=error_msg)
+    
+    # Render the enhanced template with educational content
+    try:
+        return render_template("enhanced_plugin.html", plugin=plugin, result=result)
+    except Exception as e:
+        # Handle template rendering errors
+        error_msg = f"Error rendering enhanced plugin template: {str(e)}"
+        logger.error(f"Learn route error: {error_msg}\n{traceback.format_exc()}")
+        return render_template("error.html", error="Unable to display learning content", details=str(e))
+
+# Add this navigation helper to be used in templates
+@app.context_processor
+def inject_template_helpers():
+    """Add helper functions to the template context"""
+    def get_mode_toggle_url():
+        """Generate URL to switch between standard and learning modes"""
+        if request.endpoint == 'plugin_view':
+            # Currently in standard mode, generate URL for learning mode
+            return url_for('learn_plugin_view', plugin_key=request.view_args.get('plugin_key'))
+        elif request.endpoint == 'learn_plugin_view':
+            # Currently in learning mode, generate URL for standard mode
+            return url_for('plugin_view', plugin_key=request.view_args.get('plugin_key'))
+        return "#"
+    
+    return dict(get_mode_toggle_url=get_mode_toggle_url)
+
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
     """API endpoint to get a list of all available plugins."""
@@ -382,3 +475,9 @@ if __name__ == "__main__":
     logger.info(f"Available plugins: {', '.join(PLUGINS.keys())}")
     
     socketio.run(app, host="0.0.0.0", port=port, debug=debug)
+
+#flyio
+#if __name__ == "__main__":
+#    port = int(os.environ.get("PORT", 8080))
+#    socketio.run(app, host="0.0.0.0", port=port)
+

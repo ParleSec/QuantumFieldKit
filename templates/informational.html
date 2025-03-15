@@ -1,0 +1,1618 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <div class="row">
+    <!-- Sidebar: Simulation Controls -->
+    <div class="col-lg-3">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fas {{ plugin.icon }} me-2"></i>
+            {{ plugin.name }}
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="text-muted mb-4">{{ plugin.description }}</p>
+          
+          <form method="post" id="simulation-form" class="needs-validation" novalidate>
+            {% for param in plugin.parameters %}
+              <div class="mb-3">
+                <label for="{{ param.name }}" class="form-label">
+                  {{ param.description }}
+                </label>
+                
+                {% if param.type == "float" %}
+                  <div class="input-group">
+                    <input type="range" class="form-range w-75" 
+                           id="{{ param.name }}_range" 
+                           min="0" max="{% if param.name == 'noise' %}0.2{% else %}1{% endif %}" 
+                           step="0.01" 
+                           value="{{ param.default }}"
+                           aria-label="{{ param.description }} slider">
+                    <input type="number" class="form-control w-25" 
+                           name="{{ param.name }}" 
+                           id="{{ param.name }}" 
+                           value="{{ param.default }}"
+                           step="0.01"
+                           min="0"
+                           aria-label="{{ param.description }} value"
+                           required>
+                  </div>
+                {% elif param.type == "int" %}
+                  <input type="number" class="form-control" 
+                         name="{{ param.name }}" 
+                         id="{{ param.name }}" 
+                         value="{{ param.default }}"
+                         min="1"
+                         aria-label="{{ param.description }}"
+                         required>
+                {% else %}
+                  <input type="{{ 'text' if param.type == 'str' else param.type }}" 
+                         class="form-control"
+                         name="{{ param.name }}" 
+                         id="{{ param.name }}" 
+                         value="{{ param.default }}"
+                         aria-label="{{ param.description }}"
+                         required>
+                {% endif %}
+                
+                <div class="form-text">
+                  {{ param.type }} {% if param.min is defined %}(min: {{ param.min }}){% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary" id="run-simulation">
+                <i class="fas fa-play me-2"></i> Run Simulation
+              </button>
+              <button type="button" class="btn btn-outline-secondary" id="reset-form">
+                <i class="fas fa-undo me-2"></i> Reset Parameters
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-dark text-white">
+          <h5 class="mb-0">Navigation</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+              <i class="fas fa-home me-2"></i> Back to Home
+            </a>
+            <button type="button" class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#helpModal">
+              <i class="fas fa-question-circle me-2"></i> Documentation
+            </button>
+            <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#learningModal">
+              <i class="fas fa-graduation-cap me-2"></i> Learning Center
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content: Simulation Results -->
+    <div class="col-lg-9">
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center bg-dark text-white">
+          <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i> Simulation Results</h5>
+          <div class="simulation-status">
+            <span class="badge bg-secondary" id="status-badge">Ready</span>
+          </div>
+        </div>
+        <div class="card-body" id="results-container">
+          {% if not result %}
+            <div class="text-center py-5 text-muted">
+              <i class="fas fa-atom fa-3x mb-3"></i>
+              <h4>Quantum Simulation</h4>
+              <p>Configure parameters and run the simulation to see results.</p>
+            </div>
+          {% endif %}
+          
+          {% if result %}
+            {% if result.error %}
+              <div class="alert alert-danger">
+                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Error Occurred</h5>
+                <hr>
+                <pre class="mt-3 mb-0">{{ result.error }}</pre>
+              </div>
+            {% else %}
+              <div class="result-container">
+                <!-- Visualization tabs -->
+                <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="visualization-tab" data-bs-toggle="tab" 
+                            data-bs-target="#visualization" type="button" role="tab" 
+                            aria-controls="visualization" aria-selected="true">
+                      <i class="fas fa-chart-bar me-2"></i> Visualization
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="raw-data-tab" data-bs-toggle="tab" 
+                            data-bs-target="#raw-data" type="button" role="tab" 
+                            aria-controls="raw-data" aria-selected="false">
+                      <i class="fas fa-table me-2"></i> Raw Data
+                    </button>
+                  </li>
+                  <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="log-tab" data-bs-toggle="tab" 
+                            data-bs-target="#log" type="button" role="tab" 
+                            aria-controls="log" aria-selected="false">
+                      <i class="fas fa-terminal me-2"></i> Process Log
+                    </button>
+                  </li>
+                </ul>
+                
+                <div class="tab-content p-3 border border-top-0 rounded-bottom" id="resultTabsContent">
+                  <!-- Visualization Tab -->
+                  <div class="tab-pane fade show active" id="visualization" role="tabpanel" aria-labelledby="visualization-tab">
+                    {% if result.output is mapping and result.output.circuit_svg %}
+                      <h5 class="mb-3">Circuit Diagram</h5>
+                      <div class="circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto">
+                        {{ result.output.circuit_svg | safe }}
+                      </div>
+                    {% endif %}
+                    
+                    <!-- Specific visualizations based on plugin type -->
+                    <div class="row">
+                      {% if plugin.key == 'qrng' or plugin.key == 'bb84' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Bit Distribution</div>
+                            <div class="card-body">
+                              <canvas id="bit-distribution-chart" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'teleport' or plugin.key == 'handshake' or plugin.key == 'auth' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Quantum State</div>
+                            <div class="card-body">
+                              <div id="quantum-state-viz" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'grover' or plugin.key == 'quantum_decryption_grover' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Probability Distribution</div>
+                            <div class="card-body">
+                              <canvas id="probability-distribution" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                      
+                      {% if plugin.key == 'vqe' %}
+                        <div class="col-md-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Energy Convergence</div>
+                            <div class="card-body">
+                              <canvas id="energy-convergence" class="chart-container"></canvas>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Raw Data Tab -->
+                  <div class="tab-pane fade" id="raw-data" role="tabpanel" aria-labelledby="raw-data-tab">
+                    <div class="row">
+                      {% if result.output is mapping %}
+                        {% for key, value in result.output.items() %}
+                          {% if key != 'circuit_svg' %}
+                            <div class="col-md-6 mb-4">
+                              <div class="card">
+                                <div class="card-header">{{ key | replace('_', ' ') | title }}</div>
+                                <div class="card-body">
+                                  <pre class="mb-0">{{ value | pprint }}</pre>
+                                </div>
+                              </div>
+                            </div>
+                          {% endif %}
+                        {% endfor %}
+                      {% else %}
+                        <div class="col-12">
+                          <pre class="mb-0">{{ result.output | pprint }}</pre>
+                        </div>
+                      {% endif %}
+                    </div>
+                  </div>
+                  
+                  <!-- Log Tab -->
+                  <div class="tab-pane fade" id="log" role="tabpanel" aria-labelledby="log-tab">
+                    <div class="bg-dark text-light p-3 rounded">
+                      <pre class="mb-0 terminal-log">{{ result.log }}</pre>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {% endif %}
+          {% endif %}
+        </div>
+      </div>
+      
+      <!-- Quantum Explanation Card (Mini Version) -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+          <h5 class="mb-0"><i class="fas fa-graduation-cap me-2"></i> Quantum Explanation</h5>
+          <button class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#learningModal">
+            <i class="fas fa-expand me-1"></i> Learn More
+          </button>
+        </div>
+        <div class="card-body">
+          {% if plugin.key == 'bb84' %}
+            <h5>BB84: Quantum Key Distribution</h5>
+            <p>BB84 is the first quantum cryptography protocol, developed by Charles Bennett and Gilles Brassard in 1984. It allows two parties to establish a shared secret key using quantum communication.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> The security of BB84 relies on the <em>no-cloning theorem</em> and the fact that measuring a quantum state disturbs it in a detectable way.
+            </div>
+            
+          {% elif plugin.key == 'teleport' %}
+            <h5>Quantum Teleportation</h5>
+            <p>Quantum teleportation is a technique for transferring a quantum state from one location to another using quantum entanglement and classical communication.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Teleportation doesn't move the physical particle itself, but rather transfers its quantum state to another pre-existing particle through entanglement.
+            </div>
+            
+          {% elif plugin.key == 'grover' %}
+            <h5>Grover's Search Algorithm</h5>
+            <p>Grover's algorithm provides a quadratic speedup for unstructured search problems, finding a marked item in a database of N items with approximately √N queries.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Utilizes quantum superposition and amplitude amplification to enhance the probability of measuring the correct answer.
+            </div>
+            
+          {% elif plugin.key == 'handshake' %}
+            <h5>Quantum Handshake Protocol</h5>
+            <p>A quantum handshake uses entangled particles to establish a secure connection between two parties that can detect any eavesdropping attempts.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Relies on quantum entanglement to create correlations between particles that would be impossible to achieve classically.
+            </div>
+            
+          {% elif plugin.key == 'auth' %}
+            <h5>Quantum Authentication</h5>
+            <p>Quantum authentication uses quantum fingerprinting to verify the identity of a user without exposing the actual authentication token.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> The no-cloning theorem ensures authentication tokens cannot be perfectly copied, providing enhanced security.
+            </div>
+            
+          {% elif plugin.key == 'network' %}
+            <h5>Entanglement Swapping Network</h5>
+            <p>Entanglement swapping allows quantum nodes to establish entanglement between remote particles that have never directly interacted.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Enables long-distance quantum communication by extending entanglement across a network of quantum repeaters.
+            </div>
+            
+          {% elif plugin.key == 'qrng' %}
+            <h5>Quantum Random Number Generator</h5>
+            <p>QRNGs produce true random numbers based on inherently random quantum processes, unlike classical random number generators which are typically deterministic.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Leverages the fundamental randomness of quantum measurement outcomes to generate unpredictable numbers.
+            </div>
+            
+          {% elif plugin.key == 'shor' %}
+            <h5>Shor's Code for Quantum Error Correction</h5>
+            <p>Shor's code is a quantum error correction technique that protects quantum information against both bit-flip and phase-flip errors.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Encodes a single logical qubit into nine physical qubits to detect and correct errors without disturbing the quantum state.
+            </div>
+            
+          {% elif plugin.key == 'vqe' %}
+            <h5>Variational Quantum Eigensolver</h5>
+            <p>VQE is a hybrid quantum-classical algorithm designed to find ground state energies of complex quantum systems like molecules.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Uses parameterized quantum circuits optimized by classical algorithms to approximate quantum states efficiently.
+            </div>
+            
+          {% elif plugin.key == 'quantum_decryption_grover' %}
+            <h5>Quantum Decryption via Grover's Algorithm</h5>
+            <p>This application of Grover's algorithm demonstrates how quantum computing could potentially break certain types of encryption by efficiently searching for keys.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Provides a quadratic speedup over classical brute-force approaches to key finding.
+            </div>
+            
+          {% elif plugin.key == 'quantum_decryption_shor' %}
+            <h5>Quantum Decryption via Shor's Algorithm</h5>
+            <p>Shor's algorithm can efficiently factor large numbers, threatening cryptosystems like RSA that rely on the difficulty of factoring.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Uses quantum Fourier transform to find the period of a function, enabling efficient factorization of large numbers.
+            </div>
+            
+          {% else %}
+            <h5>{{ plugin.name }}</h5>
+            <p>This simulation demonstrates key quantum computing concepts including superposition, entanglement, and measurement.</p>
+            <div class="alert alert-primary">
+              <strong>Key Quantum Concept:</strong> Quantum simulations provide insight into quantum behavior without requiring actual quantum hardware.
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Help Modal -->
+<div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="helpModalLabel">
+          <i class="fas fa-question-circle me-2"></i> {{ plugin.name }} Documentation
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h5>Parameters</h5>
+            <dl>
+              {% for param in plugin.parameters %}
+                <dt>{{ param.name }}</dt>
+                <dd>{{ param.description }} <span class="badge bg-secondary">{{ param.type }}</span></dd>
+              {% endfor %}
+            </dl>
+          </div>
+          <div class="col-md-6">
+            <h5>Output</h5>
+            <p>The simulation produces:</p>
+            <ul>
+              {% if plugin.key == 'bb84' %}
+                <li>Shared key between Alice and Bob</li>
+                <li>Information about bases used</li>
+                <li>Quantum circuit diagram</li>
+              {% elif plugin.key == 'teleport' %}
+                <li>Final quantum state after teleportation</li>
+                <li>Measurement outcomes</li>
+                <li>Quantum circuit diagram</li>
+              {% elif plugin.key == 'grover' %}
+                <li>Search outcome (target state)</li>
+                <li>Probability distribution</li>
+                <li>Quantum circuit diagram</li>
+              {% else %}
+                <li>Simulation results specific to this quantum protocol</li>
+                <li>Quantum state information</li>
+                <li>Detailed process log</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+        <hr>
+        <h5>How It Works</h5>
+        <p>This simulation uses Google Cirq, a Python framework for creating, editing, and invoking Noisy Intermediate Scale Quantum (NISQ) circuits. The backend performs these steps:</p>
+        <ol>
+          <li>Constructs quantum circuit based on your parameters</li>
+          <li>Applies specified quantum gates and operations</li>
+          <li>Simulates quantum behavior with high fidelity</li>
+          <li>Performs measurements and collects results</li>
+          <li>Renders visualizations of the quantum behavior</li>
+        </ol>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Learning Center Modal -->
+<div class="modal fade" id="learningModal" tabindex="-1" aria-labelledby="learningModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-info text-white">
+        <h5 class="modal-title" id="learningModalLabel">
+          <i class="fas fa-graduation-cap me-2"></i> Quantum Learning Center: {{ plugin.name }}
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {% if plugin.key == 'bb84' %}
+          <!-- BB84 Protocol Educational Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>BB84 Protocol: Quantum Key Distribution</h4>
+              <p>The BB84 protocol, developed by Charles Bennett and Gilles Brassard in 1984, was the first quantum cryptography protocol designed to create a secure secret key between two parties (conventionally called Alice and Bob).</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Classical vs. Quantum</strong>: In classical cryptography, key exchange is vulnerable to eavesdroppers who can potentially copy communications without detection. Quantum key distribution makes this impossible due to the fundamental properties of quantum mechanics.
+              </div>
+              
+              <h5 class="mt-4">How BB84 Works: Step-by-Step</h5>
+              <ol>
+                <li>
+                  <strong>Quantum Bit Preparation</strong>: Alice prepares qubits in one of four polarization states, representing bits 0 or 1 in one of two bases (rectilinear or diagonal).
+                </li>
+                <li>
+                  <strong>Quantum Transmission</strong>: Alice sends these qubits to Bob through a quantum channel.
+                </li>
+                <li>
+                  <strong>Random Basis Measurement</strong>: Bob measures each qubit using a randomly chosen basis (rectilinear or diagonal).
+                </li>
+                <li>
+                  <strong>Basis Reconciliation</strong>: Alice and Bob publicly share which bases they used, but not the measurement results.
+                </li>
+                <li>
+                  <strong>Key Sifting</strong>: They keep only the bits where they happened to use the same basis, discarding the rest.
+                </li>
+                <li>
+                  <strong>Error Estimation</strong>: They publicly compare a subset of their bits to detect any eavesdropping.
+                </li>
+                <li>
+                  <strong>Privacy Amplification</strong>: If the error rate is acceptably low, they perform additional processing to obtain a final secure key.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">The Two Bases Used in BB84</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/BB84_protocol.svg/500px-BB84_protocol.svg.png" alt="BB84 Protocol Bases" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Rectilinear basis (horizontal/vertical polarization) and diagonal basis (45°/135° polarization) used to encode bits.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in BB84</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>No-Cloning Theorem</strong>: It's impossible to create a perfect copy of an unknown quantum state. This prevents eavesdroppers from copying qubits.
+                    </li>
+                    <li>
+                      <strong>Heisenberg Uncertainty Principle</strong>: Measuring a quantum system disturbs it. If an eavesdropper measures a qubit, they'll introduce detectable errors.
+                    </li>
+                    <li>
+                      <strong>Quantum Superposition</strong>: Qubits can exist in a superposition of states, allowing encoding in different bases.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: Measuring a qubit in the wrong basis gives random results, securing information against incorrect measurements.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Real-World Applications</h5>
+              <p>BB84 and other quantum key distribution protocols have moved beyond theoretical interest to practical implementations:</p>
+              <ul>
+                <li><strong>Commercial QKD Systems</strong>: Companies like ID Quantique and Toshiba now offer commercial QKD systems.</li>
+                <li><strong>Quantum Networks</strong>: Experimental quantum networks in various countries use QKD for secure communications.</li>
+                <li><strong>Financial Sector</strong>: Some banks use QKD to secure transactions between offices.</li>
+                <li><strong>Government Communications</strong>: Various government agencies are exploring QKD for highly sensitive communications.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Limitations and Challenges</h5>
+              <ul>
+                <li><strong>Distance Limitations</strong>: Current technology limits QKD to distances of around 100-200 km without quantum repeaters.</li>
+                <li><strong>Hardware Vulnerabilities</strong>: Physical implementations may have vulnerabilities that theoretical protocols don't account for.</li>
+                <li><strong>Authentication Requirement</strong>: QKD requires an initial authenticated channel to prevent man-in-the-middle attacks.</li>
+                <li><strong>Cost and Complexity</strong>: QKD systems remain expensive and complex compared to classical cryptography.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding BB84</div>
+              <div class="card-body">
+                <p>Imagine Alice sends Bob a series of locks (qubits) that can be opened with either a square key or a star key (representing the two bases). Alice randomly chooses which type of lock to send and which position to set it in (locked or unlocked, representing 0 or 1).</p>
+                <p>Bob doesn't know which type of lock Alice sent, so he randomly tries either his square key or star key on each lock. Sometimes he guesses right and gets the correct information; other times he guesses wrong and gets random results.</p>
+                <p>Later, Alice and Bob publicly discuss which type of lock was used for each transmission (but not whether they were locked or unlocked). They keep only the results where Bob used the right type of key, discarding the rest.</p>
+                <p>If Eve tries to inspect the locks during transmission, she'll disturb them in a detectable way, alerting Alice and Bob to her presence.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/BB84" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> BB84 on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=UiJiXNEm-Go" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> BB84 Video Explanation
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/quant-ph/0003004" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Academic Paper on QKD
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'teleport' %}
+          <!-- Quantum Teleportation Educational Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Teleportation: Transferring Quantum States</h4>
+              <p>Quantum teleportation is a technique for transferring quantum information from one location to another, without physically sending the quantum system itself. First proposed in 1993, it has become one of the most important protocols in quantum information science.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>What Is (and Isn't) Being Teleported</strong>: Despite its name, quantum teleportation doesn't transport matter or energy—only quantum information. It's more like sending instructions for recreating a quantum state elsewhere.
+              </div>
+              
+              <h5 class="mt-4">How Quantum Teleportation Works</h5>
+              <ol>
+                <li>
+                  <strong>Entanglement Creation</strong>: Alice and Bob first share an entangled pair of qubits (a Bell pair).
+                </li>
+                <li>
+                  <strong>State Preparation</strong>: Alice has a third qubit in an unknown quantum state that she wants to teleport to Bob.
+                </li>
+                <li>
+                  <strong>Bell Measurement</strong>: Alice performs a joint measurement (Bell measurement) on her unknown qubit and her half of the entangled pair.
+                </li>
+                <li>
+                  <strong>Classical Communication</strong>: Alice sends the result of her measurement to Bob using a classical communication channel (like a phone call).
+                </li>
+                <li>
+                  <strong>Quantum Reconstruction</strong>: Based on Alice's message, Bob applies certain quantum operations to his half of the entangled pair.
+                </li>
+                <li>
+                  <strong>State Reconstruction</strong>: After these operations, Bob's qubit is now in the same quantum state that Alice's original qubit was in.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Quantum Teleportation Circuit</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Quantum_teleportation_circuit.svg/600px-Quantum_teleportation_circuit.svg.png" alt="Quantum Teleportation Circuit" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>A quantum circuit diagram showing the teleportation process. The top two lines represent Alice's qubits, and the bottom line is Bob's qubit.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Teleportation</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Entanglement</strong>: Creates non-local correlations between particles that enable teleportation.
+                    </li>
+                    <li>
+                      <strong>Bell States</strong>: Maximally entangled two-qubit states that serve as the quantum channel for teleportation.
+                    </li>
+                    <li>
+                      <strong>No-Cloning Theorem</strong>: Ensures that teleportation is not creating a copy; the original state is destroyed during the Bell measurement.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: The Bell measurement collapses the quantum state, necessitating classical communication to complete the protocol.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Real-World Applications</h5>
+              <p>Quantum teleportation has moved from theory to experimental reality:</p>
+              <ul>
+                <li><strong>Quantum Networks</strong>: Teleportation serves as a fundamental protocol for quantum networks and the future quantum internet.</li>
+                <li><strong>Quantum Computing</strong>: Used in distributed quantum computing to move quantum information between processing units.</li>
+                <li><strong>Quantum Repeaters</strong>: Key component in quantum repeaters for long-distance quantum communication.</li>
+                <li><strong>Quantum Cryptography</strong>: Enhances security in certain quantum cryptographic protocols.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Experimental Milestones</h5>
+              <ul>
+                <li><strong>1997</strong>: First experimental demonstration with photons at the University of Innsbruck.</li>
+                <li><strong>2004</strong>: Teleportation of atomic qubits demonstrated.</li>
+                <li><strong>2012</strong>: Teleportation over 143 kilometers between two Canary Islands.</li>
+                <li><strong>2017</strong>: Satellite-based teleportation achieved by China's Micius satellite.</li>
+                <li><strong>2020</strong>: Sustained high-fidelity teleportation achieved between remote quantum processors.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Quantum Teleportation</div>
+              <div class="card-body">
+                <p>Imagine Alice has a mystery box containing an unknown 3D shape. She wants to send this exact shape to Bob who is far away. They can't describe the shape accurately using words alone, and they can't send the box directly.</p>
+                <p>Fortunately, they each have one half of a pair of magical linked boxes. When Alice performs a special comparison ritual between her mystery box and her magical box, her shape disappears, and both boxes show two random numbers.</p>
+                <p>Alice calls Bob and tells him these two numbers. Based on these numbers alone, Bob can perform specific adjustments to his magical box, which then transforms to contain exactly the same shape that was in Alice's mystery box.</p>
+                <p>The original shape is gone from Alice's box (no-cloning theorem), but now exists in Bob's box—it has been "teleported" without traveling through the space between them.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Quantum_teleportation" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Quantum Teleportation on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=DxQK1WDYI_k" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video Explanation
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/quant-ph/9803052" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Original Research Paper
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'grover' %}
+          <!-- Grover's Algorithm Educational Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Grover's Algorithm: Quantum Search</h4>
+              <p>Grover's algorithm, developed by Lov Grover in 1996, is a quantum algorithm that provides a quadratic speedup for searching unsorted databases or solving unstructured search problems.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Classical vs. Quantum Search</strong>: To find a specific item in an unsorted database of N items, a classical computer needs to check an average of N/2 items (O(N) complexity). Grover's algorithm can find the item in approximately √N steps (O(√N) complexity).
+              </div>
+              
+              <h5 class="mt-4">How Grover's Algorithm Works</h5>
+              <ol>
+                <li>
+                  <strong>Initialization</strong>: Start with all qubits in superposition, representing all possible states with equal probability.
+                </li>
+                <li>
+                  <strong>Oracle Application</strong>: Apply a special function (oracle) that marks the target state by flipping its phase.
+                </li>
+                <li>
+                  <strong>Amplitude Amplification</strong>: Apply the Grover diffusion operator, which increases the amplitude of the marked state while decreasing others.
+                </li>
+                <li>
+                  <strong>Iteration</strong>: Repeat steps 2-3 approximately √N times to maximize the probability of measuring the target state.
+                </li>
+                <li>
+                  <strong>Measurement</strong>: Measure the qubits to obtain the target state with high probability.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Grover's Algorithm Visualization</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Quantum_grover_amplitude_magnitudes.png/500px-Quantum_grover_amplitude_magnitudes.png" alt="Grover's Algorithm Amplitude Magnification" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Visualization of how the probability amplitudes change during Grover's algorithm iterations. The target state's amplitude increases while others decrease.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Grover's Algorithm</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Superposition</strong>: Allows all possible solutions to be represented simultaneously.
+                    </li>
+                    <li>
+                      <strong>Quantum Interference</strong>: Amplitudes can interfere constructively or destructively to enhance or suppress states.
+                    </li>
+                    <li>
+                      <strong>Quantum Oracle</strong>: A black-box function that can recognize a solution without revealing it directly.
+                    </li>
+                    <li>
+                      <strong>Amplitude Amplification</strong>: The technique for increasing the probability of measuring the desired state.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Applications of Grover's Algorithm</h5>
+              <p>This quantum search algorithm has potential applications in various fields:</p>
+              <ul>
+                <li><strong>Cryptography</strong>: Can be used to attack symmetric encryption by searching for keys more efficiently.</li>
+                <li><strong>Database Searching</strong>: Finding specific entries in large, unstructured databases.</li>
+                <li><strong>Optimization Problems</strong>: Finding optimal solutions among many possibilities.</li>
+                <li><strong>NP-complete Problems</strong>: Provides modest speedups for problems like the traveling salesman problem.</li>
+                <li><strong>Collision Finding</strong>: Finding hash collisions or matching entries.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Mathematical Insights</h5>
+              <ul>
+                <li><strong>Optimal Iteration Count</strong>: The optimal number of iterations is approximately π√N/4, where N is the size of the search space.</li>
+                <li><strong>Success Probability</strong>: With the optimal number of iterations, the success probability approaches 1.</li>
+                <li><strong>Provable Speedup</strong>: The quadratic speedup of Grover's algorithm has been proven to be optimal for black-box search problems.</li>
+                <li><strong>Quantum Optimality</strong>: No quantum algorithm can solve the unstructured search problem in fewer than O(√N) steps.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Grover's Algorithm</div>
+              <div class="card-body">
+                <p>Imagine looking for a specific person wearing a red shirt in a large crowd where everyone else wears blue shirts. In the classical approach, you'd have to inspect people one by one until you find the person in red.</p>
+                <p>Grover's algorithm is like having a special camera that slightly brightens the image of the person in red and slightly dims everyone else each time you take a photo. After taking several photos (around √N photos for N people), the person in red becomes so bright compared to others that they're immediately obvious.</p>
+                <p>The "quantum magic" happens because all people are examined simultaneously in superposition, and the algorithm amplifies the probability of finding the right person through constructive and destructive interference of quantum amplitudes.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Grover%27s_algorithm" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Grover's Algorithm on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=0RPFWZj7Jm0" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video Explanation
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/quant-ph/9605043" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Original Research Paper
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'handshake' %}
+          <!-- Quantum Handshake Educational Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Handshake Protocol</h4>
+              <p>A quantum handshake is a protocol that uses quantum entanglement to establish secure communication between two parties. It serves as the foundation for authenticating and initiating quantum communication channels.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Classical vs. Quantum Handshakes</strong>: Classical handshake protocols can be intercepted without detection. Quantum handshakes leverage entanglement to detect any eavesdropping attempts, making them more secure for establishing initial trust.
+              </div>
+              
+              <h5 class="mt-4">How Quantum Handshake Works</h5>
+              <ol>
+                <li>
+                  <strong>Entanglement Generation</strong>: A pair of entangled qubits (a Bell pair) is created.
+                </li>
+                <li>
+                  <strong>Distribution</strong>: Each party (Alice and Bob) receives one qubit from the entangled pair.
+                </li>
+                <li>
+                  <strong>Random Measurement Basis</strong>: Each party randomly selects a measurement basis (e.g., X or Z basis).
+                </li>
+                <li>
+                  <strong>Measurement</strong>: They measure their respective qubits in their chosen bases.
+                </li>
+                <li>
+                  <strong>Basis Exchange</strong>: They communicate their chosen measurement bases (but not results) through a classical channel.
+                </li>
+                <li>
+                  <strong>Correlation Verification</strong>: For measurements made in the same basis, they compare a subset of results to verify correlations match expected entanglement patterns.
+                </li>
+                <li>
+                  <strong>Authentication</strong>: If correlations match theoretical predictions, they confirm secure quantum connection is established.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Bell Pair Entanglement</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Bell_states_generation.svg/500px-Bell_states_generation.svg.png" alt="Bell Pair Generation" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Creation of a Bell pair using a Hadamard gate and CNOT gate. This entangled state is the fundamental resource for quantum handshakes.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Handshake Protocol</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Bell States</strong>: Maximally entangled qubit pairs that exhibit perfect correlations regardless of distance.
+                    </li>
+                    <li>
+                      <strong>Bell's Theorem</strong>: Proves that quantum correlations cannot be explained by classical local hidden variables.
+                    </li>
+                    <li>
+                      <strong>No-Cloning Theorem</strong>: Prevents eavesdroppers from copying unknown quantum states without detection.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: The act of measuring collapses the quantum state, making interference detectable.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Security Features</h5>
+              <p>Quantum handshakes provide several security advantages:</p>
+              <ul>
+                <li><strong>Eavesdropper Detection</strong>: Any measurement by an eavesdropper disturbs the entanglement, making their presence detectable.</li>
+                <li><strong>Authentication</strong>: The protocol can verify that both parties are who they claim to be through shared quantum correlations.</li>
+                <li><strong>Key Establishment</strong>: Can be extended to establish encryption keys with information-theoretic security.</li>
+                <li><strong>Quantum Channel Verification</strong>: Confirms the quantum channel is working properly and secure.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Challenges and Limitations</h5>
+              <ul>
+                <li><strong>Decoherence</strong>: Quantum states are fragile and can decohere due to environmental interaction.</li>
+                <li><strong>Distance Limitation</strong>: Current technology limits the distance over which entanglement can be reliably maintained.</li>
+                <li><strong>Hardware Requirements</strong>: Requires specialized quantum hardware to generate and maintain entangled states.</li>
+                <li><strong>Initial Authentication</strong>: Still requires some initial classical authentication to prevent man-in-the-middle attacks.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Quantum Handshakes</div>
+              <div class="card-body">
+                <p>Imagine Alice and Bob each receive one glove from a magic pair. These gloves have a special property: when Alice puts her hand in her glove, it instantly becomes either hot or cold, and Bob's glove always does the exact opposite.</p>
+                <p>To verify they have a genuine magic pair, Alice and Bob randomly check if their gloves are opposite temperatures at random times they agree on. If someone tried to intercept and replace the magic gloves, the perfect opposite-temperature pattern would be disrupted.</p>
+                <p>Once they've verified their gloves behave according to these magic rules (quantum entanglement), they know they have an authentic connection that couldn't have been tampered with.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Quantum_entanglement" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Quantum Entanglement on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=ZuvK-od647c" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Bell's Theorem Video Explanation
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/quant-ph/9803056" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Academic Paper on Entanglement
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'auth' %}
+          <!-- Quantum Authentication Educational Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Authentication Protocol</h4>
+              <p>Quantum authentication uses the principles of quantum mechanics to verify the identity of users or devices with security guarantees that are impossible to achieve with classical methods alone.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Classical vs. Quantum Authentication</strong>: Classical authentication methods rely on computational complexity for security, which quantum computers may eventually break. Quantum authentication relies on the fundamental laws of physics, providing information-theoretic security.
+              </div>
+              
+              <h5 class="mt-4">How Quantum Authentication Works</h5>
+              <ol>
+                <li>
+                  <strong>Quantum Fingerprint Generation</strong>: A unique quantum state (quantum fingerprint) is created based on user identity data.
+                </li>
+                <li>
+                  <strong>State Preparation</strong>: This involves encoding classical data into quantum states using specific quantum gates.
+                </li>
+                <li>
+                  <strong>Verification Challenge</strong>: The verifier issues challenges that require knowledge of how the quantum fingerprint was prepared.
+                </li>
+                <li>
+                  <strong>Measurement</strong>: Specific measurements are performed on the quantum state to verify its authenticity.
+                </li>
+                <li>
+                  <strong>Authentication Decision</strong>: Based on measurement outcomes, the system decides whether to authenticate the user.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Quantum vs. Classical Authentication</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Quantum_circuit_composition.svg/500px-Quantum_circuit_composition.svg.png" alt="Quantum Circuit" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Quantum authentication uses quantum circuits to encode identity information in ways that are physically impossible to clone or forge.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Authentication</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>No-Cloning Theorem</strong>: Prevents perfect copying of quantum authentication tokens, making them inherently secure against duplication.
+                    </li>
+                    <li>
+                      <strong>Quantum Superposition</strong>: Allows encoding information in multiple quantum bases simultaneously.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: Ensures any unauthorized measurement disturbs the state, revealing tampering attempts.
+                    </li>
+                    <li>
+                      <strong>Quantum Entanglement</strong>: Can provide additional security by correlating authentication tokens across multiple systems.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Security Advantages</h5>
+              <p>Quantum authentication offers several security benefits:</p>
+              <ul>
+                <li><strong>Unforgeable Tokens</strong>: Quantum states cannot be perfectly copied due to the no-cloning theorem.</li>
+                <li><strong>Tamper Evidence</strong>: Any attempt to measure or intercept the quantum state disturbs it in a detectable way.</li>
+                <li><strong>Information-Theoretic Security</strong>: Security based on the laws of physics rather than computational hardness.</li>
+                <li><strong>One-Time Use</strong>: Quantum tokens can be designed to be measurable only once, preventing replay attacks.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Practical Implementations</h5>
+              <ul>
+                <li><strong>Quantum Key Distribution with Authentication</strong>: Integration of quantum authentication with QKD protocols.</li>
+                <li><strong>Quantum Tokens</strong>: Unforgeable quantum states that can serve as authentication tokens.</li>
+                <li><strong>Quantum Digital Signatures</strong>: Authentication of messages using quantum mechanics.</li>
+                <li><strong>Quantum Fingerprinting</strong>: Encoding identity data into minimal quantum states for efficient verification.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Quantum Authentication</div>
+              <div class="card-body">
+                <p>Imagine traditional authentication is like using a key to open a lock. Anyone who can copy your key (or pick the lock) can gain access.</p>
+                <p>Quantum authentication is more like using a special key made of water that takes a unique shape based on your identity. When you insert this "water key" into the lock, it flows into a specific pattern that only you can create.</p>
+                <p>If anyone tries to observe or copy this water key's shape, they inevitably change it (like quantum measurement). And the laws of physics (not just technological limitations) make it impossible to perfectly copy the water pattern without knowing exactly how it was made in the first place.</p>
+                <p>The lock can verify your identity by checking if the water forms the expected pattern, but once checked, the water key is used up and can't be reused - you need to generate a fresh one next time.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Quantum_cryptography" target="_blank" rel="noopener" rel="noopener" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Quantum Cryptography on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=qarc7AA4-wM" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video on Quantum Security
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/1711.08338" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Academic Paper on Quantum Authentication
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'network' %}
+          <!-- Quantum Network (Entanglement Swapping) Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Networks: Entanglement Swapping</h4>
+              <p>Entanglement swapping is a fundamental quantum networking protocol that allows two particles to become entangled even though they have never directly interacted with each other, enabling the creation of quantum links across long distances.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>The Challenge of Distance</strong>: Quantum entanglement typically has limited range due to noise and photon loss. Entanglement swapping allows us to extend quantum connections across longer distances, forming the basis for quantum repeaters and quantum networks.
+              </div>
+              
+              <h5 class="mt-4">How Entanglement Swapping Works</h5>
+              <ol>
+                <li>
+                  <strong>Bell Pair Creation</strong>: Two separate entangled pairs (Bell pairs) are created: particles A-B and C-D.
+                </li>
+                <li>
+                  <strong>Distribution</strong>: Particles A and D are sent to the end users, while B and C remain at a central node.
+                </li>
+                <li>
+                  <strong>Bell Measurement</strong>: At the central node, a joint Bell measurement is performed on particles B and C.
+                </li>
+                <li>
+                  <strong>Measurement Result Communication</strong>: The result of this measurement is communicated classically to at least one of the end nodes.
+                </li>
+                <li>
+                  <strong>Correction Operations</strong>: Based on the measurement result, specific quantum operations may be applied to particles A or D.
+                </li>
+                <li>
+                  <strong>Result</strong>: Particles A and D are now entangled, despite never having interacted directly.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Entanglement Swapping Diagram</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Quantum_teleportation.svg/500px-Quantum_teleportation.svg.png" alt="Entanglement Swapping" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Diagram showing the process of entanglement swapping. Two separate entangled pairs are used to create entanglement between distant particles.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Entanglement Swapping</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Entanglement</strong>: The non-local correlation between quantum particles that enables the entire process.
+                    </li>
+                    <li>
+                      <strong>Bell States</strong>: Maximally entangled two-qubit states that serve as the resource for entanglement swapping.
+                    </li>
+                    <li>
+                      <strong>Quantum Teleportation</strong>: Entanglement swapping essentially teleports the entanglement itself rather than a quantum state.
+                    </li>
+                    <li>
+                      <strong>Bell Measurement</strong>: The joint measurement that projects distant particles into an entangled state.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Applications in Quantum Networks</h5>
+              <p>Entanglement swapping is crucial for quantum networking infrastructure:</p>
+              <ul>
+                <li><strong>Quantum Repeaters</strong>: Enable long-distance quantum communication by creating entanglement between distant nodes.</li>
+                <li><strong>Quantum Internet</strong>: Forms the basis for connecting quantum computers and devices in a future quantum internet.</li>
+                <li><strong>Distributed Quantum Computing</strong>: Allows quantum computation across physically separated quantum processors.</li>
+                <li><strong>Secure Multi-Party Computation</strong>: Enables secure distributed quantum protocols across multiple parties.</li>
+                <li><strong>Quantum Communication Networks</strong>: Creates secure quantum channels for transmitting information.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Experimental Progress</h5>
+              <ul>
+                <li><strong>First Demonstration</strong>: Entanglement swapping was first demonstrated experimentally in 1998 with photons.</li>
+                <li><strong>Matter Qubits</strong>: Later experiments achieved entanglement swapping between matter-based quantum memories.</li>
+                <li><strong>Multi-Node Networks</strong>: Recent experiments have demonstrated small-scale quantum networks using entanglement swapping.</li>
+                <li><strong>Satellite-Based Swapping</strong>: China's quantum satellite has demonstrated space-based entanglement distribution.</li>
+                <li><strong>Distance Records</strong>: Researchers have achieved entanglement swapping over increasingly longer distances.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Entanglement Swapping</div>
+              <div class="card-body">
+                <p>Imagine two pairs of special coins that always show opposite faces when flipped. In pair 1, Alice has coin A and Bob has coin B. In pair 2, Bob has coin C and Charlie has coin D.</p>
+                <p>Bob performs a special "comparison flip" of his two coins (B and C) together. This special flip has four possible outcomes, which Bob records.</p>
+                <p>After Bob's special flip, something magical happens: now Alice's coin A and Charlie's coin D become linked and show opposite results when flipped—even though Alice and Charlie have never met or exchanged coins directly!</p>
+                <p>The only requirement is that Bob must tell Alice or Charlie (via regular communication) what result he got from his special flip, so they know exactly how their coins are now related.</p>
+                <p>This is like entanglement swapping, where entanglement between A-B and C-D becomes entanglement between A-D, allowing quantum connections across long distances through intermediate nodes.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Quantum_network" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Quantum Network on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=PT6GM85ut4I" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video on Quantum Internet
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/1906.02699" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Academic Paper on Quantum Networks
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'qrng' %}
+          <!-- Quantum Random Number Generator (QRNG) Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Random Number Generator</h4>
+              <p>A Quantum Random Number Generator (QRNG) produces truly random numbers by exploiting the inherent randomness in quantum mechanical processes, unlike classical random number generators which are typically deterministic and only appear random.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>True Randomness vs. Pseudorandomness</strong>: Classical computers generate "pseudorandom" numbers using deterministic algorithms. Quantum generators access the fundamental randomness of quantum mechanics to produce numbers that are truly unpredictable, even in principle.
+              </div>
+              
+              <h5 class="mt-4">How QRNG Works</h5>
+              <ol>
+                <li>
+                  <strong>Quantum State Preparation</strong>: A qubit is prepared in a superposition state (typically using a Hadamard gate).
+                </li>
+                <li>
+                  <strong>Measurement</strong>: The qubit is measured, collapsing its state randomly to either 0 or 1 with equal probability.
+                </li>
+                <li>
+                  <strong>Bit Generation</strong>: The measurement outcome becomes one random bit in the sequence.
+                </li>
+                <li>
+                  <strong>Repetition</strong>: The process is repeated to generate multiple random bits.
+                </li>
+                <li>
+                  <strong>Optional Post-Processing</strong>: Statistical tests and randomness extraction may be applied to enhance quality.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">QRNG Circuit and Process</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Quantum_randomness_generator.svg/500px-Quantum_randomness_generator.svg.png" alt="Quantum Random Number Generator" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>A simple quantum circuit for generating random bits. The Hadamard gate creates a superposition that, when measured, gives a truly random outcome.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in QRNG</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Superposition</strong>: Places the qubit in an equal probability state between 0 and 1.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: The act of measurement causes the random collapse of the superposition state.
+                    </li>
+                    <li>
+                      <strong>Heisenberg Uncertainty Principle</strong>: Guarantees that certain quantum properties cannot be simultaneously determined with perfect precision.
+                    </li>
+                    <li>
+                      <strong>Bell's Theorem</strong>: Confirms that quantum randomness cannot be explained by hidden deterministic variables.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Applications of Quantum Random Numbers</h5>
+              <p>True random numbers are valuable in many fields:</p>
+              <ul>
+                <li><strong>Cryptography</strong>: Generating encryption keys, initialization vectors, and nonces for security applications.</li>
+                <li><strong>Scientific Simulations</strong>: Monte Carlo methods that require high-quality randomness for accurate results.</li>
+                <li><strong>Statistical Sampling</strong>: Unbiased random sampling for statistics and research studies.</li>
+                <li><strong>Gaming and Gambling</strong>: Provably fair random number generation for games of chance.</li>
+                <li><strong>Numerical Optimization</strong>: Stochastic optimization algorithms that benefit from true randomness.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Implementation Methods</h5>
+              <ul>
+                <li><strong>Photonic QRNG</strong>: Using the quantum properties of light, such as path choice or photon arrival time.</li>
+                <li><strong>Vacuum Fluctuation</strong>: Measuring quantum fluctuations in the vacuum state of an electromagnetic field.</li>
+                <li><strong>Radioactive Decay</strong>: Using the inherently random timing of radioactive decay events.</li>
+                <li><strong>Quantum Circuit QRNG</strong>: Implementing quantum gates and measurements on quantum processors.</li>
+                <li><strong>Commercial QRNG Devices</strong>: Several companies now offer hardware QRNG products for various applications.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding QRNG</div>
+              <div class="card-body">
+                <p>Imagine a classical random number generator like flipping a coin. You think it's random, but theoretically, if you knew the exact physics of the flip—the force applied, air resistance, etc.—you could predict the outcome. It only seems random because these factors are complicated, not because they're truly unpredictable.</p>
+                <p>A quantum random number generator is more like having a special coin that doesn't decide whether it's heads or tails until the exact moment you look at it. Before observation, it exists in a state that is literally both heads and tails simultaneously. The act of looking causes it to randomly become one or the other, and this randomness is not due to a lack of information—it's a fundamental property of nature.</p>
+                <p>No amount of information about the system can predict which result you'll get, making quantum random numbers truly unpredictable even in principle.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Hardware_random_number_generator#Quantum_random_properties" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> QRNG on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=zcqZHYo7ONs" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video Explanation of QRNG
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/1805.09213" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Academic Paper on QRNG
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'shor' %}
+          <!-- Shor's Code for Quantum Error Correction -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Shor's Code: Quantum Error Correction</h4>
+              <p>Shor's Code, developed by Peter Shor in 1995, is a quantum error correction code that protects quantum information against both bit-flip and phase-flip errors, which are the two fundamental types of errors in quantum systems.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>The Quantum Error Challenge</strong>: Quantum states are extremely fragile and vulnerable to decoherence and errors. Classical error correction can't be directly applied to quantum information due to the no-cloning theorem and the fact that measurement disturbs quantum states.
+              </div>
+              
+              <h5 class="mt-4">How Shor's Code Works</h5>
+              <ol>
+                <li>
+                  <strong>Encoding</strong>: A single logical qubit is encoded across nine physical qubits in a special state.
+                </li>
+                <li>
+                  <strong>Error Occurrence</strong>: Environmental interactions may cause bit-flip errors (X errors) or phase-flip errors (Z errors) on some qubits.
+                </li>
+                <li>
+                  <strong>Syndrome Measurement</strong>: Special measurements are performed to detect errors without collapsing the quantum information.
+                </li>
+                <li>
+                  <strong>Error Identification</strong>: The syndrome measurements reveal which type of error occurred and on which qubit.
+                </li>
+                <li>
+                  <strong>Error Correction</strong>: Based on the syndrome, appropriate quantum gates are applied to correct the errors.
+                </li>
+                <li>
+                  <strong>Information Recovery</strong>: The original quantum state is recovered without having been directly measured.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Shor's 9-Qubit Code Structure</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Shor_Code.svg/500px-Shor_Code.svg.png" alt="Shor's Code" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>Shor's code encodes a single logical qubit into nine physical qubits. It combines three instances of the three-qubit phase-flip code, which themselves are each made of the three-qubit bit-flip code.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Shor's Code</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Superposition</strong>: The encoded state maintains superpositions of the original qubit.
+                    </li>
+                    <li>
+                      <strong>Entanglement</strong>: The encoding process creates entanglement among the nine qubits.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: Special ancilla measurements extract error information without disturbing the quantum state.
+                    </li>
+                    <li>
+                      <strong>Quantum Redundancy</strong>: Information is distributed across multiple qubits in a way that allows error detection and correction.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Importance of Quantum Error Correction</h5>
+              <p>Quantum error correction is essential for practical quantum computing:</p>
+              <ul>
+                <li><strong>Scalability</strong>: Allows quantum computations to scale beyond the coherence time limitations of physical qubits.</li>
+                <li><strong>Fault Tolerance</strong>: Enables fault-tolerant quantum computation where errors don't propagate catastrophically.</li>
+                <li><strong>Quantum Memory</strong>: Permits reliable storage of quantum information for extended periods.</li>
+                <li><strong>Reliable Computation</strong>: Makes quantum algorithms practical by protecting against unavoidable noise.</li>
+                <li><strong>Quantum Communication</strong>: Helps maintain quantum states during transmission over noisy channels.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Technical Details of Shor's Code</h5>
+              <ul>
+                <li><strong>Bit-Flip Protection</strong>: Uses three blocks of three qubits, each implementing the three-qubit bit-flip code.</li>
+                <li><strong>Phase-Flip Protection</strong>: The three blocks together implement the three-qubit phase-flip code.</li>
+                <li><strong>Code Distance</strong>: Shor's code has a distance of 3, meaning it can correct any single-qubit error.</li>
+                <li><strong>Syndrome Measurement</strong>: Uses six ancilla qubits for non-destructive error detection.</li>
+                <li><strong>Resource Overhead</strong>: Requires nine physical qubits to protect one logical qubit, plus ancilla qubits for syndrome measurements.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Quantum Error Correction</div>
+              <div class="card-body">
+                <p>Imagine you're trying to preserve a delicate message written in disappearing ink that changes if anyone reads it directly (like quantum information). Classical error correction would be like making copies of the message, but that's impossible with quantum information due to the no-cloning theorem.</p>
+                <p>Shor's code is like cleverly splitting the message across nine different papers in such a way that you can detect if any paper gets smudged (an error occurs) without having to read the actual message. You can even fix the smudge without knowing what the message says!</p>
+                <p>The trick is to create a special pattern across the nine papers so that errors show up as disturbances to this pattern. By checking the pattern (not the message itself), you can identify exactly which paper was smudged and how to fix it, all without ever reading the actual message directly.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Quantum_error_correction" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Quantum Error Correction on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=lcJQCjCw2es" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video on Quantum Error Correction
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/quant-ph/9508027" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Shor's Original Paper
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'vqe' %}
+          <!-- Variational Quantum Eigensolver (VQE) Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Variational Quantum Eigensolver (VQE)</h4>
+              <p>The Variational Quantum Eigensolver is a hybrid quantum-classical algorithm designed to find ground state energies of quantum systems like molecules. It combines a quantum computer's ability to represent complex quantum states with a classical computer's optimization capabilities.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Hybrid Quantum-Classical Approach</strong>: VQE is particularly well-suited for Noisy Intermediate-Scale Quantum (NISQ) devices available today. It minimizes the required quantum circuit depth by offloading optimization to classical computers, making it practical even with limited quantum resources.
+              </div>
+              
+              <h5 class="mt-4">How VQE Works</h5>
+              <ol>
+                <li>
+                  <strong>Problem Mapping</strong>: The system of interest (e.g., a molecule) is mapped to a Hamiltonian operator.
+                </li>
+                <li>
+                  <strong>Ansatz Selection</strong>: A parameterized quantum circuit (ansatz) is designed to create trial quantum states.
+                </li>
+                <li>
+                  <strong>State Preparation</strong>: The quantum computer prepares the trial state using the current parameter values.
+                </li>
+                <li>
+                  <strong>Energy Estimation</strong>: Measurements are performed to estimate the energy (expectation value of the Hamiltonian).
+                </li>
+                <li>
+                  <strong>Classical Optimization</strong>: A classical optimizer adjusts the circuit parameters to minimize the energy.
+                </li>
+                <li>
+                  <strong>Iteration</strong>: Steps 3-5 are repeated until the energy converges to the ground state.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">VQE Workflow Diagram</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Vqe_scheme.svg/500px-Vqe_scheme.svg.png" alt="VQE Workflow" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>The VQE workflow showing the interaction between the quantum and classical components. The quantum processor prepares and measures states, while the classical computer optimizes the parameters.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in VQE</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum State Representation</strong>: Quantum computers can efficiently represent complex quantum states that would require exponential resources classically.
+                    </li>
+                    <li>
+                      <strong>Quantum Measurement</strong>: Extracting energy estimates through quantum measurements.
+                    </li>
+                    <li>
+                      <strong>Variational Principle</strong>: The energy of any trial state is always greater than or equal to the ground state energy.
+                    </li>
+                    <li>
+                      <strong>Quantum-Classical Feedback Loop</strong>: Iterative process combining quantum state preparation with classical optimization.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Applications of VQE</h5>
+              <p>VQE has several important applications:</p>
+              <ul>
+                <li><strong>Quantum Chemistry</strong>: Calculating ground state energies and properties of molecules.</li>
+                <li><strong>Material Science</strong>: Understanding properties of complex materials and their quantum behaviors.</li>
+                <li><strong>Optimization Problems</strong>: Solving combinatorial optimization problems when mapped to finding ground states.</li>
+                <li><strong>Many-Body Physics</strong>: Studying complex quantum many-body systems.</li>
+                <li><strong>Drug Discovery</strong>: Modeling molecular interactions for pharmaceutical research.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Challenges and Considerations</h5>
+              <ul>
+                <li><strong>Barren Plateaus</strong>: Optimization landscapes may become flat for certain ansatz designs, making optimization difficult.</li>
+                <li><strong>Measurement Statistics</strong>: Requires many measurements to obtain accurate energy estimates.</li>
+                <li><strong>Ansatz Design</strong>: The choice of parameterized quantum circuit significantly affects performance.</li>
+                <li><strong>Local Minima</strong>: Classical optimizers may get trapped in local minima rather than finding the global minimum.</li>
+                <li><strong>Error Mitigation</strong>: Quantum noise and errors need to be mitigated for accurate results.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding VQE</div>
+              <div class="card-body">
+                <p>Imagine trying to find the lowest point in a vast, complex mountain range without being able to see the entire landscape at once. This is similar to finding the ground state (lowest energy) of a quantum system.</p>
+                <p>In VQE, the quantum computer is like a special drone that can take snapshots of the landscape from various positions. The classical computer is like a navigator who analyzes these snapshots and decides where to send the drone next.</p>
+                <p>The process works like this: The navigator chooses a starting position and some directions for the drone to explore (setting initial parameters). The drone takes a picture (quantum state preparation) and measures the altitude (energy measurement). The navigator analyzes this information and suggests a new position that might be lower (classical optimization). This process repeats until the drone finds what appears to be the lowest valley (ground state).</p>
+                <p>The quantum drone can access landscapes (quantum states) that would be impossible to map classically, while the classical navigator can use sophisticated strategies to efficiently find the lowest point.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Variational_quantum_eigensolver" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> VQE on Wikipedia
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=E947xs9-Mso" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video on VQE
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://arxiv.org/abs/1304.3061" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                <i class="fas fa-file-alt me-2"></i> Original VQE Paper
+              </a>
+            </div>
+          </div>
+          
+        {% elif plugin.key == 'quantum_decryption_grover' %}
+          <!-- Quantum Decryption via Grover's Algorithm Content -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <h4>Quantum Decryption via Grover's Algorithm</h4>
+              <p>This application of Grover's algorithm demonstrates how quantum computing could potentially break certain types of encryption by efficiently searching for encryption keys. It provides a quadratic speedup over classical brute-force approaches.</p>
+              
+              <div class="alert alert-secondary">
+                <strong>Classical vs. Quantum Key Search</strong>: To find a key in a keyspace of size N, a classical computer needs to check O(N) keys on average. Grover's algorithm can find the key in approximately O(√N) steps, providing a quadratic speedup.
+              </div>
+              
+              <h5 class="mt-4">How Quantum Key Search Works</h5>
+              <ol>
+                <li>
+                  <strong>Problem Setup</strong>: Define an oracle function that recognizes the correct key (returns 1 for the target key, 0 for all others).
+                </li>
+                <li>
+                  <strong>Initialization</strong>: Prepare a quantum superposition of all possible keys.
+                </li>
+                <li>
+                  <strong>Oracle Application</strong>: Apply the oracle to mark the target key by flipping its phase.
+                </li>
+                <li>
+                  <strong>Amplitude Amplification</strong>: Apply the Grover diffusion operator to amplify the amplitude of the marked key.
+                </li>
+                <li>
+                  <strong>Iteration</strong>: Repeat steps 3-4 approximately √N times to maximize the probability of finding the key.
+                </li>
+                <li>
+                  <strong>Measurement</strong>: Measure the quantum register to obtain the target key with high probability.
+                </li>
+              </ol>
+            </div>
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">Grover's Algorithm for Key Search</div>
+                <div class="card-body text-center">
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Grovers_algorithm_geometry.png/500px-Grovers_algorithm_geometry.png" alt="Grover's Algorithm Geometric Representation" class="img-fluid rounded mb-3">
+                  <p class="mb-0"><small>A geometric representation of Grover's algorithm. Each iteration rotates the state vector closer to the target state, increasing the probability of finding the correct key.</small></p>
+                </div>
+              </div>
+              
+              <div class="card">
+                <div class="card-header">Key Quantum Principles in Quantum Decryption</div>
+                <div class="card-body">
+                  <ul class="mb-0">
+                    <li>
+                      <strong>Quantum Superposition</strong>: Allows all possible keys to be evaluated simultaneously.
+                    </li>
+                    <li>
+                      <strong>Quantum Oracle</strong>: Implements the encryption function that recognizes the correct key.
+                    </li>
+                    <li>
+                      <strong>Quantum Interference</strong>: Used to amplify the probability of measuring the correct key state and suppress incorrect states.
+                    </li>
+                    <li>
+                      <strong>Amplitude Amplification</strong>: The core technique of Grover's algorithm that enhances the target state's amplitude.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <hr>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <h5>Implications for Cryptography</h5>
+              <p>Quantum key search has significant implications for cryptographic security:</p>
+              <ul>
+                <li><strong>Symmetric Encryption</strong>: Algorithms like AES would need larger key sizes to maintain security against quantum attacks.</li>
+                <li><strong>Security Scaling</strong>: Doubling the key length quadruples the security against quantum attacks, compared to classical attacks where it increases exponentially.</li>
+                <li><strong>Post-Quantum Cryptography</strong>: Development of new encryption methods resistant to quantum attacks.</li>
+                <li><strong>Hardware Requirements</strong>: Large-scale error-corrected quantum computers would be needed for attacks on modern encryption.</li>
+                <li><strong>Transition Timeline</strong>: Organizations are planning migrations to quantum-resistant cryptography.</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <h5>Technical Considerations</h5>
+              <ul>
+                <li><strong>Oracle Implementation</strong>: Implementing encryption functions as quantum oracles can be challenging and resource-intensive.</li>
+                <li><strong>Optimal Number of Iterations</strong>: Running Grover's algorithm for too many iterations can actually decrease the success probability.</li>
+                <li><strong>Quantum Memory Requirements</strong>: Requires coherent quantum memory proportional to key size.</li>
+                <li><strong>Error Correction</strong>: Practical attacks would require fault-tolerant quantum computers with error correction.</li>
+                <li><strong>Parallelization</strong>: Multiple instances of Grover's algorithm can be run in parallel to further improve speed.</li>
+              </ul>
+            </div>
+          </div>
+          
+          <div class="text-center mt-4">
+            <div class="card">
+              <div class="card-header">Beginner's Analogy: Understanding Quantum Key Search</div>
+              <div class="card-body">
+                <p>Imagine searching for a specific book in a vast library with a million books. In the classical approach, you'd need to check each book individually, and on average you'd find your book after checking about half a million books.</p>
+                <p>With Grover's algorithm, it's as if you could use a special quantum scanner that initially gives a very faint signal for the correct book. Each time you use the scanner (one Grover iteration), the signal for the correct book gets stronger, while signals for all other books get weaker.</p>
+                <p>After only about 1,000 uses of the scanner (roughly the square root of one million), the signal for the correct book becomes so strong that you can identify it with high confidence. This is the quadratic speedup that quantum computing provides for search problems.</p>
+                <p>The key insight is that you don't have to check each book individually—the quantum scanner processes all books simultaneously through superposition and gradually amplifies the signal for the right one.</p>
+              </div>
+            </div>
+          </div>
+          
+          <h5 class="mt-4">Further Learning Resources</h5>
+          <div class="row">
+            <div class="col-md-4">
+              <a href="https://en.wikipedia.org/wiki/Post-quantum_cryptography" target="_blank" rel="noopener" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+                <i class="fab fa-wikipedia-w me-2"></i> Post-Quantum Cryptography
+              </a>
+            </div>
+            <div class="col-md-4">
+              <a href="https://www.youtube.com/watch?v=arpn_0-PJ-8" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+                <i class="fab fa-youtube me-2"></i> Video on Quantum Attacks
+              </a>
+            </div>
+            <div class="col-md-4">
+                <a href="https://arxiv.org/abs/1605.05709" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+                  <i class="fas fa-file-alt me-2"></i> Paper on Quantum Cryptanalysis
+                </a>
+              </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+    </div>
+    {% endblock %}
