@@ -18,6 +18,8 @@ from plugins.quantum_decryption.quantum_decryption import grover_key_search, sho
 from plugins.teleportation.teleport import teleportation_circuit
 from plugins.variational.vqe import run_vqe
 
+from plugins.deutsch_jozsa.deutsch_jozsa import deutsch_jozsa_cirq
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -219,6 +221,18 @@ PLUGINS = {
             {"name": "N", "type": "int", "default": 15, "description": "Composite number"}
         ],
         "run": lambda p: run_plugin(shor_factorization, N=p["N"])
+    },
+        "deutsch_jozsa": {
+        "name": "Deutsch-Jozsa Algorithm",
+        "description": "Determine if a function is constant or balanced with a single quantum query.",
+        "icon": "fa-balance-scale",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of input qubits"},
+            {"name": "oracle_type", "type": "str", "default": "random", "description": "Oracle type: constant_0, constant_1, balanced, or random"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(deutsch_jozsa_cirq, n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
     }
 }
 
