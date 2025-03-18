@@ -212,6 +212,17 @@
                       </div>
                     </div>
                   {% endif %}
+
+                  {% if plugin.key == 'qft' %}
+                    <div class="col-md-6 mb-4">
+                      <div class="card">
+                        <div class="card-header">QFT Transformation</div>
+                        <div class="card-body">
+                          <div id="qft-state-viz" class="chart-container"></div>
+                        </div>
+                      </div>
+                    </div>
+                  {% endif %}
                   
                   <!-- Raw Data Tab -->
                   <div class="tab-pane fade" id="raw-data" role="tabpanel" aria-labelledby="raw-data-tab">
