@@ -19,6 +19,7 @@ from plugins.teleportation.teleport import teleportation_circuit
 from plugins.variational.vqe import run_vqe
 
 from plugins.deutsch_jozsa.deutsch_jozsa import deutsch_jozsa_cirq
+from plugins.quantum_fourier.qft import run_qft
 
 # Configure logging
 logging.basicConfig(
@@ -222,7 +223,7 @@ PLUGINS = {
         ],
         "run": lambda p: run_plugin(shor_factorization, N=p["N"])
     },
-        "deutsch_jozsa": {
+    "deutsch_jozsa": {
         "name": "Deutsch-Jozsa Algorithm",
         "description": "Determine if a function is constant or balanced with a single quantum query.",
         "icon": "fa-balance-scale",
@@ -233,6 +234,21 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
         ],
         "run": lambda p: run_plugin(deutsch_jozsa_cirq, n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
+    },
+
+    "qft": {
+        "name": "Quantum Fourier Transform",
+        "description": "Implement the quantum analogue of the discrete Fourier transform.",
+        "icon": "fa-wave-square",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of qubits"},
+            {"name": "input_state", "type": "str", "default": "010", "description": "Input state (binary)"},
+            {"name": "include_inverse", "type": "str", "default": "False", "description": "Include inverse QFT"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(run_qft, n_qubits=p["n_qubits"], input_state=p["input_state"], 
+                                    include_inverse=p["include_inverse"].lower() == "true", noise_prob=p["noise"])
     }
 }
 
