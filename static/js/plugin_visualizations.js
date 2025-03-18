@@ -42,6 +42,11 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
           console.log('Initializing Deutsch-Jozsa visualization');
           this.initDeutschJozsaVisualization(resultData);
           break;
+          
+        case 'qft':
+          console.log('Initializing QFT visualization');
+          this.initQFTVisualization(resultData);
+          break;
 
         default:
           // For other plugins, just log that no specific visualization is available
@@ -428,6 +433,137 @@ try {
   
 } catch (e) {
   console.error('Error creating Deutsch-Jozsa visualization:', e);
+  vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
+}
+},
+
+// QFT visualization
+initQFTVisualization: function(resultData) {
+const vizContainer = document.getElementById('qft-state-viz');
+if (!vizContainer) return;
+
+try {
+  // Clear any existing content
+  vizContainer.innerHTML = '';
+  
+  // Create canvas for QFT visualization
+  const canvas = document.createElement('canvas');
+  canvas.width = vizContainer.clientWidth || 400;
+  canvas.height = vizContainer.clientHeight || 300;
+  vizContainer.appendChild(canvas);
+  
+  // Get the 2D context
+  const ctx = canvas.getContext('2d');
+  
+  // Get data from the result
+  const output = resultData.output || {};
+  const inputState = output.input_state || '';
+  const measuredState = output.measured_state || '';
+  const includeInverse = output.include_inverse || false;
+  
+  // Set background
+  ctx.fillStyle = '#f8f9fa';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw QFT transformation visualization
+  const centerX = canvas.width / 2;
+  const yStart = 70;
+  
+  // Title
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 18px Arial';
+  ctx.fillStyle = '#333';
+  ctx.fillText('Quantum Fourier Transform', centerX, 30);
+  
+  // Input state
+  ctx.fillStyle = '#2196F3';
+  ctx.fillRect(centerX - 100, yStart, 200, 50);
+  
+  ctx.fillStyle = '#fff';
+  ctx.font = '16px Arial';
+  ctx.fillText(`Input: |${inputState}⟩`, centerX, yStart + 30);
+  
+  // Arrow down
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.moveTo(centerX, yStart + 60);
+  ctx.lineTo(centerX - 10, yStart + 70);
+  ctx.lineTo(centerX + 10, yStart + 70);
+  ctx.closePath();
+  ctx.fill();
+  
+  // QFT operation
+  ctx.fillStyle = '#FF9800';
+  ctx.fillRect(centerX - 100, yStart + 80, 200, 50);
+  
+  ctx.fillStyle = '#fff';
+  ctx.fillText('QFT', centerX, yStart + 110);
+  
+  // Arrow down for QFT result or inverse QFT
+  ctx.fillStyle = '#333';
+  ctx.beginPath();
+  ctx.moveTo(centerX, yStart + 140);
+  ctx.lineTo(centerX - 10, yStart + 150);
+  ctx.lineTo(centerX + 10, yStart + 150);
+  ctx.closePath();
+  ctx.fill();
+  
+  // If inverse is included, show another step
+  if (includeInverse) {
+    ctx.fillStyle = '#9C27B0';
+    ctx.fillRect(centerX - 100, yStart + 160, 200, 50);
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillText('Inverse QFT', centerX, yStart + 190);
+    
+    // Arrow down for final result
+    ctx.fillStyle = '#333';
+    ctx.beginPath();
+    ctx.moveTo(centerX, yStart + 220);
+    ctx.lineTo(centerX - 10, yStart + 230);
+    ctx.lineTo(centerX + 10, yStart + 230);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Final state
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillRect(centerX - 100, yStart + 240, 200, 50);
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`Measured: |${measuredState}⟩`, centerX, yStart + 270);
+    
+    // Success indicator
+    if (inputState === measuredState) {
+      ctx.fillStyle = '#4CAF50';
+      ctx.fillRect(centerX - 100, yStart + 300, 200, 30);
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px Arial';
+      ctx.fillText('Successfully recovered input state', centerX, yStart + 320);
+    } else {
+      ctx.fillStyle = '#F44336';
+      ctx.fillRect(centerX - 100, yStart + 300, 200, 30);
+      ctx.fillStyle = '#fff';
+      ctx.font = '14px Arial';
+      ctx.fillText('Input state changed (likely due to noise)', centerX, yStart + 320);
+    }
+  } else {
+    // Fourier basis state
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillRect(centerX - 100, yStart + 160, 200, 50);
+    
+    ctx.fillStyle = '#fff';
+    ctx.fillText(`Measured: |${measuredState}⟩`, centerX, yStart + 190);
+    
+    // Explanation
+    ctx.fillStyle = '#333';
+    ctx.textAlign = 'left';
+    ctx.font = '14px Arial';
+    ctx.fillText('The state is now in the Fourier basis,', centerX - 100, yStart + 230);
+    ctx.fillText('encoding frequency information of the input.', centerX - 100, yStart + 250);
+  }
+  
+} catch (e) {
+  console.error('Error creating QFT visualization:', e);
   vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
 }
 }
