@@ -20,6 +20,7 @@ from plugins.variational.vqe import run_vqe
 
 from plugins.deutsch_jozsa.deutsch_jozsa import deutsch_jozsa_cirq
 from plugins.quantum_fourier.qft import run_qft
+from plugins.phase_estimation.phase_estimation import run_phase_estimation
 
 # Configure logging
 logging.basicConfig(
@@ -249,6 +250,20 @@ PLUGINS = {
         ],
         "run": lambda p: run_plugin(run_qft, n_qubits=p["n_qubits"], input_state=p["input_state"], 
                                     include_inverse=p["include_inverse"].lower() == "true", noise_prob=p["noise"])
+    },
+
+    "phase_estimation": {
+        "name": "Quantum Phase Estimation",
+        "description": "Estimate eigenvalues of unitary operators with applications in quantum computing.",
+        "icon": "fa-ruler-combined",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "precision_bits", "type": "int", "default": 3, "description": "Number of bits of precision"},
+            {"name": "target_phase", "type": "float", "default": 0.125, "description": "Target phase to estimate (0-1)"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(run_phase_estimation, precision_bits=p["precision_bits"], 
+                                    target_phase=p["target_phase"], noise_prob=p["noise"])
     }
 }
 
