@@ -47,6 +47,11 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
           console.log('Initializing QFT visualization');
           this.initQFTVisualization(resultData);
           break;
+          
+        case 'phase_estimation':
+          console.log('Initializing Phase Estimation visualization');
+          this.initPhaseEstimationVisualization(resultData);
+          break;
 
         default:
           // For other plugins, just log that no specific visualization is available
@@ -564,6 +569,144 @@ try {
   
 } catch (e) {
   console.error('Error creating QFT visualization:', e);
+  vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
+}
+},
+
+// Phase Estimation visualization
+initPhaseEstimationVisualization: function(resultData) {
+const vizContainer = document.getElementById('phase-estimation-viz');
+if (!vizContainer) return;
+
+try {
+  // Clear any existing content
+  vizContainer.innerHTML = '';
+  
+  // Create canvas for phase visualization
+  const canvas = document.createElement('canvas');
+  canvas.width = vizContainer.clientWidth || 400;
+  canvas.height = vizContainer.clientHeight || 300;
+  vizContainer.appendChild(canvas);
+  
+  // Get the 2D context
+  const ctx = canvas.getContext('2d');
+  
+  // Get data from the result
+  const output = resultData.output || {};
+  const targetPhase = output.target_phase || 0;
+  const estimatedPhase = output.estimated_phase || 0;
+  const phaseError = output.phase_error || 0;
+  const accuracy = output.theoretical_accuracy || 0;
+  const precisionBits = output.precision_bits || 3;
+  
+  // Set background
+  ctx.fillStyle = '#f8f9fa';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw title
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 18px Arial';
+  ctx.fillStyle = '#333';
+  ctx.fillText('Quantum Phase Estimation', canvas.width/2, 30);
+  
+  // Draw phase circle visualization
+  const centerX = canvas.width / 2;
+  const centerY = 150;
+  const radius = 100;
+  
+  // Draw circle
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  
+  // Draw center point
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
+  ctx.fillStyle = '#333';
+  ctx.fill();
+  
+  // Draw 0 phase marker
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(centerX + radius, centerY);
+  ctx.strokeStyle = '#999';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  
+  // Draw target phase line
+  const targetAngle = targetPhase * 2 * Math.PI;
+  const targetX = centerX + radius * Math.cos(targetAngle);
+  const targetY = centerY + radius * Math.sin(targetAngle);
+  
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(targetX, targetY);
+  ctx.strokeStyle = '#4CAF50';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  
+  // Draw target phase point
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = '#4CAF50';
+  ctx.fill();
+  
+  // Draw estimated phase line
+  const estimatedAngle = estimatedPhase * 2 * Math.PI;
+  const estimatedX = centerX + radius * Math.cos(estimatedAngle);
+  const estimatedY = centerY + radius * Math.sin(estimatedAngle);
+  
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(estimatedX, estimatedY);
+  ctx.strokeStyle = '#2196F3';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  
+  // Draw estimated phase point
+  ctx.beginPath();
+  ctx.arc(estimatedX, estimatedY, 6, 0, 2 * Math.PI);
+  ctx.fillStyle = '#2196F3';
+  ctx.fill();
+  
+  // Draw legend and info
+  ctx.textAlign = 'left';
+  ctx.font = '14px Arial';
+  ctx.fillStyle = '#333';
+  
+  // Target phase marker
+  ctx.fillStyle = '#4CAF50';
+  ctx.fillRect(20, 220, 15, 15);
+  ctx.fillStyle = '#333';
+  ctx.fillText(`Target phase: ${targetPhase.toFixed(4)}`, 45, 232);
+  
+  // Estimated phase marker
+  ctx.fillStyle = '#2196F3';
+  ctx.fillRect(20, 245, 15, 15);
+  ctx.fillStyle = '#333';
+  ctx.fillText(`Estimated phase: ${estimatedPhase.toFixed(4)}`, 45, 257);
+  
+  // Phase error
+  ctx.fillText(`Error: ${phaseError.toFixed(6)}`, 45, 282);
+  
+  // Theoretical accuracy
+  ctx.textAlign = 'right';
+  ctx.fillText(`Precision bits: ${precisionBits}`, canvas.width - 20, 232);
+  ctx.fillText(`Theoretical accuracy: 1/${Math.pow(2, precisionBits)} = ${accuracy.toFixed(6)}`, canvas.width - 20, 257);
+  
+  // Compare error to theoretical accuracy
+  if (phaseError <= accuracy) {
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillText('✓ Within theoretical bounds', canvas.width - 20, 282);
+  } else {
+    ctx.fillStyle = '#F44336';
+    ctx.fillText('✗ Outside theoretical bounds', canvas.width - 20, 282);
+  }
+  
+} catch (e) {
+  console.error('Error creating Phase Estimation visualization:', e);
   vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
 }
 }
