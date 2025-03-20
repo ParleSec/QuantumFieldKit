@@ -224,6 +224,66 @@ PLUGINS = {
             {"name": "N", "type": "int", "default": 15, "description": "Composite number"}
         ],
         "run": lambda p: run_plugin(shor_factorization, N=p["N"])
+    },
+        "deutsch_jozsa": {
+        "name": "Deutsch-Jozsa Algorithm",
+        "description": "Determine if a function is constant or balanced with a single quantum query.",
+        "icon": "fa-balance-scale",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of input qubits"},
+            {"name": "oracle_type", "type": "str", "default": "random", "description": "Oracle type: constant_0, constant_1, balanced, or random"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(deutsch_jozsa_cirq, n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
+    },
+
+    # Add the Quantum Fourier Transform
+    "qft": {
+        "name": "Quantum Fourier Transform",
+        "description": "Implement the quantum analogue of the discrete Fourier transform.",
+        "icon": "fa-wave-square",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of qubits"},
+            {"name": "input_state", "type": "str", "default": "010", "description": "Input state (binary)"},
+            {"name": "include_inverse", "type": "str", "default": "False", "description": "Include inverse QFT"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(run_qft, n_qubits=p["n_qubits"], input_state=p["input_state"], 
+                                    include_inverse=p["include_inverse"].lower() == "true", noise_prob=p["noise"])
+    },
+
+    # Add the Quantum Phase Estimation
+    "phase_estimation": {
+        "name": "Quantum Phase Estimation",
+        "description": "Estimate eigenvalues of unitary operators with applications in quantum computing.",
+        "icon": "fa-ruler-combined",
+        "category": "algorithms",
+        "parameters": [
+            {"name": "precision_bits", "type": "int", "default": 3, "description": "Number of bits of precision"},
+            {"name": "target_phase", "type": "float", "default": 0.125, "description": "Target phase to estimate (0-1)"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+        ],
+        "run": lambda p: run_plugin(run_phase_estimation, precision_bits=p["precision_bits"], 
+                                    target_phase=p["target_phase"], noise_prob=p["noise"])
+    },
+
+    # Add the QAOA
+    "qaoa": {
+        "name": "Quantum Approximate Optimization Algorithm",
+        "description": "Solve combinatorial optimization problems like MaxCut using a hybrid quantum-classical approach.",
+        "icon": "fa-project-diagram",
+        "category": "optimization",
+        "parameters": [
+            {"name": "n_nodes", "type": "int", "default": 4, "description": "Number of nodes in the graph"},
+            {"name": "edge_probability", "type": "float", "default": 0.5, "description": "Probability of edge creation"},
+            {"name": "p_layers", "type": "int", "default": 1, "description": "Number of QAOA layers"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"},
+            {"name": "num_samples", "type": "int", "default": 100, "description": "Number of samples"}
+        ],
+        "run": lambda p: run_plugin(run_qaoa, n_nodes=p["n_nodes"], edge_probability=p["edge_probability"], 
+                                    p_layers=p["p_layers"], noise_prob=p["noise"], num_samples=p["num_samples"])
     }
 }
 
