@@ -1,0 +1,7 @@
+# flyctl launch added from .gitignore
+# Files
+**\__pycache__
+**\.gitignore
+**\package-lock.json
+**\package.json
+fly.toml
