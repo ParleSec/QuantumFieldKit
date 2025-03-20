@@ -113,8 +113,38 @@
                     Variational Quantum Eigensolver
                   </a>
                 </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('plugin_view', plugin_key='deutsch_jozsa') }}">
+                    Deutsch-Jozsa Algorithm
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('plugin_view', plugin_key='qft') }}">
+                    Quantum Fourier Transform
+                  </a>
+                </li>
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('plugin_view', plugin_key='phase_estimation') }}">
+                    Quantum Phase Estimation
+                  </a>
+                </li>
               </ul>
             </li>
+            
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="optimizationDropdown" role="button" 
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-project-diagram me-1"></i> Optimization
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="optimizationDropdown">
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('plugin_view', plugin_key='qaoa') }}">
+                    QAOA (MaxCut Solver)
+                  </a>
+                </li>
+              </ul>
+            </li>
+
             <li class="nav-item dropdown">
               <a class="nav-link dropdown-toggle" href="#" id="securityDropdown" role="button" 
                  data-bs-toggle="dropdown" aria-expanded="false">
