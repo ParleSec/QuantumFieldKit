@@ -438,6 +438,7 @@ def server_error(e):
     return render_template("error.html", error="Server error"), 500
 
 # --- Main entry point ---
+'''
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
     debug = os.environ.get("FLASK_ENV") == "development"
@@ -447,9 +448,8 @@ if __name__ == "__main__":
     logger.info(f"Available plugins: {', '.join(PLUGINS.keys())}")
     
     socketio.run(app, host="0.0.0.0", port=port, debug=debug)
-
-#flyio
-#if __name__ == "__main__":
-#    port = int(os.environ.get("PORT", 8080))
-#    socketio.run(app, host="0.0.0.0", port=port)
-
+'''
+# Fly.io entry
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))
+    socketio.run(app, host="0.0.0.0", port=port)
