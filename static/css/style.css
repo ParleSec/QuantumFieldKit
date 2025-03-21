@@ -138,26 +138,138 @@
   }
   
   .dropdown-menu {
+    padding: 0.7rem 0;
+    margin-top: 0.5rem;
+    font-size: 0.95rem;
     border: none;
-    box-shadow: var(--shadow-lg);
-    background-color: rgba(20, 20, 30, 0.95);
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-    border-radius: var(--border-radius-md);
-    padding: 0.5rem;
+    box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.25), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+    background-color: rgba(25, 25, 35, 0.95);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+    border-radius: var(--border-radius-lg);
+    animation: dropdown-fade 0.2s ease-out forwards;
+    min-width: 220px;
   }
   
+  @keyframes dropdown-fade {
+    from {
+      opacity: 0;
+      transform: translateY(-8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+  
+  /* Dropdown items with hover effects */
   .dropdown-item {
-    color: #fff;
-    padding: 0.5rem 1rem;
-    border-radius: var(--border-radius-sm);
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+    padding: 0.7rem 1.3rem;
+    border-radius: var(--border-radius-md);
+    margin: 0 0.5rem;
+    width: calc(100% - 1rem);
+    transition: all 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    display: flex;
+    align-items: center;
+  }
+  
+  .dropdown-item i, 
+  .dropdown-item svg {
+    margin-right: 0.7rem;
+    font-size: 1rem;
+    opacity: 0.7;
+    width: 20px;
+    text-align: center;
     transition: all 0.2s ease;
   }
   
   .dropdown-item:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(80, 70, 230, 0.15);
+    color: var(--accent);
     transform: translateX(5px);
-    color: var(--primary-light);
+  }
+  
+  .dropdown-item:hover i,
+  .dropdown-item:hover svg {
+    opacity: 1;
+    color: var(--accent);
+  }
+  
+  .dropdown-item:active {
+    background-color: var(--accent);
+    color: white;
+  }
+  
+  /* Dropdown section dividers */
+  .dropdown-divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin: 0.5rem 1rem;
+  }
+  
+  /* Dropdown toggle */
+  .nav-item.dropdown {
+    position: relative;
+  }
+  
+  .dropdown-toggle::after {
+    transition: transform 0.2s ease;
+    vertical-align: middle;
+    margin-left: 0.4em;
+  }
+  
+  .dropdown-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
+  }
+  
+  /* Dropdown show/hide states */
+  .navbar-nav .dropdown:hover > .nav-link {
+    color: var(--accent);
+  }
+  
+  /* Hover indicator for dropdown toggles */
+  .nav-item.dropdown .nav-link:hover::after {
+    background-color: var(--accent);
+  }
+  
+  /* Focus styles for keyboard navigation */
+  .dropdown-item:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+  
+  /* Mobile dropdown styles */
+  @media (max-width: 991.98px) {
+    .dropdown-menu {
+      background-color: rgba(30, 30, 45, 0.5);
+      box-shadow: none;
+      padding: 0.5rem;
+      margin-top: 0;
+      animation: none;
+    }
+    
+    .dropdown-item {
+      padding: 0.6rem 1rem;
+      margin: 0.2rem 0;
+      border-radius: var(--border-radius-sm);
+    }
+    
+    .dropdown-item:hover {
+      transform: none;
+    }
+  }
+  
+  /* Highlight active dropdown item */
+  .dropdown-item.active, 
+  .dropdown-item:active {
+    background-color: var(--accent);
+    color: white;
+  }
+  
+  /* Arrow indicator */
+  .dropdown-toggle::after {
+    margin-top: 0.1em;
   }
   
   /* =====================
