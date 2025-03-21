@@ -1,7 +1,46 @@
-# flyctl launch added from .gitignore
-# Files
-**\__pycache__
-**\.gitignore
-**\package-lock.json
-**\package.json
-fly.toml
+# Git files
+.git
+.gitignore
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environment
+venv/
+ENV/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Local configuration
+.env
+.env.local
+
+# Temp files
+.DS_Store
+Thumbs.db

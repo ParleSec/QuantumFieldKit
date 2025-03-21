@@ -7,11 +7,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Make port 8080 available to the world outside this container
+ENV PORT=8080
+ENV HOST=0.0.0.0
+
 EXPOSE 8080
 
-# Define environment variable
-ENV PORT=8080
-
-# Run app when the container launches
-CMD gunicorn --worker-class eventlet -w 1 -b 0.0.0.0:$PORT app:app
+# Fly.io specific entrypoint
+CMD ["python", "app.py"]
