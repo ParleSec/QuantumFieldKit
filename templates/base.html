@@ -245,5 +245,44 @@
   
   <!-- Page-specific scripts -->
   {% block extra_scripts %}{% endblock %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Get all dropdown toggles
+      const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+      
+      console.log('Found', dropdownToggles.length, 'dropdown toggles');
+      
+      // Add click event listeners that explicitly prevent default behavior
+      dropdownToggles.forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+          console.log('Dropdown toggle clicked:', this.textContent.trim());
+          e.preventDefault();  // Stop the link from navigating
+          
+          // Check if Bootstrap is available
+          if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+            // Use Bootstrap's API to toggle the dropdown
+            const dropdown = new bootstrap.Dropdown(this);
+            dropdown.toggle();
+          } else {
+            // Fallback - manually toggle the next dropdown menu
+            const dropdownMenu = this.nextElementSibling;
+            if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {
+              dropdownMenu.classList.toggle('show');
+              if (dropdownMenu.classList.contains('show')) {
+                // Position and style the dropdown
+                dropdownMenu.style.display = 'block';
+                dropdownMenu.style.position = 'absolute';
+                const rect = this.getBoundingClientRect();
+                dropdownMenu.style.top = rect.bottom + 'px';
+                dropdownMenu.style.left = rect.left + 'px';
+              } else {
+                dropdownMenu.style.display = '';
+              }
+            }
+          }
+        });
+      });
+    });
+    </script>
 </body>
 </html>
