@@ -1076,7 +1076,7 @@ if (data.output && data.output.circuit_svg) {
   vizTab.appendChild(circuitTitle);
   
   const circuitContainer = document.createElement('div');
-  circuitContainer.className = 'circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto';
+  circuitContainer.className = 'circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto position-relative';
   
   // IMPORTANT FIX: Use a proper DOM parser for SVG instead of innerHTML
   const tempDiv = document.createElement('div');
@@ -1089,6 +1089,9 @@ if (data.output && data.output.circuit_svg) {
   
   vizTab.appendChild(circuitContainer);
 }
+
+// When dynamically loading results, call our new function to add download buttons
+setTimeout(addCircuitDownloadButtons, 100); // Short delay to ensure DOM is updated
 
 // Add specific visualization containers based on plugin type
 const vizRow = document.createElement('div');
@@ -1213,3 +1216,136 @@ function createVisualizationCard(title, containerId) {
   
   return col;
 }
+
+/**
+ * Downloads the circuit SVG visualization as a file
+ * 
+ * @param {string} containerSelector - CSS selector for the container holding the SVG
+ * @param {string} filename - Desired filename for the downloaded SVG
+ */
+function downloadCircuitSVG(containerSelector, filename = 'quantum-circuit.svg') {
+  // Get the SVG element from the container
+  const container = document.querySelector(containerSelector);
+  if (!container) {
+    console.error(`Container not found: ${containerSelector}`);
+    return;
+  }
+  
+  const svgElement = container.querySelector('svg');
+  if (!svgElement) {
+    console.error('SVG element not found within container');
+    return;
+  }
+  
+  // Clone the SVG to avoid modifying the displayed one
+  const clonedSvg = svgElement.cloneNode(true);
+  
+  // Ensure the SVG has proper dimensions
+  if (!clonedSvg.getAttribute('width') || !clonedSvg.getAttribute('height')) {
+    const bbox = svgElement.getBBox();
+    clonedSvg.setAttribute('width', bbox.width);
+    clonedSvg.setAttribute('height', bbox.height);
+    clonedSvg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
+  }
+  
+  // Get SVG source
+  const serializer = new XMLSerializer();
+  let source = serializer.serializeToString(clonedSvg);
+  
+  // Add namespaces if they're missing
+  if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
+    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+  
+  // Add XML declaration
+  source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
+  
+  // Convert SVG source to URL data
+  const svgBlob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
+  const svgUrl = URL.createObjectURL(svgBlob);
+  
+  // Create download link
+  const downloadLink = document.createElement('a');
+  downloadLink.href = svgUrl;
+  downloadLink.download = filename;
+  
+  // Trigger download
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+  
+  // Clean up
+  URL.revokeObjectURL(svgUrl);
+  
+  console.log(`Downloaded circuit diagram as: ${filename}`);
+}
+
+/**
+ * Adds download buttons to all circuit SVG visualizations on the page
+ */
+function addCircuitDownloadButtons() {
+  // Find the circuit SVG container
+  const circuitContainers = document.querySelectorAll('.circuit-svg');
+  
+  if (circuitContainers.length === 0) {
+    console.log('No circuit visualizations found on page');
+    return;
+  }
+  
+  console.log(`Found ${circuitContainers.length} circuit visualization(s)`);
+  
+  // Get the plugin key from the URL to use in the filename
+  const urlParts = window.location.pathname.split('/');
+  const pluginKey = urlParts[urlParts.length - 1] || 'quantum';
+  
+  // Add a download button to each circuit container
+  circuitContainers.forEach((container, index) => {
+    // Check if container already has a download button
+    if (container.querySelector('.circuit-download-btn')) {
+      return;
+    }
+    
+    // Create download button
+    const downloadBtn = document.createElement('button');
+    downloadBtn.className = 'btn btn-sm btn-primary circuit-download-btn';
+    downloadBtn.innerHTML = '<i class="fas fa-download me-1"></i> Download SVG';
+    downloadBtn.title = 'Download circuit diagram as SVG';
+    downloadBtn.style.position = 'absolute';
+    downloadBtn.style.top = '10px';
+    downloadBtn.style.right = '10px';
+    downloadBtn.style.zIndex = '100';
+    
+    // Add click event listener
+    downloadBtn.addEventListener('click', function(e) {
+      e.stopPropagation(); // Prevent event from interfering with scrolling
+      const filename = `${pluginKey}_circuit${index > 0 ? '_' + index : ''}.svg`;
+      downloadCircuitSVG(`.circuit-svg:nth-of-type(${index + 1})`, filename);
+    });
+    
+    // Add button to container
+    container.appendChild(downloadBtn);
+    console.log(`Added download button to circuit visualization ${index + 1}`);
+  });
+}
+
+// Add the initialization to the document ready event
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize download buttons when the page loads
+  addCircuitDownloadButtons();
+  
+  // Also add buttons after any results are loaded via AJAX
+  // This ensures buttons are added to dynamically generated content
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes.length > 0) {
+        addCircuitDownloadButtons();
+      }
+    });
+  });
+  
+  // Observe the results container for changes
+  const resultsContainer = document.getElementById('results-container');
+  if (resultsContainer) {
+    observer.observe(resultsContainer, { childList: true, subtree: true });
+  }
+});
