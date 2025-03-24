@@ -17,7 +17,6 @@ from plugins.qrng.qrng import generate_random_number_cirq
 from plugins.quantum_decryption.quantum_decryption import grover_key_search, shor_factorization
 from plugins.teleportation.teleport import teleportation_circuit
 from plugins.variational.vqe import run_vqe
-
 from plugins.deutsch_jozsa.deutsch_jozsa import deutsch_jozsa_cirq
 from plugins.quantum_fourier.qft import run_qft
 from plugins.phase_estimation.phase_estimation import run_phase_estimation
@@ -120,14 +119,26 @@ PLUGINS = {
     },
     "bb84": {
         "name": "BB84 Protocol Simulation",
-        "description": "Simulate the BB84 quantum key distribution protocol.",
+        "description": "Simulate the BB84 quantum key distribution protocol with realistic physical effects.",
         "icon": "fa-key",
         "category": "cryptography",
         "parameters": [
             {"name": "num_bits", "type": "int", "default": 10, "description": "Number of bits to simulate"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "distance_km", "type": "float", "default": 0.0, "description": "Distance between Alice and Bob (km)"},
+            {"name": "hardware_type", "type": "str", "default": "fiber", "description": "Hardware type (fiber, satellite, trapped_ion)"},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Additional noise probability"}, 
+            {"name": "eve_present", "type": "str", "default": "False", "description": "Eavesdropper present (True/False)"},
+            {"name": "eve_strategy", "type": "str", "default": "intercept_resend", "description": "Eavesdropper strategy (intercept_resend, beam_splitting, trojan_horse)"},
+            {"name": "detailed_simulation", "type": "str", "default": "True", "description": "Run detailed quantum simulation (True/False)"}
         ],
-        "run": lambda p: run_plugin(bb84_protocol_cirq, num_bits=p["num_bits"], noise_prob=p["noise"])
+        "run": lambda p: run_plugin(bb84_protocol_cirq, 
+                                num_bits=p["num_bits"],
+                                distance_km=p["distance_km"],
+                                hardware_type=p["hardware_type"],
+                                eve_present=p["eve_present"].lower() == "true",
+                                eve_strategy=p["eve_strategy"],
+                                detailed_simulation=p["detailed_simulation"].lower() == "true",
+                                noise_prob=p["noise"])
     },
     "shor": {
         "name": "Shor's Code Simulation",
@@ -450,6 +461,7 @@ if __name__ == "__main__":
     socketio.run(app, host="0.0.0.0", port=port, debug=debug)
 '''
 # Fly.io entry
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     socketio.run(app, host="0.0.0.0", port=port)
