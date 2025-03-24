@@ -7,194 +7,44 @@
 window.QuantumVisualizer = window.QuantumVisualizer || {
   // Initialize all visualizations based on plugin data
   init: function(pluginKey, resultData) {
-      console.log('Initializing visualizations for plugin:', pluginKey);
-      console.log('Result data:', resultData);
-      
-      if (!resultData || resultData.error) {
-        console.log('No valid result data available for visualization');
-        return;
-      }
-      
-      // Initialize visualizations based on the plugin type
-      switch(pluginKey) {
-        case 'teleport':
-        case 'handshake':
-        case 'auth':
-          console.log('Initializing quantum state visualization');
-          this.initQuantumStateViz(resultData);
-          break;
-        case 'qrng':
-        case 'bb84':
-          console.log('Initializing bit distribution visualization');
-          this.initBitDistribution(resultData, pluginKey);
-          break;
-        case 'grover':
-        case 'quantum_decryption_grover':
-          console.log('Initializing probability distribution visualization');
-          this.initProbabilityDistribution(resultData, pluginKey);
-          break;
-        case 'vqe':
-          console.log('Initializing energy convergence visualization');
-          this.initEnergyConvergence(resultData);
-          break;
+    console.log('Initializing visualizations for plugin:', pluginKey);
+    console.log('Result data:', resultData);
+    
+    if (!resultData || resultData.error) {
+      console.log('No valid result data available for visualization');
+      return;
+    }
+    
+    // Initialize visualizations based on the plugin type
+    switch(pluginKey) {
+      case 'teleport':
+      case 'handshake':
+      case 'auth':
+        console.log('Initializing quantum state visualization');
+        this.initQuantumStateViz(resultData);
+        break;
+      case 'qrng':
+      case 'bb84':
+        console.log('Initializing bit distribution visualization');
+        this.initBitDistribution(resultData, pluginKey);
+        break;
+      case 'grover':
+      case 'quantum_decryption_grover':
+        console.log('Initializing probability distribution visualization');
+        this.initProbabilityDistribution(resultData, pluginKey);
+        break;
+      case 'vqe':
+        console.log('Initializing energy convergence visualization');
+        this.initEnergyConvergence(resultData);
+        break;
+      // Keep any other cases...
+      default:
+        // For other plugins, just log that no specific visualization is available
+        console.log('No specific visualization for plugin type: ' + pluginKey);
+    }
+  },
 
-        case 'deutsch_jozsa':
-          console.log('Initializing Deutsch-Jozsa visualization');
-          this.initDeutschJozsaVisualization(resultData);
-          break;
-          
-        case 'qft':
-          console.log('Initializing QFT visualization');
-          this.initQFTVisualization(resultData);
-          break;
-          
-        case 'phase_estimation':
-          console.log('Initializing Phase Estimation visualization');
-          this.initPhaseEstimationVisualization(resultData);
-          break;
-          
-        case 'qaoa':
-          console.log('Initializing QAOA visualization');
-          this.initQAOAVisualization(resultData);
-          break;
-
-        default:
-          // For other plugins, just log that no specific visualization is available
-          console.log('No specific visualization for plugin type: ' + pluginKey);
-      }
-    },
-  
-  // Initialize Bloch sphere for quantum state visualization
-  initQuantumStateViz: function(resultData) {
-      const vizContainer = document.getElementById('quantum-state-viz');
-      if (!vizContainer) return;
-      
-      try {
-        // Clear any existing content
-        vizContainer.innerHTML = '';
-        
-        // Create a canvas element
-        const canvas = document.createElement('canvas');
-        canvas.width = vizContainer.clientWidth || 300;
-        canvas.height = vizContainer.clientHeight || 300;
-        vizContainer.appendChild(canvas);
-        
-        // Get the 2D context
-        const ctx = canvas.getContext('2d');
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = Math.min(centerX, centerY) - 20;
-        
-        // Set background
-        ctx.fillStyle = '#141424';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw the Bloch sphere (simplified 2D representation)
-        // Draw the circle
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // Draw the axes
-        ctx.beginPath();
-        // Z-axis (vertical)
-        ctx.moveTo(centerX, centerY - radius);
-        ctx.lineTo(centerX, centerY + radius);
-        // X-axis (horizontal)
-        ctx.moveTo(centerX - radius, centerY);
-        ctx.lineTo(centerX + radius, centerY);
-        ctx.strokeStyle = '#888';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        
-        // Add labels
-        ctx.font = '14px Arial';
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.fillText('|0⟩', centerX, centerY - radius - 10);
-        ctx.fillText('|1⟩', centerX, centerY + radius + 20);
-        ctx.fillText('|+⟩', centerX + radius + 20, centerY);
-        ctx.fillText('|-⟩', centerX - radius - 20, centerY);
-        
-        // Draw state vector based on result data
-        let theta = Math.PI / 4; // Default angle if no data
-        let phi = 0;
-        
-        // Extract state from result data if available
-        if (resultData.output && resultData.output.final_state) {
-          // Get the state data
-          const stateData = resultData.output.final_state;
-          
-          if (Array.isArray(stateData) && stateData.length >= 2) {
-            // Calculate theta and phi from state vector
-            const alpha = stateData[0];
-            const beta = stateData[1];
-            const alphaAbs = typeof alpha === 'object' ? 
-              Math.sqrt(alpha.real**2 + alpha.imag**2) : Math.abs(alpha);
-            
-            theta = 2 * Math.acos(alphaAbs);
-            if (alphaAbs < 0.9999 && Math.abs(beta) > 0.0001) {
-              if (typeof beta === 'object' && typeof alpha === 'object') {
-                phi = Math.atan2(beta.imag, beta.real) - Math.atan2(alpha.imag, alpha.real);
-              } else {
-                phi = beta >= 0 ? 0 : Math.PI;
-              }
-            }
-          }
-        }
-        
-        // Convert spherical coordinates to 2D projection
-        const x = radius * Math.sin(theta) * Math.cos(phi);
-        const y = radius * Math.sin(theta) * Math.sin(phi);
-        const z = radius * Math.cos(theta);
-        
-        // Project 3D point onto 2D
-        const projX = centerX + x;
-        const projY = centerY - z; // Negative to match conventional coordinates
-        
-        // Draw the state vector
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(projX, projY);
-        ctx.strokeStyle = '#ff3366';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        // Draw arrowhead
-        const headSize = 10;
-        const angle = Math.atan2(projY - centerY, projX - centerX);
-        ctx.beginPath();
-        ctx.moveTo(projX, projY);
-        ctx.lineTo(
-          projX - headSize * Math.cos(angle - Math.PI/6),
-          projY - headSize * Math.sin(angle - Math.PI/6)
-        );
-        ctx.lineTo(
-          projX - headSize * Math.cos(angle + Math.PI/6),
-          projY - headSize * Math.sin(angle + Math.PI/6)
-        );
-        ctx.closePath();
-        ctx.fillStyle = '#ff3366';
-        ctx.fill();
-        
-        // Display state information
-        ctx.fillStyle = '#fff';
-        ctx.font = '12px Arial';
-        ctx.textAlign = 'left';
-        ctx.fillText(`θ: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
-        ctx.fillText(`φ: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
-        
-        console.log("Successfully rendered 2D Bloch sphere visualization");
-      } catch (e) {
-        console.error('Error initializing quantum state visualization:', e);
-        // Display error message in the container
-        vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
-      }
-    },
-  
-  // Initialize bit distribution chart
+  // Modify the existing initBitDistribution function:
   initBitDistribution: function(resultData, pluginKey) {
     const chartContainer = document.getElementById('bit-distribution-chart');
     if (!chartContainer) return;
@@ -247,73 +97,803 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
           }
         }
       });
+      
+      // Add this line to invoke the enhanced BB84 visualizations
+      if (pluginKey === 'bb84' && resultData.output) {
+        this.createBB84EnhancedVisualizations(resultData.output);
+      }
     } catch (e) {
       console.error('Error initializing bit distribution chart:', e);
       chartContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize chart</div>';
     }
   },
+
+  // Add all the new functions as properties of the QuantumVisualizer object:
   
-  // Initialize probability distribution visualization for Grover and related algorithms
-  initProbabilityDistribution: function(resultData, pluginKey) {
-    const chartContainer = document.getElementById('probability-distribution');
-    if (!chartContainer) return;
+  // New function to create enhanced BB84 visualizations
+  createBB84EnhancedVisualizations: function(outputData) {
+    // Create container for enhanced visualizations if it doesn't exist
+    let enhancedContainer = document.getElementById('bb84-enhanced-viz');
     
-    try {
-      let labels = [];
-      let probData = [];
+    // If container doesn't exist, create and add it to the DOM
+    if (!enhancedContainer) {
+      // Find the parent container (likely the tab content)
+      const parentContainer = document.getElementById('visualization');
+      if (!parentContainer) return;
       
-      if (pluginKey === 'grover' && resultData.output) {
-        // Extract number of qubits from output or default to 3
-        const n = resultData.output.n || 3;
-        const targetState = resultData.output.target_state || '101';
-        const numStates = Math.pow(2, n);
-        
-        // Create labels and probability data
-        for (let i = 0; i < numStates; i++) {
-          const stateBinary = i.toString(2).padStart(n, '0');
-          labels.push(`|${stateBinary}⟩`);
-          // Highlight the target state with high probability
-          probData.push(stateBinary === targetState ? 0.9 : 0.1 / (numStates - 1));
-        }
-      } else {
-        // Default data for demonstration
-        for (let i = 0; i < 8; i++) {
-          labels.push(`|${i.toString(2).padStart(3, '0')}⟩`);
-          probData.push(Math.random() * 0.2);
-        }
-        // Make one state prominent
-        probData[3] = 0.8;
-      }
-      
-      // Create chart
-      const ctx = chartContainer.getContext('2d');
-      new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Probability',
-            data: probData,
-            backgroundColor: 'rgba(153, 102, 255, 0.5)',
-            borderColor: 'rgba(153, 102, 255, 1)',
-            borderWidth: 1
-          }]
+      // Create container
+      enhancedContainer = document.createElement('div');
+      enhancedContainer.id = 'bb84-enhanced-viz';
+      enhancedContainer.className = 'row mt-4';
+      parentContainer.appendChild(enhancedContainer);
+    } else {
+      // Clear existing content
+      enhancedContainer.innerHTML = '';
+    }
+    
+    // Create visualizations only if we have the enhanced data
+    if (!outputData.transmission_efficiency && !outputData.error_rate) {
+      // This appears to be the basic BB84 implementation, not the enhanced version
+      return;
+    }
+    
+    // Create Key Metrics visualization
+    this.createKeyMetricsChart(enhancedContainer, outputData);
+    
+    // Create QBER visualization
+    this.createQBERViz(enhancedContainer, outputData);
+    
+    // Create eavesdropper visualization if present
+    if (outputData.eavesdropper_results) {
+      this.createEavesdropperViz(enhancedContainer, outputData);
+    }
+    
+    // Create key generation pipeline visualization
+    this.createKeyPipelineViz(enhancedContainer, outputData);
+    
+    // Create hardware effect visualization
+    this.createHardwareEffectsViz(enhancedContainer, outputData);
+  },
+
+  // Create visualization for key metrics
+  createKeyMetricsChart: function(container, data) {
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    cardHeader.textContent = 'BB84 Key Metrics';
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Create a container div with fixed height
+    const chartContainer = document.createElement('div');
+    chartContainer.style.height = '250px'; // Fixed height constraint
+    chartContainer.style.position = 'relative';
+    
+    // Create canvas for chart inside the container
+    const canvas = document.createElement('canvas');
+    canvas.id = 'bb84-key-metrics-chart';
+    chartContainer.appendChild(canvas);
+    cardBody.appendChild(chartContainer);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+    
+    // Get key metrics data
+    const rawKeyLength = data.alice_bits ? data.alice_bits.length : 0;
+    const siftedKeyLength = data.shared_key ? data.shared_key.length : 0;
+    const finalKeyLength = data.final_key ? data.final_key.length : 0;
+    
+    // Create chart with explicit maintainAspectRatio: false
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Raw Key', 'Sifted Key', 'Final Secure Key'],
+        datasets: [{
+          label: 'Bits',
+          data: [rawKeyLength, siftedKeyLength, finalKeyLength],
+          backgroundColor: [
+            'rgba(54, 162, 235, 0.5)',
+            'rgba(75, 192, 192, 0.5)',
+            'rgba(153, 102, 255, 0.5)'
+          ],
+          borderColor: [
+            'rgba(54, 162, 235, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Bits'
+            }
+          }
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            y: {
-              beginAtZero: true,
-              max: 1
+        plugins: {
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                const index = context.dataIndex;
+                if (index === 0) {
+                  return `Original bits generated`;
+                } else if (index === 1) {
+                  const efficiency = (siftedKeyLength / rawKeyLength * 100).toFixed(1);
+                  return `${efficiency}% of raw key (after basis reconciliation)`;
+                } else if (index === 2) {
+                  const efficiency = finalKeyLength > 0 ? (finalKeyLength / rawKeyLength * 100).toFixed(1) : 0;
+                  return `${efficiency}% of raw key (after privacy amplification)`;
+                }
+              }
             }
           }
         }
-      });
-    } catch (e) {
-      console.error('Error initializing probability distribution chart:', e);
-      chartContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize chart</div>';
+      }
+    });
+  },
+
+  createQBERViz: function(container, data) {
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    cardHeader.textContent = 'Error Analysis';
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Create a height-constrained wrapper for the chart
+    const chartWrapper = document.createElement('div');
+    chartWrapper.style.height = '200px'; // Fixed height
+    chartWrapper.style.position = 'relative';
+    chartWrapper.style.width = '100%';
+    
+    // Create canvas for chart (inside the wrapper)
+    const canvas = document.createElement('canvas');
+    canvas.id = 'bb84-qber-chart';
+    chartWrapper.appendChild(canvas);
+    cardBody.appendChild(chartWrapper);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+    
+    // Get error rate data
+    const qber = data.error_rate || 0;
+    const securityThreshold = 0.11; // BB84 security threshold
+    
+    // Determine whether QBER indicates eavesdropping
+    const indicatesEavesdropping = qber > securityThreshold;
+    
+    // Calculate remaining error rate after reconciliation
+    const remainingErrorRate = data.reconciliation_results ? 
+      data.reconciliation_results.remaining_error_rate || 0 : 0;
+    
+    // Add QBER interpretation text
+    const interpretation = document.createElement('div');
+    interpretation.className = 'mt-3 text-center';
+    
+    if (indicatesEavesdropping) {
+      interpretation.innerHTML = `
+        <div class="alert alert-danger mb-0">
+          <strong>QBER: ${(qber * 100).toFixed(2)}%</strong> - Above security threshold (${(securityThreshold * 100).toFixed(2)}%)
+          <br>Possible eavesdropping detected!
+        </div>
+      `;
+    } else {
+      interpretation.innerHTML = `
+        <div class="alert alert-success mb-0">
+          <strong>QBER: ${(qber * 100).toFixed(2)}%</strong> - Below security threshold (${(securityThreshold * 100).toFixed(2)}%)
+          <br>No evidence of eavesdropping
+        </div>
+      `;
     }
+    
+    cardBody.appendChild(interpretation);
+    
+    // Add note about information reconciliation if available
+    if (data.reconciliation_results) {
+      const reconciliation = document.createElement('div');
+      reconciliation.className = 'mt-2 small text-muted';
+      reconciliation.innerHTML = `After information reconciliation: ${(remainingErrorRate * 100).toFixed(4)}% error rate`;
+      cardBody.appendChild(reconciliation);
+    }
+  },
+
+  // Create visualization for eavesdropper detection
+  createEavesdropperViz: function(container, data) {
+    // Only create if we have eavesdropper data
+    if (!data.eavesdropper_results) return;
+    
+    const eveResults = data.eavesdropper_results;
+    
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header bg-danger text-white';
+    cardHeader.innerHTML = '<i class="fas fa-user-secret me-2"></i> Eavesdropper Analysis';
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Create eavesdropper metrics display
+    const eveMetrics = document.createElement('div');
+    
+    // Add eavesdropper strategy
+    const strategy = document.createElement('div');
+    strategy.className = 'mb-3';
+    strategy.innerHTML = `
+      <strong>Attack Strategy:</strong> ${data.eve_strategy || 'intercept_resend'}
+      <div class="progress mt-1">
+        <div class="progress-bar bg-info" role="progressbar" style="width: 100%"></div>
+      </div>
+    `;
+    eveMetrics.appendChild(strategy);
+    
+    // Add information leakage metric
+    const leakage = document.createElement('div');
+    leakage.className = 'mb-3';
+    const leakageRatio = eveResults.information_leak_ratio || 0;
+    leakage.innerHTML = `
+      <strong>Information Leakage:</strong> ${(leakageRatio * 100).toFixed(1)}%
+      <div class="progress mt-1">
+        <div class="progress-bar bg-warning" role="progressbar" 
+             style="width: ${leakageRatio * 100}%"></div>
+      </div>
+    `;
+    eveMetrics.appendChild(leakage);
+    
+    // Add detection probability
+    const detection = document.createElement('div');
+    detection.className = 'mb-3';
+    const detectionProb = eveResults.detection_probability || 0;
+    detection.innerHTML = `
+      <strong>Detection Probability:</strong> ${(detectionProb * 100).toFixed(1)}%
+      <div class="progress mt-1">
+        <div class="progress-bar bg-success" role="progressbar" 
+             style="width: ${detectionProb * 100}%"></div>
+      </div>
+    `;
+    eveMetrics.appendChild(detection);
+    
+    // Add detection status
+    const detectionStatus = document.createElement('div');
+    detectionStatus.className = 'alert ' + (eveResults.eve_detected ? 'alert-success' : 'alert-warning');
+    detectionStatus.innerHTML = eveResults.eve_detected 
+      ? '<i class="fas fa-check-circle me-2"></i> Eavesdropper detected!' 
+      : '<i class="fas fa-exclamation-triangle me-2"></i> Eavesdropper not detected';
+    eveMetrics.appendChild(detectionStatus);
+    
+    cardBody.appendChild(eveMetrics);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+  },
+
+  // Create visualization for key generation pipeline
+  createKeyPipelineViz: function(container, data) {
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    cardHeader.textContent = 'Key Generation Pipeline';
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body pb-0';
+    
+    // Create pipeline visualization
+    const pipeline = document.createElement('div');
+    pipeline.className = 'key-pipeline';
+    
+    // Step 1: Quantum Transmission
+    const rawKeyLength = data.alice_bits ? data.alice_bits.length : 0;
+    const transmissionEfficiency = data.transmission_efficiency || 1;
+    
+    const step1 = document.createElement('div');
+    step1.className = 'pipeline-step mb-4';
+    step1.innerHTML = `
+      <div class="step-header">
+        <span class="badge bg-primary me-2">1</span>
+        <strong>Quantum Transmission</strong>
+        <span class="ms-auto">${Math.round(transmissionEfficiency * 100)}% efficiency</span>
+      </div>
+      <div class="progress mt-2">
+        <div class="progress-bar bg-primary" role="progressbar" 
+             style="width: ${transmissionEfficiency * 100}%" 
+             aria-valuenow="${transmissionEfficiency * 100}" aria-valuemin="0" aria-valuemax="100">
+          ${Math.round(rawKeyLength * transmissionEfficiency)} qubits received
+        </div>
+      </div>
+      <div class="step-footer small text-muted mt-1">
+        Raw qubits: ${rawKeyLength} → ${Math.round(rawKeyLength * transmissionEfficiency)} received
+      </div>
+    `;
+    pipeline.appendChild(step1);
+    
+    // Step 2: Basis Reconciliation
+    const siftedKeyLength = data.shared_key ? data.shared_key.length : 0;
+    const siftedRatio = rawKeyLength > 0 ? siftedKeyLength / rawKeyLength : 0;
+    
+    const step2 = document.createElement('div');
+    step2.className = 'pipeline-step mb-4';
+    step2.innerHTML = `
+      <div class="step-header">
+        <span class="badge bg-success me-2">2</span>
+        <strong>Basis Reconciliation</strong>
+        <span class="ms-auto">${Math.round(siftedRatio * 100)}% retention</span>
+      </div>
+      <div class="progress mt-2">
+        <div class="progress-bar bg-success" role="progressbar" 
+             style="width: ${siftedRatio * 100}%" 
+             aria-valuenow="${siftedRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+          ${siftedKeyLength} matching bases
+        </div>
+      </div>
+      <div class="step-footer small text-muted mt-1">
+        Sifted key: ${siftedKeyLength} bits (bases matched ${Math.round(siftedRatio * 100)}% of the time)
+      </div>
+    `;
+    pipeline.appendChild(step2);
+    
+    // Step 3: Information Reconciliation
+    if (data.reconciliation_results) {
+      const reconciliationSuccess = data.reconciliation_results.success;
+      const bitsUsed = data.reconciliation_results.bits_used || 0;
+      const correctedBits = data.reconciliation_results.corrected_bits || 0;
+      const remainingErrors = data.reconciliation_results.remaining_error_rate || 0;
+      
+      const reconciliationRatio = siftedKeyLength > 0 ? 
+        (siftedKeyLength - bitsUsed) / siftedKeyLength : 0;
+      
+      const step3 = document.createElement('div');
+      step3.className = 'pipeline-step mb-4';
+      step3.innerHTML = `
+        <div class="step-header">
+          <span class="badge bg-info me-2">3</span>
+          <strong>Information Reconciliation</strong>
+          <span class="ms-auto">${Math.round(reconciliationRatio * 100)}% retention</span>
+        </div>
+        <div class="progress mt-2">
+          <div class="progress-bar bg-info" role="progressbar" 
+               style="width: ${reconciliationRatio * 100}%" 
+               aria-valuenow="${reconciliationRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+            ${siftedKeyLength - bitsUsed} bits
+          </div>
+        </div>
+        <div class="step-footer small text-muted mt-1">
+          Error correction: ${correctedBits} errors fixed using ${bitsUsed} bits
+          <br>Remaining error rate: ${(remainingErrors * 100).toFixed(4)}%
+        </div>
+      `;
+      pipeline.appendChild(step3);
+    }
+    
+    // Step 4: Privacy Amplification
+    if (data.final_key) {
+      const finalKeyLength = data.final_key.length;
+      const finalRatio = siftedKeyLength > 0 ? finalKeyLength / siftedKeyLength : 0;
+      
+      const step4 = document.createElement('div');
+      step4.className = 'pipeline-step mb-4';
+      step4.innerHTML = `
+        <div class="step-header">
+          <span class="badge bg-warning me-2">4</span>
+          <strong>Privacy Amplification</strong>
+          <span class="ms-auto">${Math.round(finalRatio * 100)}% retention</span>
+        </div>
+        <div class="progress mt-2">
+          <div class="progress-bar bg-warning" role="progressbar" 
+               style="width: ${finalRatio * 100}%" 
+               aria-valuenow="${finalRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+            ${finalKeyLength} bits
+          </div>
+        </div>
+        <div class="step-footer small text-muted mt-1">
+          Final secure key: ${finalKeyLength} bits (${(finalKeyLength / rawKeyLength * 100).toFixed(1)}% of raw qubits)
+        </div>
+      `;
+      pipeline.appendChild(step4);
+    }
+    
+    cardBody.appendChild(pipeline);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+  },
+
+  // Create visualization for hardware effects
+  createHardwareEffectsViz: function(container, data) {
+    // Only create if we have noise model data
+    if (!data.noise_model) return;
+    
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    const distanceInfo = data.distance_km ? ` (${data.distance_km}km)` : '';
+    cardHeader.textContent = `Hardware Effects: ${data.hardware_type || 'fiber'}${distanceInfo}`;
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Extract hardware parameters
+    const noiseModel = data.noise_model;
+    const secureKeyRate = data.secure_key_rate || 0;
+    
+    // Create metrics table
+    const table = document.createElement('table');
+    table.className = 'table table-sm';
+    
+    const tbody = document.createElement('tbody');
+    
+    // Add photon loss row
+    const photonLossRow = document.createElement('tr');
+    photonLossRow.innerHTML = `
+      <td>Photon Loss</td>
+      <td>${(noiseModel.photon_loss * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-danger" role="progressbar" 
+               style="width: ${noiseModel.photon_loss * 100}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(photonLossRow);
+    
+    // Add polarization drift row
+    const polarizationRow = document.createElement('tr');
+    polarizationRow.innerHTML = `
+      <td>Polarization Drift</td>
+      <td>${(noiseModel.polarization_drift * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-warning" role="progressbar" 
+               style="width: ${Math.min(100, noiseModel.polarization_drift * 1000)}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(polarizationRow);
+    
+    // Add phase drift row
+    const phaseRow = document.createElement('tr');
+    phaseRow.innerHTML = `
+      <td>Phase Drift</td>
+      <td>${(noiseModel.phase_drift * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-info" role="progressbar" 
+               style="width: ${Math.min(100, noiseModel.phase_drift * 1000)}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(phaseRow);
+    
+    // Add detector efficiency row
+    const detectorRow = document.createElement('tr');
+    detectorRow.innerHTML = `
+      <td>Detector Efficiency</td>
+      <td>${(noiseModel.detector_efficiency * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-success" role="progressbar" 
+               style="width: ${noiseModel.detector_efficiency * 100}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(detectorRow);
+    
+    table.appendChild(tbody);
+    cardBody.appendChild(table);
+    
+    // Add theoretical key rate
+    const keyRateDiv = document.createElement('div');
+    keyRateDiv.className = 'alert alert-primary mt-2 mb-0';
+    keyRateDiv.innerHTML = `
+      <strong>Theoretical Secure Key Rate:</strong> ${secureKeyRate.toFixed(2)} bits/second
+      <div class="progress mt-2">
+        <div class="progress-bar bg-primary" role="progressbar" 
+             style="width: ${Math.min(100, secureKeyRate / 1000 * 100)}%"></div>
+      </div>
+    `;
+    cardBody.appendChild(keyRateDiv);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+  },
+
+  // Create visualization for key generation pipeline
+  createKeyPipelineViz: function(container, data) {
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    cardHeader.textContent = 'Key Generation Pipeline';
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body pb-0';
+    
+    // Create pipeline visualization
+    const pipeline = document.createElement('div');
+    pipeline.className = 'key-pipeline';
+    
+    // Step 1: Quantum Transmission
+    const rawKeyLength = data.alice_bits ? data.alice_bits.length : 0;
+    const transmissionEfficiency = data.transmission_efficiency || 1;
+    
+    const step1 = document.createElement('div');
+    step1.className = 'pipeline-step mb-4';
+    step1.innerHTML = `
+      <div class="step-header">
+        <span class="badge bg-primary me-2">1</span>
+        <strong>Quantum Transmission</strong>
+        <span class="ms-auto">${Math.round(transmissionEfficiency * 100)}% efficiency</span>
+      </div>
+      <div class="progress mt-2">
+        <div class="progress-bar bg-primary" role="progressbar" 
+             style="width: ${transmissionEfficiency * 100}%" 
+             aria-valuenow="${transmissionEfficiency * 100}" aria-valuemin="0" aria-valuemax="100">
+          ${Math.round(rawKeyLength * transmissionEfficiency)} qubits received
+        </div>
+      </div>
+      <div class="step-footer small text-muted mt-1">
+        Raw qubits: ${rawKeyLength} → ${Math.round(rawKeyLength * transmissionEfficiency)} received
+      </div>
+    `;
+    pipeline.appendChild(step1);
+    
+    // Step 2: Basis Reconciliation
+    const siftedKeyLength = data.shared_key ? data.shared_key.length : 0;
+    const siftedRatio = rawKeyLength > 0 ? siftedKeyLength / rawKeyLength : 0;
+    
+    const step2 = document.createElement('div');
+    step2.className = 'pipeline-step mb-4';
+    step2.innerHTML = `
+      <div class="step-header">
+        <span class="badge bg-success me-2">2</span>
+        <strong>Basis Reconciliation</strong>
+        <span class="ms-auto">${Math.round(siftedRatio * 100)}% retention</span>
+      </div>
+      <div class="progress mt-2">
+        <div class="progress-bar bg-success" role="progressbar" 
+             style="width: ${siftedRatio * 100}%" 
+             aria-valuenow="${siftedRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+          ${siftedKeyLength} matching bases
+        </div>
+      </div>
+      <div class="step-footer small text-muted mt-1">
+        Sifted key: ${siftedKeyLength} bits (bases matched ${Math.round(siftedRatio * 100)}% of the time)
+      </div>
+    `;
+    pipeline.appendChild(step2);
+    
+    // Step 3: Information Reconciliation
+    if (data.reconciliation_results) {
+      const reconciliationSuccess = data.reconciliation_results.success;
+      const bitsUsed = data.reconciliation_results.bits_used || 0;
+      const correctedBits = data.reconciliation_results.corrected_bits || 0;
+      const remainingErrors = data.reconciliation_results.remaining_error_rate || 0;
+      
+      const reconciliationRatio = siftedKeyLength > 0 ? 
+        (siftedKeyLength - bitsUsed) / siftedKeyLength : 0;
+      
+      const step3 = document.createElement('div');
+      step3.className = 'pipeline-step mb-4';
+      step3.innerHTML = `
+        <div class="step-header">
+          <span class="badge bg-info me-2">3</span>
+          <strong>Information Reconciliation</strong>
+          <span class="ms-auto">${Math.round(reconciliationRatio * 100)}% retention</span>
+        </div>
+        <div class="progress mt-2">
+          <div class="progress-bar bg-info" role="progressbar" 
+               style="width: ${reconciliationRatio * 100}%" 
+               aria-valuenow="${reconciliationRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+            ${siftedKeyLength - bitsUsed} bits
+          </div>
+        </div>
+        <div class="step-footer small text-muted mt-1">
+          Error correction: ${correctedBits} errors fixed using ${bitsUsed} bits
+          <br>Remaining error rate: ${(remainingErrors * 100).toFixed(4)}%
+        </div>
+      `;
+      pipeline.appendChild(step3);
+    }
+    
+    // Step 4: Privacy Amplification
+    if (data.final_key) {
+      const finalKeyLength = data.final_key.length;
+      const finalRatio = siftedKeyLength > 0 ? finalKeyLength / siftedKeyLength : 0;
+      
+      const step4 = document.createElement('div');
+      step4.className = 'pipeline-step mb-4';
+      step4.innerHTML = `
+        <div class="step-header">
+          <span class="badge bg-warning me-2">4</span>
+          <strong>Privacy Amplification</strong>
+          <span class="ms-auto">${Math.round(finalRatio * 100)}% retention</span>
+        </div>
+        <div class="progress mt-2">
+          <div class="progress-bar bg-warning" role="progressbar" 
+               style="width: ${finalRatio * 100}%" 
+               aria-valuenow="${finalRatio * 100}" aria-valuemin="0" aria-valuemax="100">
+            ${finalKeyLength} bits
+          </div>
+        </div>
+        <div class="step-footer small text-muted mt-1">
+          Final secure key: ${finalKeyLength} bits (${(finalKeyLength / rawKeyLength * 100).toFixed(1)}% of raw qubits)
+        </div>
+      `;
+      pipeline.appendChild(step4);
+    }
+    
+    cardBody.appendChild(pipeline);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
+  },
+
+  // Create visualization for hardware effects
+  createHardwareEffectsViz: function(container, data) {
+    // Only create if we have noise model data
+    if (!data.noise_model) return;
+    
+    // Create card for the visualization
+    const cardContainer = document.createElement('div');
+    cardContainer.className = 'col-md-6 mb-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100';
+    
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header';
+    const distanceInfo = data.distance_km ? ` (${data.distance_km}km)` : '';
+    cardHeader.textContent = `Hardware Effects: ${data.hardware_type || 'fiber'}${distanceInfo}`;
+    
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Extract hardware parameters
+    const noiseModel = data.noise_model;
+    const secureKeyRate = data.secure_key_rate || 0;
+    
+    // Create metrics table
+    const table = document.createElement('table');
+    table.className = 'table table-sm';
+    
+    const tbody = document.createElement('tbody');
+    
+    // Add photon loss row
+    const photonLossRow = document.createElement('tr');
+    photonLossRow.innerHTML = `
+      <td>Photon Loss</td>
+      <td>${(noiseModel.photon_loss * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-danger" role="progressbar" 
+               style="width: ${noiseModel.photon_loss * 100}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(photonLossRow);
+    
+    // Add polarization drift row
+    const polarizationRow = document.createElement('tr');
+    polarizationRow.innerHTML = `
+      <td>Polarization Drift</td>
+      <td>${(noiseModel.polarization_drift * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-warning" role="progressbar" 
+               style="width: ${Math.min(100, noiseModel.polarization_drift * 1000)}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(polarizationRow);
+    
+    // Add phase drift row
+    const phaseRow = document.createElement('tr');
+    phaseRow.innerHTML = `
+      <td>Phase Drift</td>
+      <td>${(noiseModel.phase_drift * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-info" role="progressbar" 
+               style="width: ${Math.min(100, noiseModel.phase_drift * 1000)}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(phaseRow);
+    
+    // Add detector efficiency row
+    const detectorRow = document.createElement('tr');
+    detectorRow.innerHTML = `
+      <td>Detector Efficiency</td>
+      <td>${(noiseModel.detector_efficiency * 100).toFixed(2)}%</td>
+      <td>
+        <div class="progress">
+          <div class="progress-bar bg-success" role="progressbar" 
+               style="width: ${noiseModel.detector_efficiency * 100}%"></div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(detectorRow);
+    
+    table.appendChild(tbody);
+    cardBody.appendChild(table);
+    
+    // Add theoretical key rate
+    const keyRateDiv = document.createElement('div');
+    keyRateDiv.className = 'alert alert-primary mt-2 mb-0';
+    keyRateDiv.innerHTML = `
+      <strong>Theoretical Secure Key Rate:</strong> ${secureKeyRate.toFixed(2)} bits/second
+      <div class="progress mt-2">
+        <div class="progress-bar bg-primary" role="progressbar" 
+             style="width: ${Math.min(100, secureKeyRate / 1000 * 100)}%"></div>
+      </div>
+    `;
+    cardBody.appendChild(keyRateDiv);
+    
+    // Assemble card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    cardContainer.appendChild(card);
+    container.appendChild(cardContainer);
   },
   
   // Initialize energy convergence chart for VQE

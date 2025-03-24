@@ -595,3 +595,27 @@
     overflow-x: auto;
     position: relative;
   }
+
+  /* BB84 Visualization Styles */
+  .pipeline-step {
+    position: relative;
+  }
+
+  .step-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+
+  .key-pipeline .progress {
+    height: 24px;
+  }
+
+  .key-pipeline .progress-bar {
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
