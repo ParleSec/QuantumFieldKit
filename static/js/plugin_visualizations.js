@@ -1295,6 +1295,135 @@ try {
 }
 },
 
+  // Initialize Bloch sphere for quantum state visualization
+  initQuantumStateViz: function(resultData) {
+    const vizContainer = document.getElementById('quantum-state-viz');
+    if (!vizContainer) return;
+    
+    try {
+      // Clear any existing content
+      vizContainer.innerHTML = '';
+      
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = vizContainer.clientWidth || 300;
+      canvas.height = vizContainer.clientHeight || 300;
+      vizContainer.appendChild(canvas);
+      
+      // Get the 2D context
+      const ctx = canvas.getContext('2d');
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 20;
+      
+      // Set background
+      ctx.fillStyle = '#141424';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the Bloch sphere (simplified 2D representation)
+      // Draw the circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw the axes
+      ctx.beginPath();
+      // Z-axis (vertical)
+      ctx.moveTo(centerX, centerY - radius);
+      ctx.lineTo(centerX, centerY + radius);
+      // X-axis (horizontal)
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Add labels
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText('|0⟩', centerX, centerY - radius - 10);
+      ctx.fillText('|1⟩', centerX, centerY + radius + 20);
+      ctx.fillText('|+⟩', centerX + radius + 20, centerY);
+      ctx.fillText('|-⟩', centerX - radius - 20, centerY);
+      
+      // Draw state vector based on result data
+      let theta = Math.PI / 4; // Default angle if no data
+      let phi = 0;
+      
+      // Extract state from result data if available
+      if (resultData.output && resultData.output.final_state) {
+        // Get the state data
+        const stateData = resultData.output.final_state;
+        
+        if (Array.isArray(stateData) && stateData.length >= 2) {
+          // Calculate theta and phi from state vector
+          const alpha = stateData[0];
+          const beta = stateData[1];
+          const alphaAbs = typeof alpha === 'object' ? 
+            Math.sqrt(alpha.real**2 + alpha.imag**2) : Math.abs(alpha);
+          
+          theta = 2 * Math.acos(alphaAbs);
+          if (alphaAbs < 0.9999 && Math.abs(beta) > 0.0001) {
+            if (typeof beta === 'object' && typeof alpha === 'object') {
+              phi = Math.atan2(beta.imag, beta.real) - Math.atan2(alpha.imag, alpha.real);
+            } else {
+              phi = beta >= 0 ? 0 : Math.PI;
+            }
+          }
+        }
+      }
+      
+      // Convert spherical coordinates to 2D projection
+      const x = radius * Math.sin(theta) * Math.cos(phi);
+      const y = radius * Math.sin(theta) * Math.sin(phi);
+      const z = radius * Math.cos(theta);
+      
+      // Project 3D point onto 2D
+      const projX = centerX + x;
+      const projY = centerY - z; // Negative to match conventional coordinates
+      
+      // Draw the state vector
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(projX, projY);
+      ctx.strokeStyle = '#ff3366';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Draw arrowhead
+      const headSize = 10;
+      const angle = Math.atan2(projY - centerY, projX - centerX);
+      ctx.beginPath();
+      ctx.moveTo(projX, projY);
+      ctx.lineTo(
+        projX - headSize * Math.cos(angle - Math.PI/6),
+        projY - headSize * Math.sin(angle - Math.PI/6)
+      );
+      ctx.lineTo(
+        projX - headSize * Math.cos(angle + Math.PI/6),
+        projY - headSize * Math.sin(angle + Math.PI/6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = '#ff3366';
+      ctx.fill();
+      
+      // Display state information
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`θ: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
+      ctx.fillText(`φ: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
+      
+      console.log("Successfully rendered 2D Bloch sphere visualization");
+    } catch (e) {
+      console.error('Error initializing quantum state visualization:', e);
+      // Display error message in the container
+      vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
+    }
+  },
 
 initProbabilityDistribution : function(resultData, pluginKey) {
   const chartContainer = document.getElementById('probability-distribution');
