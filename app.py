@@ -139,8 +139,8 @@ def run_plugin(sim_func, **params):
     try:
         logger.info(f"Running simulation with parameters: {params}")
         
-        # Apply timeout to simulation function (30 seconds max)
-        @timeout(30)
+        # Apply timeout to simulation function
+        @timeout(10)
         def run_with_timeout():
             return sim_func(**params)
         
