@@ -5,6 +5,10 @@ import logging
 from flask import Flask, request, render_template, jsonify, session, abort
 from flask_socketio import SocketIO, emit
 from werkzeug.middleware.proxy_fix import ProxyFix
+import signal
+from functools import wraps
+import threading
+import multiprocessing
 
 # Import simulation functions from plugins
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
@@ -41,6 +45,45 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 # Initialize Socket.IO for real-time communication
 socketio = SocketIO(app, async_mode='eventlet', cors_allowed_origins="*")
+
+def timeout(seconds):
+    """
+    Decorator that adds a timeout to a function.
+    If the function takes longer than 'seconds' to execute, it will be terminated.
+    
+    Args:
+        seconds: Maximum execution time in seconds
+        
+    Returns:
+        Decorated function with timeout capability
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            result = [None]
+            error = [None]
+            
+            def target():
+                try:
+                    result[0] = func(*args, **kwargs)
+                except Exception as e:
+                    error[0] = e
+            
+            thread = threading.Thread(target=target)
+            thread.daemon = True
+            thread.start()
+            thread.join(seconds)
+            
+            if thread.is_alive():
+                return {"output": None, "log": None, "error": f"Execution timed out after {seconds} seconds"}
+            
+            if error[0] is not None:
+                raise error[0]
+            
+            return result[0]
+        
+        return wrapper
+    return decorator
 
 def json_safe(obj):
     """
@@ -95,7 +138,17 @@ def run_plugin(sim_func, **params):
     """
     try:
         logger.info(f"Running simulation with parameters: {params}")
-        sim_result = sim_func(**params)
+        
+        # Apply timeout to simulation function (30 seconds max)
+        @timeout(30)
+        def run_with_timeout():
+            return sim_func(**params)
+        
+        sim_result = run_with_timeout()
+        if isinstance(sim_result, dict) and "error" in sim_result and sim_result["error"] is not None:
+            # This is a timeout error from our decorator
+            return sim_result
+        
         return wrap_result(sim_result)
     except Exception as e:
         error_msg = str(e)
@@ -112,24 +165,42 @@ PLUGINS = {
         "icon": "fa-fingerprint",
         "category": "security",
         "parameters": [
-            {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate"},
-            {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use"}
+            {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate", 
+             "max_length": 64},
+            {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use",
+             "min": 1, "max": 10}
         ],
         "run": lambda p: run_plugin(generate_quantum_fingerprint_cirq, data=p["data"], num_qubits=p["num_qubits"])
     },
+    
     "bb84": {
         "name": "BB84 Protocol Simulation",
         "description": "Simulate the BB84 quantum key distribution protocol with realistic physical effects.",
         "icon": "fa-key",
         "category": "cryptography",
         "parameters": [
-            {"name": "num_bits", "type": "int", "default": 10, "description": "Number of bits to simulate"},
-            {"name": "distance_km", "type": "float", "default": 0.0, "description": "Distance between Alice and Bob (km)"},
-            {"name": "hardware_type", "type": "str", "default": "fiber", "description": "Hardware type (fiber, satellite, trapped_ion)"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Additional noise probability"}, 
-            {"name": "eve_present", "type": "str", "default": "False", "description": "Eavesdropper present (True/False)"},
-            {"name": "eve_strategy", "type": "str", "default": "intercept_resend", "description": "Eavesdropper strategy (intercept_resend, beam_splitting, trojan_horse)"},
-            {"name": "detailed_simulation", "type": "str", "default": "True", "description": "Run detailed quantum simulation (True/False)"}
+            {"name": "num_bits", "type": "int", "default": 10, "description": "Number of bits to simulate",
+            "min": 1, "max": 16},
+            
+            {"name": "distance_km", "type": "float", "default": 0.0, "description": "Distance between Alice and Bob (km)",
+            "min": 0.0, "max": 1000.0},
+            
+            {"name": "hardware_type", "type": "select", "default": "fiber", 
+            "description": "Hardware type (fiber, satellite, trapped_ion)", 
+            "options": ["fiber", "satellite", "trapped_ion"]},
+            
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Additional noise probability",
+            "min": 0.0, "max": 0.3},
+            
+            {"name": "eve_present", "type": "bool", "default": False, 
+            "description": "Eavesdropper present"},
+            
+            {"name": "eve_strategy", "type": "select", "default": "intercept_resend", 
+            "description": "Eavesdropper strategy (intercept_resend, beam_splitting, trojan)", 
+            "options": ["intercept_resend", "beam_splitting", "trojan_horse"]},
+            
+            {"name": "detailed_simulation", "type": "bool", "default": True, 
+            "description": "Run detailed quantum simulation"}
         ],
         "run": lambda p: run_plugin(bb84_protocol_cirq, 
                                 num_bits=p["num_bits"],
@@ -140,158 +211,195 @@ PLUGINS = {
                                 detailed_simulation=p["detailed_simulation"].lower() == "true",
                                 noise_prob=p["noise"])
     },
+    
     "shor": {
         "name": "Shor's Code Simulation",
         "description": "Simulate quantum error correction using Shor's code.",
         "icon": "fa-shield-alt",
         "category": "error-correction",
         "parameters": [
-            {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"}
+            {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(run_shor_code, noise_prob=p["noise"])
     },
+    
     "grover": {
         "name": "Grover's Algorithm Simulation",
         "description": "Simulate Grover's search algorithm.",
         "icon": "fa-search",
         "category": "algorithms",
         "parameters": [
-            {"name": "n", "type": "int", "default": 3, "description": "Number of qubits"},
-            {"name": "target_state", "type": "str", "default": "101", "description": "Target state (binary)"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "n", "type": "int", "default": 3, "description": "Number of qubits",
+             "min": 1, "max": 8},
+            {"name": "target_state", "type": "str", "default": "101", "description": "Target state (binary)",
+             "max_length": 8},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(run_grover, n=p["n"], target_state=p["target_state"], noise_prob=p["noise"])
     },
+    
     "handshake": {
         "name": "Quantum Handshake Simulation",
         "description": "Simulate a quantum handshake using entangled Bell pairs.",
         "icon": "fa-handshake",
         "category": "protocols",
         "parameters": [
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(handshake_cirq, noise_prob=p["noise"])
     },
+    
     "network": {
         "name": "Entanglement Swapping Simulation",
         "description": "Simulate a quantum network using entanglement swapping.",
         "icon": "fa-network-wired",
         "category": "protocols",
         "parameters": [
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(entanglement_swapping_cirq, noise_prob=p["noise"])
     },
+    
     "qrng": {
         "name": "Quantum Random Number Generator",
         "description": "Generate a random number using quantum superposition.",
         "icon": "fa-dice",
         "category": "utilities",
         "parameters": [
-            {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits"}
+            {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits",
+             "min": 1, "max": 16}
         ],
         "run": lambda p: run_plugin(generate_random_number_cirq, num_bits=p["num_bits"])
     },
+    
     "teleport": {
         "name": "Quantum Teleportation Simulation",
         "description": "Simulate quantum teleportation protocol.",
         "icon": "fa-atom",
         "category": "protocols",
         "parameters": [
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(teleportation_circuit, noise_prob=p["noise"])
     },
+    
     "vqe": {
         "name": "Variational Quantum Eigensolver (VQE)",
         "description": "Simulate VQE to find the ground state energy of a Hamiltonian.",
         "icon": "fa-wave-square",
         "category": "algorithms",
         "parameters": [
-            {"name": "num_qubits", "type": "int", "default": 2, "description": "Number of qubits"},
-            {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability"},
-            {"name": "max_iter", "type": "int", "default": 5, "description": "Maximum iterations"}
+            {"name": "num_qubits", "type": "int", "default": 2, "description": "Number of qubits",
+             "min": 1, "max": 6},
+            {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability",
+             "min": 0.0, "max": 0.3},
+            {"name": "max_iter", "type": "int", "default": 5, "description": "Maximum iterations",
+             "min": 1, "max": 20}
         ],
         "run": lambda p: run_plugin(run_vqe, num_qubits=p["num_qubits"], noise_prob=p["noise"], max_iter=p["max_iter"])
     },
+    
     "quantum_decryption_grover": {
         "name": "Quantum Decryption via Grover Key Search",
         "description": "Use Grover's algorithm to search for a secret key.",
         "icon": "fa-unlock",
         "category": "cryptography",
         "parameters": [
-            {"name": "key", "type": "int", "default": 5, "description": "Secret key (integer)"},
-            {"name": "num_bits", "type": "int", "default": 4, "description": "Number of bits (search space)"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "key", "type": "int", "default": 5, "description": "Secret key (integer)",
+             "min": 0, "max": 255},
+            {"name": "num_bits", "type": "int", "default": 4, "description": "Number of bits (search space)",
+             "min": 1, "max": 8},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(grover_key_search, key=p["key"], num_bits=p["num_bits"], noise_prob=p["noise"])
     },
+    
     "quantum_decryption_shor": {
         "name": "Quantum Decryption via Shor Factorization",
         "description": "Simulate quantum decryption using Shor's code simulation.",
         "icon": "fa-key",
         "category": "cryptography",
         "parameters": [
-            {"name": "N", "type": "int", "default": 15, "description": "Composite number"}
+            {"name": "N", "type": "int", "default": 15, "description": "Composite number",
+             "min": 4, "max": 100}
         ],
         "run": lambda p: run_plugin(shor_factorization, N=p["N"])
     },
-        "deutsch_jozsa": {
+    
+    "deutsch_jozsa": {
         "name": "Deutsch-Jozsa Algorithm",
         "description": "Determine if a function is constant or balanced with a single quantum query.",
         "icon": "fa-balance-scale",
         "category": "algorithms",
         "parameters": [
-            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of input qubits"},
-            {"name": "oracle_type", "type": "str", "default": "random", "description": "Oracle type: constant_0, constant_1, balanced, or random"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of input qubits",
+             "min": 1, "max": 8},
+            {"name": "oracle_type", "type": "str", "default": "random", "description": "Oracle type: constant_0, constant_1, balanced, or random",
+             "options": ["constant_0", "constant_1", "balanced", "random"], "max_length": 10},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(deutsch_jozsa_cirq, n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
     },
 
-    # Add the Quantum Fourier Transform
     "qft": {
         "name": "Quantum Fourier Transform",
         "description": "Implement the quantum analogue of the discrete Fourier transform.",
         "icon": "fa-wave-square",
         "category": "algorithms",
         "parameters": [
-            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of qubits"},
-            {"name": "input_state", "type": "str", "default": "010", "description": "Input state (binary)"},
-            {"name": "include_inverse", "type": "str", "default": "False", "description": "Include inverse QFT"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "n_qubits", "type": "int", "default": 3, "description": "Number of qubits",
+             "min": 1, "max": 8}, 
+            {"name": "input_state", "type": "str", "default": "010", "description": "Input state (binary)",
+             "max_length": 8},
+            {"name": "include_inverse", "type": "str", "default": "False", "description": "Include inverse QFT",
+             "options": ["True", "False"], "max_length": 5},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(run_qft, n_qubits=p["n_qubits"], input_state=p["input_state"], 
                                     include_inverse=p["include_inverse"].lower() == "true", noise_prob=p["noise"])
     },
 
-    # Add the Quantum Phase Estimation
     "phase_estimation": {
         "name": "Quantum Phase Estimation",
         "description": "Estimate eigenvalues of unitary operators with applications in quantum computing.",
         "icon": "fa-ruler-combined",
         "category": "algorithms",
         "parameters": [
-            {"name": "precision_bits", "type": "int", "default": 3, "description": "Number of bits of precision"},
-            {"name": "target_phase", "type": "float", "default": 0.125, "description": "Target phase to estimate (0-1)"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"}
+            {"name": "precision_bits", "type": "int", "default": 3, "description": "Number of bits of precision",
+             "min": 1, "max": 6},
+            {"name": "target_phase", "type": "float", "default": 0.125, "description": "Target phase to estimate (0-1)",
+             "min": 0.0, "max": 1.0},
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3}
         ],
         "run": lambda p: run_plugin(run_phase_estimation, precision_bits=p["precision_bits"], 
                                     target_phase=p["target_phase"], noise_prob=p["noise"])
     },
 
-    # Add the QAOA
     "qaoa": {
         "name": "Quantum Approximate Optimization Algorithm",
         "description": "Solve combinatorial optimization problems like MaxCut using a hybrid quantum-classical approach.",
         "icon": "fa-project-diagram",
         "category": "optimization",
         "parameters": [
-            {"name": "n_nodes", "type": "int", "default": 4, "description": "Number of nodes in the graph"},
-            {"name": "edge_probability", "type": "float", "default": 0.5, "description": "Probability of edge creation"},
-            {"name": "p_layers", "type": "int", "default": 1, "description": "Number of QAOA layers"},
-            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability"},
-            {"name": "num_samples", "type": "int", "default": 100, "description": "Number of samples"}
+            {"name": "n_nodes", "type": "int", "default": 4, "description": "Number of nodes in the graph",
+             "min": 2, "max": 8},  # Limit nodes
+            {"name": "edge_probability", "type": "float", "default": 0.5, "description": "Probability of edge creation",
+             "min": 0.1, "max": 1.0},  # Valid probability range
+            {"name": "p_layers", "type": "int", "default": 1, "description": "Number of QAOA layers",
+             "min": 1, "max": 3},  # Severe limit on layers (computational complexity)
+            {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
+             "min": 0.0, "max": 0.3},
+            {"name": "num_samples", "type": "int", "default": 100, "description": "Number of samples",
+             "min": 10, "max": 500}  # Limit sample size
         ],
         "run": lambda p: run_plugin(run_qaoa, n_nodes=p["n_nodes"], edge_probability=p["edge_probability"], 
                                     p_layers=p["p_layers"], noise_prob=p["noise"], num_samples=p["num_samples"])
@@ -325,19 +433,39 @@ def plugin_view(plugin_key):
         params = {}
         for param in plugin["parameters"]:
             raw_val = request.form.get(param["name"], param.get("default"))
+            param_name = param["name"]
+            
+            # Validate and convert parameters with bounds checking
             if param["type"] == "int":
                 try:
                     raw_val = int(raw_val)
+                    # Check min/max bounds for integers
+                    if "min" in param and raw_val < param["min"]:
+                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"})
+                    if "max" in param and raw_val > param["max"]:
+                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"})
                 except ValueError:
-                    return jsonify({"error": f"Invalid integer value for {param['name']}"})
+                    return jsonify({"error": f"Invalid integer value for {param_name}"})
+            
             elif param["type"] == "float":
                 try:
                     raw_val = float(raw_val)
+                    # Check min/max bounds for floats
+                    if "min" in param and raw_val < param["min"]:
+                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"})
+                    if "max" in param and raw_val > param["max"]:
+                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"})
                 except ValueError:
-                    return jsonify({"error": f"Invalid float value for {param['name']}"})
-            params[param["name"]] = raw_val
+                    return jsonify({"error": f"Invalid float value for {param_name}"})
+            
+            elif param["type"] == "str":
+                # Check max length for strings
+                if "max_length" in param and len(raw_val) > param["max_length"]:
+                    return jsonify({"error": f"Value for {param_name} cannot exceed {param['max_length']} characters"})
+            
+            params[param_name] = raw_val
         
-        # Execute the plugin with the provided parameters
+        # Execute the plugin with the validated parameters
         result = plugin["run"](params)
         
         # If this is an AJAX request, return JSON
@@ -372,22 +500,40 @@ def api_run_plugin(plugin_key):
     except Exception:
         return jsonify({"error": "Invalid JSON data"}), 400
     
-    # Validate and convert parameters
+    # Validate and convert parameters with bounds checking
     for param in plugin["parameters"]:
-        if param["name"] not in params and "default" in param:
-            params[param["name"]] = param["default"]
+        param_name = param["name"]
         
-        if param["name"] in params:
+        if param_name not in params and "default" in param:
+            params[param_name] = param["default"]
+        
+        if param_name in params:
             if param["type"] == "int":
                 try:
-                    params[param["name"]] = int(params[param["name"]])
+                    params[param_name] = int(params[param_name])
+                    # Check min/max bounds for integers
+                    if "min" in param and params[param_name] < param["min"]:
+                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"}), 400
+                    if "max" in param and params[param_name] > param["max"]:
+                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"}), 400
                 except (ValueError, TypeError):
-                    return jsonify({"error": f"Invalid integer value for {param['name']}"}), 400
+                    return jsonify({"error": f"Invalid integer value for {param_name}"}), 400
+            
             elif param["type"] == "float":
                 try:
-                    params[param["name"]] = float(params[param["name"]])
+                    params[param_name] = float(params[param_name])
+                    # Check min/max bounds for floats
+                    if "min" in param and params[param_name] < param["min"]:
+                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"}), 400
+                    if "max" in param and params[param_name] > param["max"]:
+                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"}), 400
                 except (ValueError, TypeError):
-                    return jsonify({"error": f"Invalid float value for {param['name']}"}), 400
+                    return jsonify({"error": f"Invalid float value for {param_name}"}), 400
+            
+            elif param["type"] == "str" and "max_length" in param:
+                # Check max length for strings
+                if len(str(params[param_name])) > param["max_length"]:
+                    return jsonify({"error": f"Value for {param_name} cannot exceed {param['max_length']} characters"}), 400
     
     # Run the plugin
     result = plugin["run"](params)
@@ -463,5 +609,5 @@ if __name__ == "__main__":
 # Fly.io entry
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 5001))
     socketio.run(app, host="0.0.0.0", port=port)
