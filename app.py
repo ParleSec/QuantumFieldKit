@@ -391,20 +391,46 @@ PLUGINS = {
         "category": "optimization",
         "parameters": [
             {"name": "n_nodes", "type": "int", "default": 4, "description": "Number of nodes in the graph",
-             "min": 2, "max": 8},  # Limit nodes
+             "min": 2, "max": 8},
             {"name": "edge_probability", "type": "float", "default": 0.5, "description": "Probability of edge creation",
-             "min": 0.1, "max": 1.0},  # Valid probability range
+             "min": 0.1, "max": 1.0},
             {"name": "p_layers", "type": "int", "default": 1, "description": "Number of QAOA layers",
-             "min": 1, "max": 3},  # Severe limit on layers (computational complexity)
+             "min": 1, "max": 3},
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3},
             {"name": "num_samples", "type": "int", "default": 100, "description": "Number of samples",
-             "min": 10, "max": 500}  # Limit sample size
+             "min": 10, "max": 500}
         ],
         "run": lambda p: run_plugin(run_qaoa, n_nodes=p["n_nodes"], edge_probability=p["edge_probability"], 
                                     p_layers=p["p_layers"], noise_prob=p["noise"], num_samples=p["num_samples"])
     }
 }
+
+def get_educational_content_template(plugin_key):
+    """
+    Returns the appropriate template file name for the plugin's educational content
+    """
+    # Map plugin keys to their educational content template files
+    templates = {
+        'bb84': 'educational/bb84.html',
+        'teleport': 'educational/teleport.html',
+        'grover': 'educational/grover.html',
+        'handshake': 'educational/handshake.html',
+        'auth': 'educational/auth.html',
+        'network': 'educational/network.html',
+        'qrng': 'educational/qrng.html',
+        'shor': 'educational/shor.html',
+        'vqe': 'educational/vqe.html',
+        'quantum_decryption_grover': 'educational/quantum_decryption_grover.html',
+        'quantum_decryption_shor': 'educational/quantum_decryption_shor.html',
+        'deutsch_jozsa': 'educational/deutsch_jozsa.html',
+        'qft': 'educational/qft.html',
+        'phase_estimation': 'educational/phase_estimation.html',
+        'qaoa': 'educational/qaoa.html',
+    }
+    
+    # Return the template name or a default if not found
+    return templates.get(plugin_key, 'educational/default.html')
 
 # --- Route handlers ---
 @app.route("/")
@@ -429,6 +455,8 @@ def plugin_view(plugin_key):
     plugin = PLUGINS[plugin_key]
     result = None
     
+    educational_template = get_educational_content_template(plugin_key)
+
     if request.method == "POST":
         params = {}
         for param in plugin["parameters"]:
@@ -472,7 +500,7 @@ def plugin_view(plugin_key):
         if request.headers.get("X-Requested-With") == "XMLHttpRequest":
             return jsonify(result)
     
-    return render_template("plugin.html", plugin=plugin, result=result)
+    return render_template("plugin.html", plugin=plugin, result=result, educational_template=educational_template)
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
