@@ -1,0 +1,119 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>BB84 Protocol: Quantum Key Distribution</h4>
+      <p>The BB84 protocol, developed by Charles Bennett and Gilles Brassard in 1984, was the first quantum cryptography protocol designed to create a secure secret key between two parties (conventionally called Alice and Bob).</p>
+      
+      <div class="alert alert-secondary">
+        <strong>Classical vs. Quantum</strong>: In classical cryptography, key exchange is vulnerable to eavesdroppers who can potentially copy communications without detection. Quantum key distribution makes this impossible due to the fundamental properties of quantum mechanics.
+      </div>
+      
+      <h5 class="mt-4">How BB84 Works: Step-by-Step</h5>
+      <ol>
+        <li>
+          <strong>Quantum Bit Preparation</strong>: Alice prepares qubits in one of four polarization states, representing bits 0 or 1 in one of two bases (rectilinear or diagonal).
+        </li>
+        <li>
+          <strong>Quantum Transmission</strong>: Alice sends these qubits to Bob through a quantum channel.
+        </li>
+        <li>
+          <strong>Random Basis Measurement</strong>: Bob measures each qubit using a randomly chosen basis (rectilinear or diagonal).
+        </li>
+        <li>
+          <strong>Basis Reconciliation</strong>: Alice and Bob publicly share which bases they used, but not the measurement results.
+        </li>
+        <li>
+          <strong>Key Sifting</strong>: They keep only the bits where they happened to use the same basis, discarding the rest.
+        </li>
+        <li>
+          <strong>Error Estimation</strong>: They publicly compare a subset of their bits to detect any eavesdropping.
+        </li>
+        <li>
+          <strong>Privacy Amplification</strong>: If the error rate is acceptably low, they perform additional processing to obtain a final secure key.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">The Two Bases Used in BB84</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/1/1c/BB84-network_setup.svg" alt="BB84 Protocol Bases" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>Rectilinear basis (horizontal/vertical polarization) and diagonal basis (45°/135° polarization) used to encode bits.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in BB84</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>No-Cloning Theorem</strong>: It's impossible to create a perfect copy of an unknown quantum state. This prevents eavesdroppers from copying qubits.
+            </li>
+            <li>
+              <strong>Heisenberg Uncertainty Principle</strong>: Measuring a quantum system disturbs it. If an eavesdropper measures a qubit, they'll introduce detectable errors.
+            </li>
+            <li>
+              <strong>Quantum Superposition</strong>: Qubits can exist in a superposition of states, allowing encoding in different bases.
+            </li>
+            <li>
+              <strong>Quantum Measurement</strong>: Measuring a qubit in the wrong basis gives random results, securing information against incorrect measurements.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Real-World Applications</h5>
+      <p>BB84 and other quantum key distribution protocols have moved beyond theoretical interest to practical implementations:</p>
+      <ul>
+        <li><strong>Commercial QKD Systems</strong>: Companies like ID Quantique and Toshiba now offer commercial QKD systems.</li>
+        <li><strong>Quantum Networks</strong>: Experimental quantum networks in various countries use QKD for secure communications.</li>
+        <li><strong>Financial Sector</strong>: Some banks use QKD to secure transactions between offices.</li>
+        <li><strong>Government Communications</strong>: Various government agencies are exploring QKD for highly sensitive communications.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Limitations and Challenges</h5>
+      <ul>
+        <li><strong>Distance Limitations</strong>: Current technology limits QKD to distances of around 100-200 km without quantum repeaters.</li>
+        <li><strong>Hardware Vulnerabilities</strong>: Physical implementations may have vulnerabilities that theoretical protocols don't account for.</li>
+        <li><strong>Authentication Requirement</strong>: QKD requires an initial authenticated channel to prevent man-in-the-middle attacks.</li>
+        <li><strong>Cost and Complexity</strong>: QKD systems remain expensive and complex compared to classical cryptography.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding BB84</div>
+      <div class="card-body">
+        <p>Imagine Alice sends Bob a series of locks (qubits) that can be opened with either a square key or a star key (representing the two bases). Alice randomly chooses which type of lock to send and which position to set it in (locked or unlocked, representing 0 or 1).</p>
+        <p>Bob doesn't know which type of lock Alice sent, so he randomly tries either his square key or star key on each lock. Sometimes he guesses right and gets the correct information; other times he guesses wrong and gets random results.</p>
+        <p>Later, Alice and Bob publicly discuss which type of lock was used for each transmission (but not whether they were locked or unlocked). They keep only the results where Bob used the right type of key, discarding the rest.</p>
+        <p>If Eve tries to inspect the locks during transmission, she'll disturb them in a detectable way, alerting Alice and Bob to her presence.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/BB84" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> BB84 on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://www.youtube.com/watch?v=UiJiXNEm-Go" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+        <i class="fab fa-youtube me-2"></i> BB84 Video Explanation
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/quant-ph/0003004" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> Academic Paper on QKD
+      </a>
+    </div>
+  </div>
