@@ -1,0 +1,117 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>Shor's Code: Quantum Error Correction</h4>
+      <p>Shor's Code, developed by Peter Shor in 1995, is a quantum error correction code that protects quantum information against both bit-flip and phase-flip errors, which are the two fundamental types of errors in quantum systems.</p>
+      
+      <div class="alert alert-secondary">
+        <strong>The Quantum Error Challenge</strong>: Quantum states are extremely fragile and vulnerable to decoherence and errors. Classical error correction can't be directly applied to quantum information due to the no-cloning theorem and the fact that measurement disturbs quantum states.
+      </div>
+      
+      <h5 class="mt-4">How Shor's Code Works</h5>
+      <ol>
+        <li>
+          <strong>Encoding</strong>: A single logical qubit is encoded across nine physical qubits in a special state.
+        </li>
+        <li>
+          <strong>Error Occurrence</strong>: Environmental interactions may cause bit-flip errors (X errors) or phase-flip errors (Z errors) on some qubits.
+        </li>
+        <li>
+          <strong>Syndrome Measurement</strong>: Special measurements are performed to detect errors without collapsing the quantum information.
+        </li>
+        <li>
+          <strong>Error Identification</strong>: The syndrome measurements reveal which type of error occurred and on which qubit.
+        </li>
+        <li>
+          <strong>Error Correction</strong>: Based on the syndrome, appropriate quantum gates are applied to correct the errors.
+        </li>
+        <li>
+          <strong>Information Recovery</strong>: The original quantum state is recovered without having been directly measured.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">Shor's 9-Qubit Code Structure</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/a/a9/Shore_code.svg" alt="Shor's Code" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>Shor's code encodes a single logical qubit into nine physical qubits. It combines three instances of the three-qubit phase-flip code, which themselves are each made of the three-qubit bit-flip code.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in Shor's Code</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>Quantum Superposition</strong>: The encoded state maintains superpositions of the original qubit.
+            </li>
+            <li>
+              <strong>Entanglement</strong>: The encoding process creates entanglement among the nine qubits.
+            </li>
+            <li>
+              <strong>Quantum Measurement</strong>: Special ancilla measurements extract error information without disturbing the quantum state.
+            </li>
+            <li>
+              <strong>Quantum Redundancy</strong>: Information is distributed across multiple qubits in a way that allows error detection and correction.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Importance of Quantum Error Correction</h5>
+      <p>Quantum error correction is essential for practical quantum computing:</p>
+      <ul>
+        <li><strong>Scalability</strong>: Allows quantum computations to scale beyond the coherence time limitations of physical qubits.</li>
+        <li><strong>Fault Tolerance</strong>: Enables fault-tolerant quantum computation where errors don't propagate catastrophically.</li>
+        <li><strong>Quantum Memory</strong>: Permits reliable storage of quantum information for extended periods.</li>
+        <li><strong>Reliable Computation</strong>: Makes quantum algorithms practical by protecting against unavoidable noise.</li>
+        <li><strong>Quantum Communication</strong>: Helps maintain quantum states during transmission over noisy channels.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Technical Details of Shor's Code</h5>
+      <ul>
+        <li><strong>Bit-Flip Protection</strong>: Uses three blocks of three qubits, each implementing the three-qubit bit-flip code.</li>
+        <li><strong>Phase-Flip Protection</strong>: The three blocks together implement the three-qubit phase-flip code.</li>
+        <li><strong>Code Distance</strong>: Shor's code has a distance of 3, meaning it can correct any single-qubit error.</li>
+        <li><strong>Syndrome Measurement</strong>: Uses six ancilla qubits for non-destructive error detection.</li>
+        <li><strong>Resource Overhead</strong>: Requires nine physical qubits to protect one logical qubit, plus ancilla qubits for syndrome measurements.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding Quantum Error Correction</div>
+      <div class="card-body">
+        <p>Imagine you're trying to preserve a delicate message written in disappearing ink that changes if anyone reads it directly (like quantum information). Classical error correction would be like making copies of the message, but that's impossible with quantum information due to the no-cloning theorem.</p>
+        <p>Shor's code is like cleverly splitting the message across nine different papers in such a way that you can detect if any paper gets smudged (an error occurs) without having to read the actual message. You can even fix the smudge without knowing what the message says!</p>
+        <p>The trick is to create a special pattern across the nine papers so that errors show up as disturbances to this pattern. By checking the pattern (not the message itself), you can identify exactly which paper was smudged and how to fix it, all without ever reading the actual message directly.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/Quantum_error_correction" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> Quantum Error Correction on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://www.youtube.com/watch?v=lcJQCjCw2es" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+        <i class="fab fa-youtube me-2"></i> Video on Quantum Error Correction
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/quant-ph/9508027" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> Shor's Original Paper
+      </a>
+    </div>
+  </div>

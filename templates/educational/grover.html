@@ -1,0 +1,113 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>Grover's Algorithm: Quantum Search</h4>
+      <p>Grover's algorithm, developed by Lov Grover in 1996, is a quantum algorithm that provides a quadratic speedup for searching unsorted databases or solving unstructured search problems.</p>
+      
+      <div class="alert alert-secondary">
+        <strong>Classical vs. Quantum Search</strong>: To find a specific item in an unsorted database of N items, a classical computer needs to check an average of N/2 items (O(N) complexity). Grover's algorithm can find the item in approximately √N steps (O(√N) complexity).
+      </div>
+      
+      <h5 class="mt-4">How Grover's Algorithm Works</h5>
+      <ol>
+        <li>
+          <strong>Initialization</strong>: Start with all qubits in superposition, representing all possible states with equal probability.
+        </li>
+        <li>
+          <strong>Oracle Application</strong>: Apply a special function (oracle) that marks the target state by flipping its phase.
+        </li>
+        <li>
+          <strong>Amplitude Amplification</strong>: Apply the Grover diffusion operator, which increases the amplitude of the marked state while decreasing others.
+        </li>
+        <li>
+          <strong>Iteration</strong>: Repeat steps 2-3 approximately √N times to maximize the probability of measuring the target state.
+        </li>
+        <li>
+          <strong>Measurement</strong>: Measure the qubits to obtain the target state with high probability.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">Grover's Algorithm Visualization</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/8/84/Example_Qiskit_quantum_circuit_that_implements_Grover%27s_algorithm.png" alt="Grover's Algorithm Amplitude Magnification" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>Visualization of how the probability amplitudes change during Grover's algorithm iterations. The target state's amplitude increases while others decrease.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in Grover's Algorithm</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>Quantum Superposition</strong>: Allows all possible solutions to be represented simultaneously.
+            </li>
+            <li>
+              <strong>Quantum Interference</strong>: Amplitudes can interfere constructively or destructively to enhance or suppress states.
+            </li>
+            <li>
+              <strong>Quantum Oracle</strong>: A black-box function that can recognize a solution without revealing it directly.
+            </li>
+            <li>
+              <strong>Amplitude Amplification</strong>: The technique for increasing the probability of measuring the desired state.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Applications of Grover's Algorithm</h5>
+      <p>This quantum search algorithm has potential applications in various fields:</p>
+      <ul>
+        <li><strong>Cryptography</strong>: Can be used to attack symmetric encryption by searching for keys more efficiently.</li>
+        <li><strong>Database Searching</strong>: Finding specific entries in large, unstructured databases.</li>
+        <li><strong>Optimization Problems</strong>: Finding optimal solutions among many possibilities.</li>
+        <li><strong>NP-complete Problems</strong>: Provides modest speedups for problems like the traveling salesman problem.</li>
+        <li><strong>Collision Finding</strong>: Finding hash collisions or matching entries.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Mathematical Insights</h5>
+      <ul>
+        <li><strong>Optimal Iteration Count</strong>: The optimal number of iterations is approximately π√N/4, where N is the size of the search space.</li>
+        <li><strong>Success Probability</strong>: With the optimal number of iterations, the success probability approaches 1.</li>
+        <li><strong>Provable Speedup</strong>: The quadratic speedup of Grover's algorithm has been proven to be optimal for black-box search problems.</li>
+        <li><strong>Quantum Optimality</strong>: No quantum algorithm can solve the unstructured search problem in fewer than O(√N) steps.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding Grover's Algorithm</div>
+      <div class="card-body">
+        <p>Imagine looking for a specific person wearing a red shirt in a large crowd where everyone else wears blue shirts. In the classical approach, you'd have to inspect people one by one until you find the person in red.</p>
+        <p>Grover's algorithm is like having a special camera that slightly brightens the image of the person in red and slightly dims everyone else each time you take a photo. After taking several photos (around √N photos for N people), the person in red becomes so bright compared to others that they're immediately obvious.</p>
+        <p>The "quantum magic" happens because all people are examined simultaneously in superposition, and the algorithm amplifies the probability of finding the right person through constructive and destructive interference of quantum amplitudes.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/Grover%27s_algorithm" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> Grover's Algorithm on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://www.youtube.com/watch?v=0RPFWZj7Jm0" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+        <i class="fab fa-youtube me-2"></i> Video Explanation
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/quant-ph/9605043" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> Original Research Paper
+      </a>
+    </div>
+  </div>
