@@ -1,0 +1,114 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>Quantum Random Number Generator</h4>
+      <p>A Quantum Random Number Generator (QRNG) produces truly random numbers by exploiting the inherent randomness in quantum mechanical processes, unlike classical random number generators which are typically deterministic and only appear random.</p>
+      
+      <div class="alert alert-secondary">
+        <strong>True Randomness vs. Pseudorandomness</strong>: Classical computers generate "pseudorandom" numbers using deterministic algorithms. Quantum generators access the fundamental randomness of quantum mechanics to produce numbers that are truly unpredictable, even in principle.
+      </div>
+      
+      <h5 class="mt-4">How QRNG Works</h5>
+      <ol>
+        <li>
+          <strong>Quantum State Preparation</strong>: A qubit is prepared in a superposition state (typically using a Hadamard gate).
+        </li>
+        <li>
+          <strong>Measurement</strong>: The qubit is measured, collapsing its state randomly to either 0 or 1 with equal probability.
+        </li>
+        <li>
+          <strong>Bit Generation</strong>: The measurement outcome becomes one random bit in the sequence.
+        </li>
+        <li>
+          <strong>Repetition</strong>: The process is repeated to generate multiple random bits.
+        </li>
+        <li>
+          <strong>Optional Post-Processing</strong>: Statistical tests and randomness extraction may be applied to enhance quality.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">QRNG Circuit and Process</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Quantum_randomness_generator.svg/500px-Quantum_randomness_generator.svg.png" alt="Quantum Random Number Generator" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>A simple quantum circuit for generating random bits. The Hadamard gate creates a superposition that, when measured, gives a truly random outcome.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in QRNG</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>Quantum Superposition</strong>: Places the qubit in an equal probability state between 0 and 1.
+            </li>
+            <li>
+              <strong>Quantum Measurement</strong>: The act of measurement causes the random collapse of the superposition state.
+            </li>
+            <li>
+              <strong>Heisenberg Uncertainty Principle</strong>: Guarantees that certain quantum properties cannot be simultaneously determined with perfect precision.
+            </li>
+            <li>
+              <strong>Bell's Theorem</strong>: Confirms that quantum randomness cannot be explained by hidden deterministic variables.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Applications of Quantum Random Numbers</h5>
+      <p>True random numbers are valuable in many fields:</p>
+      <ul>
+        <li><strong>Cryptography</strong>: Generating encryption keys, initialization vectors, and nonces for security applications.</li>
+        <li><strong>Scientific Simulations</strong>: Monte Carlo methods that require high-quality randomness for accurate results.</li>
+        <li><strong>Statistical Sampling</strong>: Unbiased random sampling for statistics and research studies.</li>
+        <li><strong>Gaming and Gambling</strong>: Provably fair random number generation for games of chance.</li>
+        <li><strong>Numerical Optimization</strong>: Stochastic optimization algorithms that benefit from true randomness.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Implementation Methods</h5>
+      <ul>
+        <li><strong>Photonic QRNG</strong>: Using the quantum properties of light, such as path choice or photon arrival time.</li>
+        <li><strong>Vacuum Fluctuation</strong>: Measuring quantum fluctuations in the vacuum state of an electromagnetic field.</li>
+        <li><strong>Radioactive Decay</strong>: Using the inherently random timing of radioactive decay events.</li>
+        <li><strong>Quantum Circuit QRNG</strong>: Implementing quantum gates and measurements on quantum processors.</li>
+        <li><strong>Commercial QRNG Devices</strong>: Several companies now offer hardware QRNG products for various applications.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding QRNG</div>
+      <div class="card-body">
+        <p>Imagine a classical random number generator like flipping a coin. You think it's random, but theoretically, if you knew the exact physics of the flip—the force applied, air resistance, etc.—you could predict the outcome. It only seems random because these factors are complicated, not because they're truly unpredictable.</p>
+        <p>A quantum random number generator is more like having a special coin that doesn't decide whether it's heads or tails until the exact moment you look at it. Before observation, it exists in a state that is literally both heads and tails simultaneously. The act of looking causes it to randomly become one or the other, and this randomness is not due to a lack of information—it's a fundamental property of nature.</p>
+        <p>No amount of information about the system can predict which result you'll get, making quantum random numbers truly unpredictable even in principle.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/Hardware_random_number_generator#Quantum_random_properties" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> QRNG on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://www.youtube.com/watch?v=GqBJiOM5tm8" target="_blank" rel="noopener" class="btn btn-outline-danger w-100 mb-2">
+        <i class="fab fa-youtube me-2"></i> Video Explanation of QRNG
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/1805.09213" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> Academic Paper on QRNG
+      </a>
+    </div>
+  </div>
