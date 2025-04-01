@@ -1,0 +1,114 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>Deutsch-Jozsa Algorithm: Quantum Classification</h4>
+      <p>The Deutsch-Jozsa algorithm, developed by David Deutsch and Richard Jozsa in 1992, is one of the first quantum algorithms to demonstrate a provable exponential advantage over classical computation for a specific problem.</p>
+      
+      <div class="alert alert-secondary">
+        <strong>Classical vs. Quantum Classification</strong>: To determine if a binary function is constant or balanced, a classical computer needs to check up to 2<sup>n-1</sup>+1 inputs in the worst case. The Deutsch-Jozsa algorithm can solve this problem with certainty using just a single quantum function evaluation.
+      </div>
+      
+      <h5 class="mt-4">How Deutsch-Jozsa Algorithm Works</h5>
+      <ol>
+        <li>
+          <strong>Initialization</strong>: Prepare n+1 qubits, with n qubits in the |0⟩ state and one ancilla qubit in the |1⟩ state.
+        </li>
+        <li>
+          <strong>Superposition</strong>: Apply Hadamard gates to all qubits, creating a superposition of all possible input states.
+        </li>
+        <li>
+          <strong>Oracle Application</strong>: Apply the oracle function that encodes the problem. The oracle marks whether the function is constant or balanced.
+        </li>
+        <li>
+          <strong>Interference</strong>: Apply Hadamard gates again to the first n qubits to cause interference between the quantum states.
+        </li>
+        <li>
+          <strong>Measurement</strong>: Measure the first n qubits. If all are measured as 0, the function is constant; otherwise, it's balanced.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">Deutsch-Jozsa Circuit Visualization</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Deutsch-Jozsa.png" alt="Deutsch-Jozsa Quantum Circuit" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>A quantum circuit implementing the Deutsch-Jozsa algorithm. H gates create superposition, U<sub>f</sub> represents the oracle function, and the final measurement determines the function type.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in Deutsch-Jozsa</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>Quantum Parallelism</strong>: The ability to evaluate a function on all possible inputs simultaneously using superposition.
+            </li>
+            <li>
+              <strong>Phase Kickback</strong>: A quantum effect where applying a controlled operation affects the phase of the control qubit.
+            </li>
+            <li>
+              <strong>Interference</strong>: Quantum amplitudes can interfere constructively or destructively to extract global properties of a function.
+            </li>
+            <li>
+              <strong>Oracle Functions</strong>: Black-box functions implemented as quantum operations that preserve quantum behavior.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Theoretical Significance</h5>
+      <p>While the problem solved by the Deutsch-Jozsa algorithm may seem abstract, its importance in quantum computing is profound:</p>
+      <ul>
+        <li><strong>First Exponential Speedup</strong>: One of the first algorithms to demonstrate an exponential quantum advantage over classical computation.</li>
+        <li><strong>Foundational Insights</strong>: Provided key insights that led to the development of more practical quantum algorithms.</li>
+        <li><strong>Quantum Oracle Model</strong>: Established the quantum oracle model for algorithm analysis.</li>
+        <li><strong>Teaching Tool</strong>: Serves as an excellent pedagogical example for understanding quantum advantage.</li>
+        <li><strong>Precursor</strong>: Paved the way for algorithms like Simon's and Shor's that have more practical applications.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>Extensions and Related Algorithms</h5>
+      <ul>
+        <li><strong>Deutsch's Algorithm</strong>: The single-qubit version that determines if a function f:{0,1}→{0,1} is constant or balanced.</li>
+        <li><strong>Bernstein-Vazirani Algorithm</strong>: Discovers a hidden bit string with a single query, where classical algorithms need n queries.</li>
+        <li><strong>Simon's Algorithm</strong>: Determines the "period" of a function with exponential speedup, a precursor to Shor's algorithm.</li>
+        <li><strong>Hidden Subgroup Problem</strong>: A generalization of the problems solved by many quantum algorithms, including Deutsch-Jozsa.</li>
+        <li><strong>Quantum Counting</strong>: Determines how many inputs satisfy a given property, building on similar principles.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding Deutsch-Jozsa</div>
+      <div class="card-body">
+        <p>Imagine you have a large collection of identical-looking coins. You're told that either all coins are the same (all heads or all tails), or exactly half are heads and half are tails. To determine which is true, classically you would need to check about half the coins in the worst case.</p>
+        <p>The Deutsch-Jozsa algorithm is like having a special quantum balance scale. By carefully placing all coins in quantum superposition on this scale, you can tell in just one weighing whether all coins are identical or split 50/50 between heads and tails.</p>
+        <p>The "quantum magic" happens because the superposition allows all coins to be weighed simultaneously, and interference between the possible outcomes amplifies the pattern of all-same vs. half-half, making it detectable in a single step.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/Deutsch%E2%80%93Jozsa_algorithm" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> Deutsch-Jozsa on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://qiskit.org/textbook/ch-algorithms/deutsch-jozsa.html" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-book-open me-2"></i> Qiskit Textbook
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/quant-ph/9801041" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> Original Paper
+      </a>
+    </div>
+  </div>

@@ -1,0 +1,115 @@
+<div class="row mb-4">
+    <div class="col-md-6">
+      <h4>Quantum Phase Estimation: Eigenvalue Extraction</h4>
+      <p>Quantum Phase Estimation (QPE) is a fundamental quantum algorithm that determines the eigenphase of a unitary operator's eigenvector with high precision. It serves as a critical subroutine in many quantum algorithms including Shor's factoring algorithm and HHL for solving linear systems.</p>
+      
+      <div class="alert alert-secondary">
+        <strong>Classical vs. Quantum Estimation</strong>: Classically, estimating eigenvalues with precision 2<sup>-n</sup> typically requires O(2<sup>n</sup>) operations. QPE can achieve the same precision using only O(n) qubits and quantum operations, providing an exponential advantage.
+      </div>
+      
+      <h5 class="mt-4">How Quantum Phase Estimation Works</h5>
+      <ol>
+        <li>
+          <strong>Initialization</strong>: Prepare a register of n phase qubits in |0⟩ state and a target register in the eigenvector state |ψ⟩.
+        </li>
+        <li>
+          <strong>Superposition</strong>: Apply Hadamard gates to all phase qubits to create superposition.
+        </li>
+        <li>
+          <strong>Controlled Operations</strong>: Apply controlled-U<sup>2<sup>j</sup></sup> operations between each phase qubit j and the target register.
+        </li>
+        <li>
+          <strong>Inverse QFT</strong>: Apply inverse Quantum Fourier Transform to the phase register.
+        </li>
+        <li>
+          <strong>Measurement</strong>: Measure the phase register to obtain a binary approximation of the eigenphase φ.
+        </li>
+      </ol>
+    </div>
+    <div class="col-md-6">
+      <div class="card mb-4">
+        <div class="card-header">QPE Circuit Visualization</div>
+        <div class="card-body text-center">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/f/f3/Phase_estimation.png" alt="Quantum Phase Estimation Circuit" class="img-fluid rounded mb-3">
+          <p class="mb-0"><small>Quantum circuit for phase estimation showing the phase register, controlled-U operations, and inverse QFT to extract the eigenphase.</small></p>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header">Key Quantum Principles in QPE</div>
+        <div class="card-body">
+          <ul class="mb-0">
+            <li>
+              <strong>Eigenvalue Extraction</strong>: QPE extracts the eigenvalue φ from a unitary operator U and its eigenvector |ψ⟩, where U|ψ⟩ = e<sup>2πiφ</sup>|ψ⟩.
+            </li>
+            <li>
+              <strong>Phase Kickback</strong>: Using controlled-U operations to encode phase information in the control qubits.
+            </li>
+            <li>
+              <strong>Quantum Fourier Transform</strong>: The inverse QFT converts phase information into a binary representation.
+            </li>
+            <li>
+              <strong>Amplitude Amplification</strong>: The algorithm naturally amplifies the correct phase through quantum interference.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <hr>
+  
+  <div class="row">
+    <div class="col-md-6">
+      <h5>Applications of Quantum Phase Estimation</h5>
+      <p>QPE enables numerous quantum algorithms with significant practical applications:</p>
+      <ul>
+        <li><strong>Shor's Algorithm</strong>: Uses QPE to find the period of a modular function, enabling integer factorization.</li>
+        <li><strong>Quantum Chemistry</strong>: Determines molecular energy levels and electronic structure properties.</li>
+        <li><strong>HHL Algorithm</strong>: Solves linear systems of equations for applications in simulation and machine learning.</li>
+        <li><strong>Quantum Counting</strong>: Determines how many inputs satisfy a given property with quadratic speedup.</li>
+        <li><strong>Hamiltonian Simulation</strong>: Enables efficient simulation of quantum systems for physics and chemistry.</li>
+      </ul>
+    </div>
+    <div class="col-md-6">
+      <h5>QAOA: Quantum Optimization</h5>
+      <p>The Quantum Approximate Optimization Algorithm (QAOA) is a hybrid quantum-classical algorithm for combinatorial optimization problems:</p>
+      <ul>
+        <li><strong>Problem Encoding</strong>: Map optimization problems to a cost Hamiltonian H<sub>C</sub> that encodes the objective function.</li>
+        <li><strong>Parameterized Circuit</strong>: Create a quantum circuit with parameters β and γ that alternates between problem and mixer Hamiltonians.</li>
+        <li><strong>Variational Approach</strong>: Use classical optimization to find optimal parameters that minimize the cost function.</li>
+        <li><strong>Depth Parameter p</strong>: Controls circuit depth and approximation quality, with higher p generally giving better results.</li>
+        <li><strong>Applications</strong>: Solves problems like MaxCut, traveling salesman, and satisfiability with potential quantum advantage.</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div class="text-center mt-4">
+    <div class="card">
+      <div class="card-header">Beginner's Analogy: Understanding QPE and QAOA</div>
+      <div class="card-body">
+        <p><strong>For QPE:</strong> Imagine you have a mysterious clock with hands that rotate at an unknown but fixed rate. Classically, you'd need to watch the clock for a very long time to precisely determine this rate. Quantum phase estimation is like having a special device that can observe all possible rotations simultaneously and determine the exact rotation rate exponentially faster.</p>
+        <p>The "quantum magic" happens because quantum superposition allows the observation of all time periods at once, while quantum interference amplifies the true rotation rate.</p>
+        <p><strong>For QAOA:</strong> Think of trying to find the highest peak in a mountain range while blindfolded. Classically, you'd need to check many locations randomly or systematically. QAOA is like having a special quantum compass that points increasingly toward higher ground as you adjust its parameters, helping you find the highest peak much faster.</p>
+      </div>
+    </div>
+  </div>
+  
+  <h5 class="mt-4">Further Learning Resources</h5>
+  <div class="row">
+    <div class="col-md-4">
+      <a href="https://en.wikipedia.org/wiki/Quantum_phase_estimation_algorithm" target="_blank" rel="noopener" class="btn btn-outline-secondary w-100 mb-2">
+        <i class="fab fa-wikipedia-w me-2"></i> QPE on Wikipedia
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://arxiv.org/abs/1411.4028" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">
+        <i class="fas fa-file-alt me-2"></i> QAOA Original Paper
+      </a>
+    </div>
+    <div class="col-md-4">
+      <a href="https://qiskit.org/textbook/ch-algorithms/quantum-phase-estimation.html" target="_blank" rel="noopener" class="btn btn-outline-primary w-100 mb-2">
+        <i class="fas fa-book-open me-2"></i> Qiskit QPE Tutorial
+      </a>
+    </div>
+  </div>
