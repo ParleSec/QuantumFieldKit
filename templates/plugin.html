@@ -115,11 +115,30 @@
           
           {% if result %}
             {% if result.error %}
-              <div class="alert alert-danger">
-                <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Error Occurred</h5>
-                <hr>
-                <pre class="mt-3 mb-0">{{ result.error }}</pre>
+            <div class="alert alert-danger">
+              <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i> Error Occurred</h5>
+              <hr>
+              <div class="error-details">
+                {% if '\n' in result.error %}
+                  {% for line in result.error.split('\n') %}
+                    {% if 'Suggestion:' in line %}
+                      <div class="alert alert-info mt-2">
+                        <i class="fas fa-lightbulb me-2"></i> {{ line }}
+                      </div>
+                    {% else %}
+                      <p>{{ line }}</p>
+                    {% endif %}
+                  {% endfor %}
+                {% else %}
+                  <p>{{ result.error }}</p>
+                {% endif %}
               </div>
+              <div class="mt-3">
+                <button type="button" class="btn btn-outline-secondary" id="reset-form">
+                  <i class="fas fa-undo me-2"></i> Reset Parameters
+                </button>
+              </div>
+            </div>
             {% else %}
               <div class="result-container">
                 <!-- Visualization tabs -->
