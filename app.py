@@ -7,8 +7,11 @@ from flask_socketio import SocketIO, emit
 from werkzeug.middleware.proxy_fix import ProxyFix
 import signal
 from functools import wraps
-import threading
-import multiprocessing
+#import threading
+#import multiprocessing
+import concurrent.futures
+from datetime import datetime
+import psutil
 
 # Import simulation functions from plugins
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
@@ -26,13 +29,57 @@ from plugins.quantum_fourier.qft import run_qft
 from plugins.phase_estimation.phase_estimation import run_phase_estimation
 from plugins.optimization.qaoa import run_qaoa
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
+# Configure Errors
+class SimulationError(Exception):
+    """Base class for simulation errors"""
+    def __init__(self, message, param_info=None, suggestion=None):
+        self.message = message
+        self.param_info = param_info
+        self.suggestion = suggestion
+        super().__init__(self.message)
+
+class ParameterError(SimulationError):
+    """Error for invalid simulation parameters"""
+    pass
+
+class QuantumCircuitError(SimulationError):
+    """Error in quantum circuit construction or execution"""
+    pass
+
+class ResourceExceededError(SimulationError):
+    """Error when simulation exceeds available resources"""
+    pass
+
+
+
+def configure_logging():
+    # Create logs directory if it doesn't exist
+    if not os.path.exists('logs'):
+        os.makedirs('logs')
+        
+    # Create log file with date-based naming
+    log_filename = f"logs/quantum_field_kit_{datetime.now().strftime('%Y-%m-%d')}.log"
+    
+    # Configure root logger
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+        handlers=[
+            # Console handler for immediate feedback
+            logging.StreamHandler(),
+            # File handler for persistent logs
+            logging.FileHandler(log_filename)
+        ]
+    )
+    
+    # Set specific logger levels
+    logging.getLogger('werkzeug').setLevel(logging.WARNING)
+    logging.getLogger('socketio').setLevel(logging.WARNING)
+    
+    return logging.getLogger('quantum_field_kit')
+
+# Create application logger
+logger = configure_logging()
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -60,28 +107,19 @@ def timeout(seconds):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            result = [None]
-            error = [None]
-            
-            def target():
+            plugin_name = kwargs.get('_plugin_name', 'Unknown plugin')
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(func, *args, **kwargs)
                 try:
-                    result[0] = func(*args, **kwargs)
-                except Exception as e:
-                    error[0] = e
-            
-            thread = threading.Thread(target=target)
-            thread.daemon = True
-            thread.start()
-            thread.join(seconds)
-            
-            if thread.is_alive():
-                return {"output": None, "log": None, "error": f"Execution timed out after {seconds} seconds"}
-            
-            if error[0] is not None:
-                raise error[0]
-            
-            return result[0]
-        
+                    return future.result(timeout=seconds)
+                except concurrent.futures.TimeoutError:
+                    # More detailed timeout message
+                    return {
+                        "output": None, 
+                        "log": f"Simulation for {plugin_name} started but could not complete within {seconds} seconds.\n"
+                               f"This may be due to complex parameters or high precision settings.",
+                        "error": f"Execution timed out after {seconds} seconds. Try reducing complexity of the simulation."
+                    }
         return wrapper
     return decorator
 
@@ -105,6 +143,22 @@ def json_safe(obj):
             return obj.tolist()
         else:
             return str(obj)
+
+def check_memory_usage():
+    """Check if memory usage is within acceptable limits"""
+    try:
+        process = psutil.Process(os.getpid())
+        memory_usage = process.memory_info().rss / (1024 * 1024) # MB
+        memory_percent = process.memory_percent()
+        
+        if memory_percent > 85:
+            logger.warning(f"High memory usage detected: {memory_usage:.2f} MB ({memory_percent:.1f}%)")
+            return False
+        
+        return True
+    except Exception as e:
+        logger.error(f"Error checking memory usage: {e}")
+        return True  # Assume it's safe if we can't check
 
 def wrap_result(sim_result):
     """
@@ -134,15 +188,24 @@ def wrap_result(sim_result):
 def run_plugin(sim_func, **params):
     """
     Calls the simulation function with the given parameters.
-    Returns a standardized result dictionary.
+    Returns a standardized result dictionary with improved error handling.
     """
+    # Check memory before running simulation
+    if not check_memory_usage():
+        return {
+            "output": None,
+            "log": "Server is currently experiencing high memory usage. Please try again later.",
+            "error": "Insufficient memory available for simulation. Try reducing simulation complexity."
+        }
+    
     try:
-        logger.info(f"Running simulation with parameters: {params}")
+        plugin_key = params.pop('_plugin_key', 'unknown_plugin')
+        logger.info(f"Running {plugin_key} simulation with parameters: {params}")
         
         # Apply timeout to simulation function
-        @timeout(10)
+        @timeout(15)  # Increased timeout for complex simulations
         def run_with_timeout():
-            return sim_func(**params)
+            return sim_func(_plugin_name=plugin_key, **params)
         
         sim_result = run_with_timeout()
         if isinstance(sim_result, dict) and "error" in sim_result and sim_result["error"] is not None:
@@ -150,11 +213,162 @@ def run_plugin(sim_func, **params):
             return sim_result
         
         return wrap_result(sim_result)
+    except ParameterError as e:
+        # Handle parameter errors with helpful suggestions
+        error_msg = f"Parameter error: {e.message}"
+        if e.param_info:
+            error_msg += f"\nParameter: {e.param_info}"
+        if e.suggestion:
+            error_msg += f"\nSuggestion: {e.suggestion}"
+        
+        logger.error(f"Parameter error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_msg}")
+        return {"output": None, "log": None, "error": error_msg}
+    except QuantumCircuitError as e:
+        # Handle quantum circuit specific errors
+        error_msg = f"Quantum circuit error: {e.message}"
+        if e.suggestion:
+            error_msg += f"\nSuggestion: {e.suggestion}"
+        
+        logger.error(f"Circuit error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_msg}")
+        return {"output": None, "log": None, "error": error_msg}
     except Exception as e:
+        # Generic exception handling with improved context
+        error_type = type(e).__name__
         error_msg = str(e)
         stack_trace = traceback.format_exc()
-        logger.error(f"Simulation error: {error_msg}\n{stack_trace}")
-        return {"output": None, "log": None, "error": f"{error_msg}\n\n{stack_trace}"}
+        
+        # Create a user-friendly error message
+        user_error = f"Error ({error_type}): {error_msg}"
+        
+        # Log the full technical details
+        logger.error(f"Simulation error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_type} - {error_msg}\n{stack_trace}")
+        
+        return {
+            "output": None, 
+            "log": f"Simulation failed. See error tab for details.",
+            "error": user_error
+        }
+    
+def validate_parameters(plugin, params):
+    """Enhanced parameter validation with detailed error messages"""
+    validated_params = {}
+    
+    for param in plugin["parameters"]:
+        param_name = param["name"]
+        
+        # Check if required parameter is missing
+        if param_name not in params and "default" not in param:
+            raise ParameterError(
+                f"Missing required parameter: {param_name}",
+                param_info=f"{param_name} ({param['type']})",
+                suggestion="Please provide a value for this required parameter."
+            )
+        
+        # Use default if parameter is missing
+        if param_name not in params and "default" in param:
+            validated_params[param_name] = param["default"]
+            continue
+            
+        # Validate parameter based on type
+        raw_val = params[param_name]
+        
+        if param["type"] == "int":
+            try:
+                val = int(raw_val)
+                # Check min/max bounds
+                if "min" in param and val < param["min"]:
+                    raise ParameterError(
+                        f"Value for {param_name} is too small",
+                        param_info=f"{param_name} = {val}",
+                        suggestion=f"Minimum allowed value is {param['min']}."
+                    )
+                if "max" in param and val > param["max"]:
+                    raise ParameterError(
+                        f"Value for {param_name} is too large",
+                        param_info=f"{param_name} = {val}",
+                        suggestion=f"Maximum allowed value is {param['max']}."
+                    )
+                validated_params[param_name] = val
+            except ValueError:
+                raise ParameterError(
+                    f"Invalid integer value for {param_name}",
+                    param_info=f"Received: {raw_val}",
+                    suggestion="Please provide a valid integer value."
+                )
+                
+        elif param["type"] == "float":
+            try:
+                val = float(raw_val)
+                # Check min/max bounds
+                if "min" in param and val < param["min"]:
+                    raise ParameterError(
+                        f"Value for {param_name} is too small",
+                        param_info=f"{param_name} = {val}",
+                        suggestion=f"Minimum allowed value is {param['min']}."
+                    )
+                if "max" in param and val > param["max"]:
+                    raise ParameterError(
+                        f"Value for {param_name} is too large",
+                        param_info=f"{param_name} = {val}",
+                        suggestion=f"Maximum allowed value is {param['max']}."
+                    )
+                validated_params[param_name] = val
+            except ValueError:
+                raise ParameterError(
+                    f"Invalid float value for {param_name}",
+                    param_info=f"Received: {raw_val}",
+                    suggestion="Please provide a valid decimal number."
+                )
+                
+        elif param["type"] == "bool":
+            if isinstance(raw_val, bool):
+                validated_params[param_name] = raw_val
+            elif isinstance(raw_val, str):
+                validated_params[param_name] = raw_val.lower() == "true"
+            else:
+                raise ParameterError(
+                    f"Invalid boolean value for {param_name}",
+                    param_info=f"Received: {raw_val}",
+                    suggestion="Please provide 'true' or 'false'."
+                )
+                
+        elif param["type"] == "str":
+            if not isinstance(raw_val, str):
+                raw_val = str(raw_val)
+                
+            # Check max length for strings
+            if "max_length" in param and len(raw_val) > param["max_length"]:
+                raise ParameterError(
+                    f"Value for {param_name} is too long",
+                    param_info=f"Length: {len(raw_val)} characters",
+                    suggestion=f"Maximum allowed length is {param['max_length']} characters."
+                )
+                
+            # Check if value is in allowed options
+            if "options" in param and raw_val not in param["options"]:
+                raise ParameterError(
+                    f"Invalid option for {param_name}",
+                    param_info=f"Received: {raw_val}",
+                    suggestion=f"Allowed options are: {', '.join(param['options'])}"
+                )
+                
+            validated_params[param_name] = raw_val
+        
+        elif param["type"] == "select":
+            if "options" in param and raw_val not in param["options"]:
+                raise ParameterError(
+                    f"Invalid selection for {param_name}",
+                    param_info=f"Received: {raw_val}",
+                    suggestion=f"Please select one of: {', '.join(param['options'])}"
+                )
+            validated_params[param_name] = raw_val
+            
+        else:
+            # For unrecognized types, just pass through the value
+            validated_params[param_name] = raw_val
+            
+    return validated_params
+
 
 # --- Plugin Registry ---
 # Define all available quantum simulation plugins
@@ -170,7 +384,7 @@ PLUGINS = {
             {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use",
              "min": 1, "max": 10}
         ],
-        "run": lambda p: run_plugin(generate_quantum_fingerprint_cirq, data=p["data"], num_qubits=p["num_qubits"])
+        "run": lambda p: run_plugin(generate_quantum_fingerprint_cirq, _plugin_key="auth", data=p["data"], num_qubits=p["num_qubits"])
     },
     
     "bb84": {
@@ -203,6 +417,7 @@ PLUGINS = {
             "description": "Run detailed quantum simulation"}
         ],
         "run": lambda p: run_plugin(bb84_protocol_cirq, 
+                                _plugin_key="bb84",
                                 num_bits=p["num_bits"],
                                 distance_km=p["distance_km"],
                                 hardware_type=p["hardware_type"],
@@ -221,7 +436,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(run_shor_code, noise_prob=p["noise"])
+        "run": lambda p: run_plugin(run_shor_code, _plugin_key="shor", noise_prob=p["noise"])
     },
     
     "grover": {
@@ -237,7 +452,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(run_grover, n=p["n"], target_state=p["target_state"], noise_prob=p["noise"])
+        "run": lambda p: run_plugin(run_grover, _plugin_key="grover", n=p["n"], target_state=p["target_state"], noise_prob=p["noise"])
     },
     
     "handshake": {
@@ -249,7 +464,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(handshake_cirq, noise_prob=p["noise"])
+        "run": lambda p: run_plugin(handshake_cirq, _plugin_key="handshake", noise_prob=p["noise"])
     },
     
     "network": {
@@ -261,7 +476,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(entanglement_swapping_cirq, noise_prob=p["noise"])
+        "run": lambda p: run_plugin(entanglement_swapping_cirq, _plugin_key="network", noise_prob=p["noise"])
     },
     
     "qrng": {
@@ -273,7 +488,7 @@ PLUGINS = {
             {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits",
              "min": 1, "max": 16}
         ],
-        "run": lambda p: run_plugin(generate_random_number_cirq, num_bits=p["num_bits"])
+        "run": lambda p: run_plugin(generate_random_number_cirq, _plugin_key="qrng", num_bits=p["num_bits"])
     },
     
     "teleport": {
@@ -285,7 +500,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(teleportation_circuit, noise_prob=p["noise"])
+        "run": lambda p: run_plugin(teleportation_circuit, _plugin_key="teleport", noise_prob=p["noise"])
     },
     
     "vqe": {
@@ -301,7 +516,7 @@ PLUGINS = {
             {"name": "max_iter", "type": "int", "default": 5, "description": "Maximum iterations",
              "min": 1, "max": 20}
         ],
-        "run": lambda p: run_plugin(run_vqe, num_qubits=p["num_qubits"], noise_prob=p["noise"], max_iter=p["max_iter"])
+        "run": lambda p: run_plugin(run_vqe, _plugin_key="vqe", num_qubits=p["num_qubits"], noise_prob=p["noise"], max_iter=p["max_iter"])
     },
     
     "quantum_decryption_grover": {
@@ -317,7 +532,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(grover_key_search, key=p["key"], num_bits=p["num_bits"], noise_prob=p["noise"])
+        "run": lambda p: run_plugin(grover_key_search, _plugin_key="quantum_decryption_grover", key=p["key"], num_bits=p["num_bits"], noise_prob=p["noise"])
     },
     
     "quantum_decryption_shor": {
@@ -329,7 +544,7 @@ PLUGINS = {
             {"name": "N", "type": "int", "default": 15, "description": "Composite number",
              "min": 4, "max": 100}
         ],
-        "run": lambda p: run_plugin(shor_factorization, N=p["N"])
+        "run": lambda p: run_plugin(shor_factorization, _plugin_key="quantum_decryption_shor", N=p["N"])
     },
     
     "deutsch_jozsa": {
@@ -345,7 +560,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(deutsch_jozsa_cirq, n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
+        "run": lambda p: run_plugin(deutsch_jozsa_cirq, _plugin_key="deutsch_jozsa", n_qubits=p["n_qubits"], oracle_type=p["oracle_type"], noise_prob=p["noise"])
     },
 
     "qft": {
@@ -363,7 +578,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(run_qft, n_qubits=p["n_qubits"], input_state=p["input_state"], 
+        "run": lambda p: run_plugin(run_qft, _plugin_key="qft", n_qubits=p["n_qubits"], input_state=p["input_state"], 
                                     include_inverse=p["include_inverse"].lower() == "true", noise_prob=p["noise"])
     },
 
@@ -380,7 +595,7 @@ PLUGINS = {
             {"name": "noise", "type": "float", "default": 0.0, "description": "Noise probability",
              "min": 0.0, "max": 0.3}
         ],
-        "run": lambda p: run_plugin(run_phase_estimation, precision_bits=p["precision_bits"], 
+        "run": lambda p: run_plugin(run_phase_estimation, _plugin_key="phase_estimation", precision_bits=p["precision_bits"], 
                                     target_phase=p["target_phase"], noise_prob=p["noise"])
     },
 
@@ -401,7 +616,7 @@ PLUGINS = {
             {"name": "num_samples", "type": "int", "default": 100, "description": "Number of samples",
              "min": 10, "max": 500}
         ],
-        "run": lambda p: run_plugin(run_qaoa, n_nodes=p["n_nodes"], edge_probability=p["edge_probability"], 
+        "run": lambda p: run_plugin(run_qaoa, _plugin_key="qaoa", n_nodes=p["n_nodes"], edge_probability=p["edge_probability"], 
                                     p_layers=p["p_layers"], noise_prob=p["noise"], num_samples=p["num_samples"])
     }
 }
@@ -458,47 +673,35 @@ def plugin_view(plugin_key):
     educational_template = get_educational_content_template(plugin_key)
 
     if request.method == "POST":
-        params = {}
+        # Extract parameters from the form
+        raw_params = {}
         for param in plugin["parameters"]:
-            raw_val = request.form.get(param["name"], param.get("default"))
-            param_name = param["name"]
-            
-            # Validate and convert parameters with bounds checking
-            if param["type"] == "int":
-                try:
-                    raw_val = int(raw_val)
-                    # Check min/max bounds for integers
-                    if "min" in param and raw_val < param["min"]:
-                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"})
-                    if "max" in param and raw_val > param["max"]:
-                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"})
-                except ValueError:
-                    return jsonify({"error": f"Invalid integer value for {param_name}"})
-            
-            elif param["type"] == "float":
-                try:
-                    raw_val = float(raw_val)
-                    # Check min/max bounds for floats
-                    if "min" in param and raw_val < param["min"]:
-                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"})
-                    if "max" in param and raw_val > param["max"]:
-                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"})
-                except ValueError:
-                    return jsonify({"error": f"Invalid float value for {param_name}"})
-            
-            elif param["type"] == "str":
-                # Check max length for strings
-                if "max_length" in param and len(raw_val) > param["max_length"]:
-                    return jsonify({"error": f"Value for {param_name} cannot exceed {param['max_length']} characters"})
-            
-            params[param_name] = raw_val
+            raw_params[param["name"]] = request.form.get(param["name"], param.get("default", ""))
         
-        # Execute the plugin with the validated parameters
-        result = plugin["run"](params)
-        
-        # If this is an AJAX request, return JSON
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return jsonify(result)
+        try:
+            # Validate parameters
+            params = validate_parameters(plugin, raw_params)
+            
+            # Add plugin key for better error reporting
+            params['_plugin_key'] = plugin_key
+            
+            # Execute the plugin with the validated parameters
+            result = plugin["run"](params)
+            
+            # If this is an AJAX request, return JSON
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(result)
+                
+        except SimulationError as e:
+            # Handle validation errors
+            error_msg = str(e)
+            if hasattr(e, 'suggestion') and e.suggestion:
+                error_msg += f"\n\nSuggestion: {e.suggestion}"
+                
+            result = {"output": None, "log": None, "error": error_msg}
+            
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return jsonify(result)
     
     return render_template("plugin.html", plugin=plugin, result=result, educational_template=educational_template)
 
@@ -524,48 +727,31 @@ def api_run_plugin(plugin_key):
     
     # Parse JSON parameters
     try:
-        params = request.json or {}
+        raw_params = request.json or {}
     except Exception:
         return jsonify({"error": "Invalid JSON data"}), 400
     
-    # Validate and convert parameters with bounds checking
-    for param in plugin["parameters"]:
-        param_name = param["name"]
+    try:
+        # Validate and convert parameters
+        params = validate_parameters(plugin, raw_params)
         
-        if param_name not in params and "default" in param:
-            params[param_name] = param["default"]
+        # Add plugin key for better error reporting
+        params['_plugin_key'] = plugin_key
         
-        if param_name in params:
-            if param["type"] == "int":
-                try:
-                    params[param_name] = int(params[param_name])
-                    # Check min/max bounds for integers
-                    if "min" in param and params[param_name] < param["min"]:
-                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"}), 400
-                    if "max" in param and params[param_name] > param["max"]:
-                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"}), 400
-                except (ValueError, TypeError):
-                    return jsonify({"error": f"Invalid integer value for {param_name}"}), 400
+        # Run the plugin
+        result = plugin["run"](params)
+        return jsonify(result)
+        
+    except SimulationError as e:
+        # Handle validation errors
+        error_msg = str(e)
+        if hasattr(e, 'suggestion') and e.suggestion:
+            error_msg += f"\n\nSuggestion: {e.suggestion}"
             
-            elif param["type"] == "float":
-                try:
-                    params[param_name] = float(params[param_name])
-                    # Check min/max bounds for floats
-                    if "min" in param and params[param_name] < param["min"]:
-                        return jsonify({"error": f"Value for {param_name} must be at least {param['min']}"}), 400
-                    if "max" in param and params[param_name] > param["max"]:
-                        return jsonify({"error": f"Value for {param_name} cannot exceed {param['max']}"}), 400
-                except (ValueError, TypeError):
-                    return jsonify({"error": f"Invalid float value for {param_name}"}), 400
-            
-            elif param["type"] == "str" and "max_length" in param:
-                # Check max length for strings
-                if len(str(params[param_name])) > param["max_length"]:
-                    return jsonify({"error": f"Value for {param_name} cannot exceed {param['max_length']} characters"}), 400
-    
-    # Run the plugin
-    result = plugin["run"](params)
-    return jsonify(result)
+        return jsonify({"output": None, "log": None, "error": error_msg}), 400
+    except Exception as e:
+        logger.error(f"Unexpected error running plugin {plugin_key} via API: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({"output": None, "log": None, "error": f"Server error: {str(e)}"}), 500
 
 # --- Socket.IO event handlers for real-time updates ---
 @socketio.on('connect')
@@ -582,7 +768,7 @@ def handle_disconnect():
 def handle_run_plugin(data):
     """Run a plugin and emit progress updates."""
     plugin_key = data.get('plugin_key')
-    params = data.get('params', {})
+    raw_params = data.get('params', {})
     
     if plugin_key not in PLUGINS:
         emit('plugin_error', {'error': f"Plugin '{plugin_key}' not found"})
@@ -590,24 +776,39 @@ def handle_run_plugin(data):
     
     plugin = PLUGINS[plugin_key]
     
-    # Convert parameters to the correct types
-    for param in plugin["parameters"]:
-        name = param["name"]
-        if name in params:
-            try:
-                if param["type"] == "int":
-                    params[name] = int(params[name])
-                elif param["type"] == "float":
-                    params[name] = float(params[name])
-            except (ValueError, TypeError):
-                emit('plugin_error', {'error': f"Invalid {param['type']} value for {name}"})
-                return
-    
-    # Run the plugin and emit the result
     try:
+        # Validate parameters
+        params = validate_parameters(plugin, raw_params)
+        
+        # Add plugin key for better error reporting
+        params['_plugin_key'] = plugin_key
+        
+        # Set up progress tracking
+        session_id = request.sid
+        
+        def progress_callback(step, total, message):
+            progress = int(100 * step / total) if total > 0 else 0
+            emit('plugin_progress', {
+                'plugin_key': plugin_key,
+                'progress': progress,
+                'message': message
+            })
+        
+        # Add progress callback to parameters if supported
+        params['progress_callback'] = progress_callback
+        
+        # Run the plugin and emit the result
         emit('plugin_start', {'plugin_key': plugin_key})
         result = plugin["run"](params)
         emit('plugin_result', {'plugin_key': plugin_key, 'result': result})
+        
+    except SimulationError as e:
+        # Handle validation errors
+        error_msg = str(e)
+        if hasattr(e, 'suggestion') and e.suggestion:
+            error_msg += f"\n\nSuggestion: {e.suggestion}"
+            
+        emit('plugin_error', {'plugin_key': plugin_key, 'error': error_msg})
     except Exception as e:
         emit('plugin_error', {'plugin_key': plugin_key, 'error': str(e)})
 
