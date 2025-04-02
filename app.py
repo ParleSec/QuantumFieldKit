@@ -667,6 +667,60 @@ def index():
     
     return render_template("index.html", plugins=PLUGINS, categories=categories)
 
+@app.route('/sitemap.xml')
+def sitemap():
+    """Generate the sitemap.xml file dynamically."""
+    # Get base URL from request or use production URL
+    if app.config.get('ENV') == 'production':
+        base_url = "https://quantumfieldkit.com"
+    else:
+        base_url = request.url_root.rstrip('/')
+    
+    # Build the sitemap XML string
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+           '  <url>',
+           f'    <loc>{base_url}/</loc>',
+           '    <changefreq>monthly</changefreq>',
+           '    <priority>1.0</priority>',
+           '  </url>']
+    
+    # Add all plugin pages
+    for plugin_key in PLUGINS:
+        xml.append('  <url>')
+        xml.append(f'    <loc>{base_url}/plugin/{plugin_key}</loc>')
+        xml.append('    <changefreq>monthly</changefreq>')
+        xml.append('    <priority>0.8</priority>')
+        xml.append('  </url>')
+    
+    xml.append('</urlset>')
+    
+    # Return the sitemap with the correct MIME type
+    return app.response_class(
+        response='\n'.join(xml),
+        status=200,
+        mimetype='application/xml'
+    )
+
+@app.route('/robots.txt')
+def robots():
+    """Serve robots.txt dynamically."""
+    if app.config.get('ENV') == 'production':
+        base_url = "https://quantumfieldkit.com"
+    else:
+        base_url = request.url_root.rstrip('/')
+    
+    robots_txt = f"""User-agent: *
+Allow: /
+
+Sitemap: {base_url}/sitemap.xml
+"""
+    return app.response_class(
+        response=robots_txt,
+        status=200,
+        mimetype='text/plain'
+    )
+
 @app.route("/plugin/<plugin_key>", methods=["GET", "POST"])
 def plugin_view(plugin_key):
     """Handle individual plugin pages and simulation requests."""
