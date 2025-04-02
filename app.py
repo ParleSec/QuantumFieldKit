@@ -199,13 +199,19 @@ def run_plugin(sim_func, **params):
         }
     
     try:
+        # Extract plugin key for error reporting but don't pass it to the simulation function
         plugin_key = params.pop('_plugin_key', 'unknown_plugin')
+        
+        # Also remove _plugin_name if it exists (backward compatibility)
+        params.pop('_plugin_name', None)
+        
         logger.info(f"Running {plugin_key} simulation with parameters: {params}")
         
         # Apply timeout to simulation function
         @timeout(15)  # Increased timeout for complex simulations
         def run_with_timeout():
-            return sim_func(_plugin_name=plugin_key, **params)
+            # Don't pass plugin identifiers to the actual simulation function
+            return sim_func(**params)
         
         sim_result = run_with_timeout()
         if isinstance(sim_result, dict) and "error" in sim_result and sim_result["error"] is not None:
@@ -221,7 +227,7 @@ def run_plugin(sim_func, **params):
         if e.suggestion:
             error_msg += f"\nSuggestion: {e.suggestion}"
         
-        logger.error(f"Parameter error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_msg}")
+        logger.error(f"Parameter error in {plugin_key}: {error_msg}")
         return {"output": None, "log": None, "error": error_msg}
     except QuantumCircuitError as e:
         # Handle quantum circuit specific errors
@@ -229,7 +235,7 @@ def run_plugin(sim_func, **params):
         if e.suggestion:
             error_msg += f"\nSuggestion: {e.suggestion}"
         
-        logger.error(f"Circuit error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_msg}")
+        logger.error(f"Circuit error in {plugin_key}: {error_msg}")
         return {"output": None, "log": None, "error": error_msg}
     except Exception as e:
         # Generic exception handling with improved context
@@ -241,7 +247,7 @@ def run_plugin(sim_func, **params):
         user_error = f"Error ({error_type}): {error_msg}"
         
         # Log the full technical details
-        logger.error(f"Simulation error in {plugin_key if 'plugin_key' in locals() else 'unknown'}: {error_type} - {error_msg}\n{stack_trace}")
+        logger.error(f"Simulation error in {plugin_key}: {error_type} - {error_msg}\n{stack_trace}")
         
         return {
             "output": None, 
@@ -421,9 +427,9 @@ PLUGINS = {
                                 num_bits=p["num_bits"],
                                 distance_km=p["distance_km"],
                                 hardware_type=p["hardware_type"],
-                                eve_present=p["eve_present"].lower() == "true",
+                                eve_present=p["eve_present"] if isinstance(p["eve_present"], bool) else p["eve_present"].lower() == "true",
                                 eve_strategy=p["eve_strategy"],
-                                detailed_simulation=p["detailed_simulation"].lower() == "true",
+                                detailed_simulation=p["detailed_simulation"] if isinstance(p["detailed_simulation"], bool) else p["detailed_simulation"].lower() == "true",
                                 noise_prob=p["noise"])
     },
     
