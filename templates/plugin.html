@@ -180,7 +180,7 @@
                     
                     <!-- Specific visualizations based on plugin type -->
                     <div class="row">
-                      {% if plugin.key == 'qrng' or plugin.key == 'bb84' %}
+                      {% if plugin.key == 'bb84' %}
                         <div class="col-md-6 mb-4">
                           <div class="card">
                             <div class="card-header">Bit Distribution</div>
@@ -191,6 +191,37 @@
                         </div>
                       {% endif %}
                       
+                      {% if plugin.key == 'qrng' %}
+                      <div class="row">
+                        <div class="col-12 mb-4">
+                          <div class="card">
+                            <div class="card-header">Quantum Circuit Visualization</div>
+                            <div class="card-body">
+                              <div id="quantum-circuit-viz" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-lg-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">Applications</div>
+                            <div class="card-body">
+                              <div id="qrng-applications" class="applications-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-lg-6 mb-4">
+                          <div class="card">
+                            <div class="card-header">History</div>
+                            <div class="card-body">
+                              <div id="qrng-history" class="history-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {% endif %}
+
                       {% if plugin.key == 'teleport' or plugin.key == 'handshake' or plugin.key == 'auth' %}
                         <div class="col-md-6 mb-4">
                           <div class="card">

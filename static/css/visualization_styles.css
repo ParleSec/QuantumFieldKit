@@ -27,3 +27,29 @@
     height: 300px !important;
     width: 100% !important;
   }
+
+  /* QRNG visualization */
+  .application-card {
+    transition: all 0.2s ease;
+  }
+
+  .application-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  }
+
+  .qubit-row {
+    transition: background-color 0.2s ease;
+  }
+
+  .qubit-row:hover {
+    background-color: rgba(0,0,0,0.08) !important;
+  }
+
+  #qrng-enhanced-viz .nav-tabs .nav-link {
+    transition: all 0.3s ease;
+  }
+
+  #qrng-enhanced-viz .nav-link:hover:not(.active) {
+    background-color: rgba(255,255,255,0.2);
+  }

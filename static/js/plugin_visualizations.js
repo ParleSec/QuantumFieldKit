@@ -24,6 +24,9 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
         this.initQuantumStateViz(resultData);
         break;
       case 'qrng':
+        console.log('Initializing enhanced QRNG visualization');
+        this.initQRNG(resultData, pluginKey);
+        break;
       case 'bb84':
         console.log('Initializing bit distribution visualization');
         this.initBitDistribution(resultData, pluginKey);
@@ -1716,7 +1719,450 @@ try {
   console.error('Error creating QAOA visualization:', e);
   vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
 }
+},
+
+initQRNG: function(resultData) {
+  if (!resultData || !resultData.output) return;
+  const output = resultData.output;
+  
+  // Find the visualization container - it's the tab with the circuit diagram
+  const visualizationTab = document.querySelector('#visualization');
+  if (!visualizationTab) return;
+  
+  // Create container for additional visualizations if they don't exist
+  if (!document.getElementById('qrng-enhanced-viz')) {
+    const container = document.createElement('div');
+    container.id = 'qrng-enhanced-viz';
+    container.className = 'mt-4';
+    visualizationTab.appendChild(container);
+    
+    // Create structure with tabs
+    container.innerHTML = `
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+              <button class="nav-link active text-dark bg-white" id="qrng-tab-applications" data-bs-toggle="tab" data-bs-target="#qrng-applications-content">
+                <i class="fas fa-dice me-1"></i> Applications
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link text-white" id="qrng-tab-details" data-bs-toggle="tab" data-bs-target="#qrng-details-content">
+                <i class="fas fa-microchip me-1"></i> Quantum Bits
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link text-white" id="qrng-tab-history" data-bs-toggle="tab" data-bs-target="#qrng-history-content">
+                <i class="fas fa-history me-1"></i> History
+              </button>
+            </li>
+          </ul>
+        </div>
+        <div class="card-body">
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="qrng-applications-content">
+              <h5 class="card-title">Random Number Applications</h5>
+              <div id="qrng-apps-container"></div>
+            </div>
+            <div class="tab-pane fade" id="qrng-details-content">
+              <h5 class="card-title">Quantum Circuit Details</h5>
+              <div id="qrng-bits-container"></div>
+            </div>
+            <div class="tab-pane fade" id="qrng-history-content">
+              <h5 class="card-title">Generation History</h5>
+              <div id="qrng-history-container"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+  
+  // Initialize history if it doesn't exist
+  if (!window.qrngHistory) {
+    window.qrngHistory = [];
+  }
+  
+  // Add current result to history
+  window.qrngHistory.unshift({
+    number: output.random_number,
+    binary: output.bits_string,
+    zeros: output.zeros_count,
+    ones: output.ones_count,
+    timestamp: new Date().toLocaleTimeString()
+  });
+  
+  // Keep only the last 10 entries
+  if (window.qrngHistory.length > 10) {
+    window.qrngHistory = window.qrngHistory.slice(0, 10);
+  }
+  
+  // Populate the applications tab
+  this.populateQRNGApplications(output);
+  
+  // Populate the quantum bits tab
+  this.populateQRNGBitDetails(output);
+  
+  // Populate the history tab
+  this.populateQRNGHistory();
+},
+
+// Applications visualization
+populateQRNGApplications: function(output) {
+  const container = document.getElementById('qrng-apps-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  const randomNumber = output.random_number;
+  
+  // Create applications display
+  const applications = [
+    { name: 'Coin Flip', icon: '🪙', mapping: (n) => n % 2 === 0 ? 'Heads' : 'Tails' },
+    { name: 'Dice Roll', icon: '🎲', mapping: (n) => 1 + (n % 6) },
+    { name: 'Card Draw', icon: '🃏', mapping: (n) => {
+      const suits = ['♠️', '♥️', '♦️', '♣️'];
+      const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+      const suit = suits[n % 4];
+      const value = values[(n >> 2) % 13];
+      return `${value}${suit}`;
+    }},
+    { name: 'Lottery', icon: '🎰', mapping: (n) => {
+      // Generate lottery numbers
+      const numbers = new Set();
+      let seed = n;
+      while(numbers.size < 6) {
+        seed = (seed * 1664525 + 1013904223) % Math.pow(2, 32);
+        numbers.add(1 + (seed % 49));
+      }
+      return Array.from(numbers).sort((a, b) => a - b).join(', ');
+    }},
+    { name: 'Password', icon: '🔑', mapping: (n) => {
+      // Generate a simple password based on the random number
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      let password = '';
+      let seed = n;
+      for (let i = 0; i < 8; i++) {
+        seed = (seed * 1664525 + 1013904223) % Math.pow(2, 32);
+        password += chars[seed % chars.length];
+      }
+      return password;
+    }},
+    { name: 'RGB Color', icon: '🎨', mapping: (n) => {
+      // Generate a color based on the random number
+      const r = (n * 73) % 256;
+      const g = (n * 149) % 256;
+      const b = (n * 223) % 256;
+      const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+      return hex;
+    }}
+  ];
+  
+  // Create grid for applications
+  const row = document.createElement('div');
+  row.className = 'row g-3';
+  
+  applications.forEach(app => {
+    const col = document.createElement('div');
+    col.className = 'col-md-6 col-lg-4';
+    
+    const card = document.createElement('div');
+    card.className = 'card h-100 application-card';
+    
+    // Style for hover effect
+    card.style.transition = 'all 0.2s ease';
+    card.onmouseenter = function() { 
+      this.style.transform = 'translateY(-3px)';
+      this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+    };
+    card.onmouseleave = function() {
+      this.style.transform = '';
+      this.style.boxShadow = '';
+    };
+    
+    // Card header with app icon and name
+    const cardHeader = document.createElement('div');
+    cardHeader.className = 'card-header d-flex align-items-center';
+    cardHeader.innerHTML = `
+      <span class="me-2 fs-4">${app.icon}</span>
+      <h6 class="mb-0">${app.name}</h6>
+    `;
+    
+    // Card body with the application output
+    const cardBody = document.createElement('div');
+    cardBody.className = 'card-body';
+    
+    // Special case for color preview
+    if (app.name === 'RGB Color') {
+      const colorHex = app.mapping(randomNumber);
+      cardBody.innerHTML = `
+        <div class="d-flex align-items-center">
+          <div style="width: 30px; height: 30px; background-color: ${colorHex}; border-radius: 4px; border: 1px solid #dee2e6; margin-right: 10px;"></div>
+          <div class="fw-bold">${colorHex.toUpperCase()}</div>
+        </div>
+      `;
+    } else {
+      const result = app.mapping(randomNumber);
+      cardBody.innerHTML = `<div class="fw-bold text-center py-2 fs-5">${result}</div>`;
+    }
+    
+    // Assemble the card
+    card.appendChild(cardHeader);
+    card.appendChild(cardBody);
+    col.appendChild(card);
+    row.appendChild(col);
+  });
+  
+  container.appendChild(row);
+  
+  // Add explanation
+  const explanation = document.createElement('div');
+  explanation.className = 'mt-3 alert alert-info';
+  explanation.innerHTML = `
+    <p class="mb-0"><i class="fas fa-info-circle me-2"></i> These examples show how a single quantum random number (${randomNumber}) can be 
+    transformed into different applications. Unlike classical random number generators that use predictable algorithms, quantum randomness is truly unpredictable.</p>
+  `;
+  container.appendChild(explanation);
+},
+
+// Quantum bits visualization
+populateQRNGBitDetails: function(output) {
+  const container = document.getElementById('qrng-bits-container');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  // Add binary representation in large format
+  const binaryRepDiv = document.createElement('div');
+  binaryRepDiv.className = 'text-center mb-4 py-2 border rounded bg-light';
+  
+  let binaryHTML = '';
+  for (let i = 0; i < output.bits_string.length; i++) {
+    const bit = output.bits_string[i];
+    binaryHTML += `<span class="fs-3 fw-bold mx-1 ${bit === '0' ? 'text-primary' : 'text-danger'}">${bit}</span>`;
+  }
+  
+  binaryRepDiv.innerHTML = binaryHTML;
+  container.appendChild(binaryRepDiv);
+  
+  // Add quantum circuit visualization
+  const circuitContainer = document.createElement('div');
+  circuitContainer.className = 'quantum-circuit-container mt-4';
+  
+  const bitseq = output.bitseq || [];
+  
+  bitseq.forEach((bit, index) => {
+    // Generate a random "superposition" value just for visualization
+    // In a real quantum system we couldn't observe this
+    const superposition = Math.random();
+    
+    const qubitRow = document.createElement('div');
+    qubitRow.className = 'qubit-row p-2 mb-2 rounded d-flex align-items-center';
+    qubitRow.style.backgroundColor = 'rgba(0,0,0,0.03)';
+    
+    // Qubit label
+    const label = document.createElement('div');
+    label.className = 'me-3 text-muted';
+    label.style.width = '60px';
+    label.textContent = `q${index}:`;
+    
+    // Initial state |0⟩
+    const initialState = document.createElement('div');
+    initialState.className = 'text-center border rounded d-flex justify-content-center align-items-center';
+    initialState.style.width = '35px';
+    initialState.style.height = '35px';
+    initialState.style.backgroundColor = '#f8f9fa';
+    initialState.style.marginRight = '10px';
+    initialState.textContent = '|0⟩';
+    
+    // Arrow
+    const arrow1 = document.createElement('div');
+    arrow1.className = 'text-muted mx-2';
+    arrow1.innerHTML = '<i class="fas fa-arrow-right"></i>';
+    
+    // H gate
+    const hGate = document.createElement('div');
+    hGate.className = 'text-center border rounded d-flex justify-content-center align-items-center';
+    hGate.style.width = '35px';
+    hGate.style.height = '35px';
+    hGate.style.backgroundColor = '#3b82f6';
+    hGate.style.color = 'white';
+    hGate.style.marginRight = '10px';
+    hGate.textContent = 'H';
+    
+    // Arrow
+    const arrow2 = document.createElement('div');
+    arrow2.className = 'text-muted mx-2';
+    arrow2.innerHTML = '<i class="fas fa-arrow-right"></i>';
+    
+    // Superposition (|0⟩ + |1⟩)/√2
+    const superpositionBox = document.createElement('div');
+    superpositionBox.className = 'text-center border rounded d-flex justify-content-center align-items-center';
+    superpositionBox.style.width = '70px';
+    superpositionBox.style.height = '35px';
+    superpositionBox.style.backgroundColor = '#f8f9fa';
+    superpositionBox.style.marginRight = '10px';
+    superpositionBox.innerHTML = '<span class="small">|ψ⟩</span>';
+    
+    // Arrow
+    const arrow3 = document.createElement('div');
+    arrow3.className = 'text-muted mx-2';
+    arrow3.innerHTML = '<i class="fas fa-arrow-right"></i>';
+    
+    // Measurement
+    const mGate = document.createElement('div');
+    mGate.className = 'text-center border rounded d-flex justify-content-center align-items-center';
+    mGate.style.width = '35px';
+    mGate.style.height = '35px';
+    mGate.style.backgroundColor = '#10b981';
+    mGate.style.color = 'white';
+    mGate.style.marginRight = '10px';
+    mGate.textContent = 'M';
+    
+    // Arrow
+    const arrow4 = document.createElement('div');
+    arrow4.className = 'text-muted mx-2';
+    arrow4.innerHTML = '<i class="fas fa-arrow-right"></i>';
+    
+    // Result
+    const result = document.createElement('div');
+    result.className = 'text-center border rounded-circle d-flex justify-content-center align-items-center';
+    result.style.width = '35px';
+    result.style.height = '35px';
+    result.style.backgroundColor = bit === 0 ? '#3b82f6' : '#ef4444';
+    result.style.color = 'white';
+    result.style.fontWeight = 'bold';
+    result.textContent = bit;
+    
+    // Assemble row
+    qubitRow.appendChild(label);
+    qubitRow.appendChild(initialState);
+    qubitRow.appendChild(arrow1);
+    qubitRow.appendChild(hGate);
+    qubitRow.appendChild(arrow2);
+    qubitRow.appendChild(superpositionBox);
+    qubitRow.appendChild(arrow3);
+    qubitRow.appendChild(mGate);
+    qubitRow.appendChild(arrow4);
+    qubitRow.appendChild(result);
+    
+    circuitContainer.appendChild(qubitRow);
+  });
+  
+  container.appendChild(circuitContainer);
+  
+  // Add explanation
+  const explanation = document.createElement('div');
+  explanation.className = 'mt-4 alert alert-primary';
+  explanation.innerHTML = `
+    <div class="fw-bold mb-2">How Quantum Random Number Generation Works:</div>
+    <ol class="mb-0">
+      <li>Each qubit starts in the |0⟩ state</li>
+      <li>A Hadamard (H) gate creates an equal superposition: |0⟩ → (|0⟩ + |1⟩)/√2</li>
+      <li>Measurement collapses the superposition to |0⟩ or |1⟩ with 50% probability</li>
+      <li>The process results in a truly random bit due to quantum uncertainty</li>
+    </ol>
+  `;
+  container.appendChild(explanation);
+},
+
+// History visualization
+populateQRNGHistory: function() {
+  const container = document.getElementById('qrng-history-container');
+  if (!container || !window.qrngHistory) return;
+  
+  container.innerHTML = '';
+  
+  if (window.qrngHistory.length === 0) {
+    container.innerHTML = '<div class="alert alert-info">Generate more random numbers to see your history.</div>';
+    return;
+  }
+  
+  // Create table for history
+  const table = document.createElement('table');
+  table.className = 'table table-striped table-sm';
+  
+  // Create table header
+  const thead = document.createElement('thead');
+  thead.innerHTML = `
+    <tr>
+      <th>Time</th>
+      <th>Number</th>
+      <th>Binary</th>
+      <th>Distribution</th>
+    </tr>
+  `;
+  
+  // Create table body
+  const tbody = document.createElement('tbody');
+  
+  window.qrngHistory.forEach((item, index) => {
+    const row = document.createElement('tr');
+    
+    // Highlight most recent entry
+    if (index === 0) {
+      row.className = 'table-primary';
+    }
+    
+    // Time cell
+    const timeCell = document.createElement('td');
+    timeCell.textContent = item.timestamp;
+    
+    // Number cell
+    const numberCell = document.createElement('td');
+    numberCell.textContent = item.number;
+    
+    // Binary cell
+    const binaryCell = document.createElement('td');
+    binaryCell.innerHTML = `<code>${item.binary}</code>`;
+    
+    // Distribution cell
+    const distCell = document.createElement('td');
+    const totalBits = item.zeros + item.ones;
+    
+    // Create mini distribution bar
+    distCell.innerHTML = `
+      <div class="d-flex" style="height: 20px; width: 100px;">
+        <div class="bg-primary" style="width: ${(item.zeros/totalBits)*100}%; height: 100%;"></div>
+        <div class="bg-danger" style="width: ${(item.ones/totalBits)*100}%; height: 100%;"></div>
+      </div>
+      <div class="small">${item.zeros}:${item.ones}</div>
+    `;
+    
+    // Add cells to row
+    row.appendChild(timeCell);
+    row.appendChild(numberCell);
+    row.appendChild(binaryCell);
+    row.appendChild(distCell);
+    
+    // Add row to table body
+    tbody.appendChild(row);
+  });
+  
+  // Assemble table
+  table.appendChild(thead);
+  table.appendChild(tbody);
+  container.appendChild(table);
+  
+  // Add statistical insight
+  if (window.qrngHistory.length >= 3) {
+    const statsDiv = document.createElement('div');
+    statsDiv.className = 'mt-3 alert alert-info';
+    
+    // Calculate average percentage of 1s
+    const avgOnes = window.qrngHistory.reduce((sum, item) => 
+      sum + (item.ones / (item.ones + item.zeros)), 0) / window.qrngHistory.length;
+    
+    statsDiv.innerHTML = `
+      <div class="fw-bold">Statistical Insights:</div>
+      <p class="mb-0">Average distribution: ${(avgOnes * 100).toFixed(1)}% ones / ${(100 - avgOnes * 100).toFixed(1)}% zeros
+      (ideal: 50/50). <span class="fst-italic">The more numbers you generate, the closer this should get to 50/50.</span></p>
+    `;
+    
+    container.appendChild(statsDiv);
+  }
 }
+
 
 };
 
@@ -1929,7 +2375,7 @@ const vizRow = document.createElement('div');
 vizRow.className = 'row';
 
 // Add appropriate visualization containers based on plugin type
-if (pluginKey === 'qrng' || pluginKey === 'bb84') {
+if (pluginKey === 'bb84') {
   const bitDistCol = createVisualizationCard('Bit Distribution', 'bit-distribution-chart');
   vizRow.appendChild(bitDistCol);
 }
