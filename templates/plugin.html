@@ -346,91 +346,17 @@
             <i class="fas fa-expand me-1"></i> Learn More
           </button>
         </div>
-        <div class="card-body">
-          {% if plugin.key == 'bb84' %}
-            <h5>BB84: Quantum Key Distribution</h5>
-            <p>BB84 is the first quantum cryptography protocol, developed by Charles Bennett and Gilles Brassard in 1984. It allows two parties to establish a shared secret key using quantum communication.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> The security of BB84 relies on the <em>no-cloning theorem</em> and the fact that measuring a quantum state disturbs it in a detectable way.
-            </div>
-            
-          {% elif plugin.key == 'teleport' %}
-            <h5>Quantum Teleportation</h5>
-            <p>Quantum teleportation is a technique for transferring a quantum state from one location to another using quantum entanglement and classical communication.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Teleportation doesn't move the physical particle itself, but rather transfers its quantum state to another pre-existing particle through entanglement.
-            </div>
-            
-          {% elif plugin.key == 'grover' %}
-            <h5>Grover's Search Algorithm</h5>
-            <p>Grover's algorithm provides a quadratic speedup for unstructured search problems, finding a marked item in a database of N items with approximately √N queries.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Utilizes quantum superposition and amplitude amplification to enhance the probability of measuring the correct answer.
-            </div>
-            
-          {% elif plugin.key == 'handshake' %}
-            <h5>Quantum Handshake Protocol</h5>
-            <p>A quantum handshake uses entangled particles to establish a secure connection between two parties that can detect any eavesdropping attempts.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Relies on quantum entanglement to create correlations between particles that would be impossible to achieve classically.
-            </div>
-            
-          {% elif plugin.key == 'auth' %}
-            <h5>Quantum Authentication</h5>
-            <p>Quantum authentication uses quantum fingerprinting to verify the identity of a user without exposing the actual authentication token.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> The no-cloning theorem ensures authentication tokens cannot be perfectly copied, providing enhanced security.
-            </div>
-            
-          {% elif plugin.key == 'network' %}
-            <h5>Entanglement Swapping Network</h5>
-            <p>Entanglement swapping allows quantum nodes to establish entanglement between remote particles that have never directly interacted.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Enables long-distance quantum communication by extending entanglement across a network of quantum repeaters.
-            </div>
-            
-          {% elif plugin.key == 'qrng' %}
-            <h5>Quantum Random Number Generator</h5>
-            <p>QRNGs produce true random numbers based on inherently random quantum processes, unlike classical random number generators which are typically deterministic.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Leverages the fundamental randomness of quantum measurement outcomes to generate unpredictable numbers.
-            </div>
-            
-          {% elif plugin.key == 'shor' %}
-            <h5>Shor's Code for Quantum Error Correction</h5>
-            <p>Shor's code is a quantum error correction technique that protects quantum information against both bit-flip and phase-flip errors.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Encodes a single logical qubit into nine physical qubits to detect and correct errors without disturbing the quantum state.
-            </div>
-            
-          {% elif plugin.key == 'vqe' %}
-            <h5>Variational Quantum Eigensolver</h5>
-            <p>VQE is a hybrid quantum-classical algorithm designed to find ground state energies of complex quantum systems like molecules.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Uses parameterized quantum circuits optimized by classical algorithms to approximate quantum states efficiently.
-            </div>
-            
-          {% elif plugin.key == 'quantum_decryption_grover' %}
-            <h5>Quantum Decryption via Grover's Algorithm</h5>
-            <p>This application of Grover's algorithm demonstrates how quantum computing could potentially break certain types of encryption by efficiently searching for keys.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Provides a quadratic speedup over classical brute-force approaches to key finding.
-            </div>
-            
-          {% elif plugin.key == 'quantum_decryption_shor' %}
-            <h5>Quantum Decryption via Shor's Algorithm</h5>
-            <p>Shor's algorithm can efficiently factor large numbers, threatening cryptosystems like RSA that rely on the difficulty of factoring.</p>
-            <div class="alert alert-primary">
-              <strong>Key Quantum Concept:</strong> Uses quantum Fourier transform to find the period of a function, enabling efficient factorization of large numbers.
-            </div>
-            
+        <div class="card-body" id="mini-explanation-card">
+          {% if mini_explanation %}
+            {{ mini_explanation|safe }}
           {% else %}
+            <!-- Fallback content -->
             <h5>{{ plugin.name }}</h5>
             <p>This simulation demonstrates key quantum computing concepts including superposition, entanglement, and measurement.</p>
             <div class="alert alert-primary">
               <strong>Key Quantum Concept:</strong> Quantum simulations provide insight into quantum behavior without requiring actual quantum hardware.
             </div>
-          {% endif %}
+        {% endif %}
         </div>
       </div>
     </div>

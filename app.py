@@ -12,6 +12,7 @@ from functools import wraps
 import concurrent.futures
 from datetime import datetime
 import psutil
+import re
 
 # Import simulation functions from plugins
 from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
@@ -653,6 +654,58 @@ def get_educational_content_template(plugin_key):
     # Return the template name or a default if not found
     return templates.get(plugin_key, 'educational/default.html')
 
+def extract_mini_explanation(template_path):
+    """
+    Extracts mini explanation from a template file.
+    
+    Looks for content between <!-- MINI_EXPLANATION_START --> and <!-- MINI_EXPLANATION_END -->
+    markers. If not found, returns None.
+    """
+    try:
+        if not os.path.exists(template_path):
+            return None
+            
+        with open(template_path, 'r') as f:
+            content = f.read()
+            
+        # Use regex to extract content between markers
+        mini_pattern = re.compile(r'<!-- MINI_EXPLANATION_START -->(.*?)<!-- MINI_EXPLANATION_END -->', 
+                                 re.DOTALL)
+        match = mini_pattern.search(content)
+        
+        if match:
+            return match.group(1).strip()
+        return None
+    except Exception as e:
+        logger.error(f"Error extracting mini explanation: {e}")
+        return None
+
+def get_mini_explanation(plugin_key):
+    """
+    Gets the mini explanation for a plugin, either from its template file
+    or returns a default explanation based on the plugin info.
+    """
+    template_name = get_educational_content_template(plugin_key)
+    template_path = os.path.join('templates', template_name)
+    
+    # Try to extract from template file
+    mini_content = extract_mini_explanation(template_path)
+    
+    if mini_content:
+        return mini_content
+        
+    # If no template or no mini section, generate default mini explanation
+    plugin = PLUGINS.get(plugin_key, {})
+    plugin_name = plugin.get('name', plugin_key.replace('_', ' ').title())
+    
+    return f"""
+    <h5>{plugin_name}</h5>
+    <p>This simulation demonstrates key quantum computing concepts including superposition, entanglement, and measurement.</p>
+    <div class="alert alert-primary">
+        <strong>Key Quantum Concept:</strong> Quantum simulations provide insight into quantum behavior without requiring actual quantum hardware.
+    </div>
+    """
+
 # --- Route handlers ---
 @app.route("/")
 def index():
@@ -731,6 +784,7 @@ def plugin_view(plugin_key):
     result = None
     
     educational_template = get_educational_content_template(plugin_key)
+    mini_explanation = get_mini_explanation(plugin_key)
 
     if request.method == "POST":
         # Extract parameters from the form
@@ -763,7 +817,7 @@ def plugin_view(plugin_key):
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify(result)
     
-    return render_template("plugin.html", plugin=plugin, result=result, educational_template=educational_template)
+    return render_template("plugin.html", plugin=plugin, result=result, educational_template=educational_template, mini_explanation=mini_explanation)
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
