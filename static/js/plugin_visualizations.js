@@ -2213,6 +2213,7 @@ const setupFormHandling = () => {
             statusBadge.textContent = 'Completed';
             statusBadge.className = 'badge bg-success';
             // Instead of reloading, display results directly
+ 
             displayResults(data);
           }
         }
@@ -2279,179 +2280,187 @@ syncRangeInputs();
 
 // Safely injects SVG content by creating a new div and using the DOM parser
 function displayResults(data) {
-// Get the results container
-const resultsContainer = document.getElementById('results-container');
-if (!resultsContainer) return;
+  // Get the results container
+  const resultsContainer = document.getElementById('results-container');
+  if (!resultsContainer) return;
 
-// Extract the plugin key from the URL
-const urlParts = window.location.pathname.split('/');
-const pluginKey = urlParts[urlParts.length - 1];
-
-// Create a container for the results
-resultsContainer.innerHTML = '';
-
-// Create the tabs structure
-const tabsContainer = document.createElement('div');
-tabsContainer.className = 'result-container';
-
-// Create tab navigation
-const tabNav = document.createElement('ul');
-tabNav.className = 'nav nav-tabs';
-tabNav.id = 'resultTabs';
-tabNav.setAttribute('role', 'tablist');
-
-// Add tab buttons
-const tabItems = [
-  {id: 'visualization', icon: 'chart-bar', text: 'Visualization', active: true},
-  {id: 'raw-data', icon: 'table', text: 'Raw Data', active: false},
-  {id: 'log', icon: 'terminal', text: 'Process Log', active: false}
-];
-
-tabItems.forEach(item => {
-  const li = document.createElement('li');
-  li.className = 'nav-item';
-  li.setAttribute('role', 'presentation');
-  
-  const button = document.createElement('button');
-  button.className = `nav-link ${item.active ? 'active' : ''}`;
-  button.id = `${item.id}-tab`;
-  button.setAttribute('data-bs-toggle', 'tab');
-  button.setAttribute('data-bs-target', `#${item.id}`);
-  button.setAttribute('type', 'button');
-  button.setAttribute('role', 'tab');
-  button.setAttribute('aria-controls', item.id);
-  button.setAttribute('aria-selected', item.active ? 'true' : 'false');
-  
-  const icon = document.createElement('i');
-  icon.className = `fas fa-${item.icon} me-2`;
-  
-  button.appendChild(icon);
-  button.appendChild(document.createTextNode(item.text));
-  li.appendChild(button);
-  tabNav.appendChild(li);
-});
-
-tabsContainer.appendChild(tabNav);
-
-// Create tab content container
-const tabContent = document.createElement('div');
-tabContent.className = 'tab-content p-3 border border-top-0 rounded-bottom';
-tabContent.id = 'resultTabsContent';
-
-// Create visualization tab content
-const vizTab = document.createElement('div');
-vizTab.className = 'tab-pane fade show active';
-vizTab.id = 'visualization';
-vizTab.setAttribute('role', 'tabpanel');
-vizTab.setAttribute('aria-labelledby', 'visualization-tab');
-
-// Add circuit SVG if available
-if (data.output && data.output.circuit_svg) {
-  const circuitTitle = document.createElement('h5');
-  circuitTitle.className = 'mb-3';
-  circuitTitle.textContent = 'Circuit Diagram';
-  vizTab.appendChild(circuitTitle);
-  
-  const circuitContainer = document.createElement('div');
-  circuitContainer.className = 'circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto position-relative';
-  
-  // IMPORTANT FIX: Use a proper DOM parser for SVG instead of innerHTML
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = data.output.circuit_svg;
-  
-  // Append the SVG element(s) to the circuit container
-  while (tempDiv.firstChild) {
-    circuitContainer.appendChild(tempDiv.firstChild);
+  // Save the currently active tab before clearing the container
+  let activeTabId = 'visualization'; // Default to visualization tab
+  const activeTabElement = document.querySelector('#resultTabs .nav-link.active');
+  if (activeTabElement) {
+    // Extract the active tab ID from data-bs-target attribute (removing the # prefix)
+    activeTabId = activeTabElement.getAttribute('data-bs-target')?.replace('#', '') || activeTabId;
   }
-  
-  vizTab.appendChild(circuitContainer);
-}
 
-// When dynamically loading results, call our new function to add download buttons
-setTimeout(addCircuitDownloadButtons, 100); // Short delay to ensure DOM is updated
+  // Extract the plugin key from the URL
+  const urlParts = window.location.pathname.split('/');
+  const pluginKey = urlParts[urlParts.length - 1];
 
-// Add specific visualization containers based on plugin type
-const vizRow = document.createElement('div');
-vizRow.className = 'row';
+  // Create a container for the results
+  resultsContainer.innerHTML = '';
 
-// Add appropriate visualization containers based on plugin type
-if (pluginKey === 'bb84') {
-  const bitDistCol = createVisualizationCard('Bit Distribution', 'bit-distribution-chart');
-  vizRow.appendChild(bitDistCol);
-}
+  // Create the tabs structure
+  const tabsContainer = document.createElement('div');
+  tabsContainer.className = 'result-container';
 
-if (pluginKey === 'teleport' || pluginKey === 'handshake' || pluginKey === 'auth') {
-  const stateVizCol = createVisualizationCard('Quantum State', 'quantum-state-viz');
-  vizRow.appendChild(stateVizCol);
-}
+  // Create tab navigation
+  const tabNav = document.createElement('ul');
+  tabNav.className = 'nav nav-tabs';
+  tabNav.id = 'resultTabs';
+  tabNav.setAttribute('role', 'tablist');
 
-if (pluginKey === 'grover' || pluginKey === 'quantum_decryption_grover') {
-  const probDistCol = createVisualizationCard('Probability Distribution', 'probability-distribution');
-  vizRow.appendChild(probDistCol);
-}
+  // Add tab buttons
+  const tabItems = [
+    {id: 'visualization', icon: 'chart-bar', text: 'Visualization', active: activeTabId === 'visualization'},
+    {id: 'raw-data', icon: 'table', text: 'Raw Data', active: activeTabId === 'raw-data'},
+    {id: 'log', icon: 'terminal', text: 'Process Log', active: activeTabId === 'log'}
+  ];
 
-if (pluginKey === 'vqe') {
-  const energyCol = createVisualizationCard('Energy Convergence', 'energy-convergence');
-  vizRow.appendChild(energyCol);
-}
-
-vizTab.appendChild(vizRow);
-tabContent.appendChild(vizTab);
-
-// Create raw data tab content
-const rawDataTab = document.createElement('div');
-rawDataTab.className = 'tab-pane fade';
-rawDataTab.id = 'raw-data';
-rawDataTab.setAttribute('role', 'tabpanel');
-rawDataTab.setAttribute('aria-labelledby', 'raw-data-tab');
-
-const rawDataRow = document.createElement('div');
-rawDataRow.className = 'row';
-
-const rawDataCol = document.createElement('div');
-rawDataCol.className = 'col-12';
-
-const rawDataPre = document.createElement('pre');
-rawDataPre.className = 'mb-0';
-rawDataPre.textContent = JSON.stringify(data.output, null, 2);
-
-rawDataCol.appendChild(rawDataPre);
-rawDataRow.appendChild(rawDataCol);
-rawDataTab.appendChild(rawDataRow);
-tabContent.appendChild(rawDataTab);
-
-// Create log tab content
-const logTab = document.createElement('div');
-logTab.className = 'tab-pane fade';
-logTab.id = 'log';
-logTab.setAttribute('role', 'tabpanel');
-logTab.setAttribute('aria-labelledby', 'log-tab');
-
-const logDiv = document.createElement('div');
-logDiv.className = 'bg-dark text-light p-3 rounded';
-
-const logPre = document.createElement('pre');
-logPre.className = 'mb-0 terminal-log';
-logPre.textContent = data.log || 'No log data available';
-
-logDiv.appendChild(logPre);
-logTab.appendChild(logDiv);
-tabContent.appendChild(logTab);
-
-tabsContainer.appendChild(tabContent);
-resultsContainer.appendChild(tabsContainer);
-
-// Initialize visualization components
-if (window.QuantumVisualizer) {
-  window.QuantumVisualizer.init(pluginKey, data);
-}
-
-// Initialize Bootstrap tabs if needed
-if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
-  document.querySelectorAll('#resultTabs button').forEach(button => {
-    new bootstrap.Tab(button);
+  tabItems.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'nav-item';
+    li.setAttribute('role', 'presentation');
+    
+    const button = document.createElement('button');
+    button.className = `nav-link ${item.active ? 'active' : ''}`;
+    button.id = `${item.id}-tab`;
+    button.setAttribute('data-bs-toggle', 'tab');
+    button.setAttribute('data-bs-target', `#${item.id}`);
+    button.setAttribute('type', 'button');
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-controls', item.id);
+    button.setAttribute('aria-selected', item.active ? 'true' : 'false');
+    
+    const icon = document.createElement('i');
+    icon.className = `fas fa-${item.icon} me-2`;
+    
+    button.appendChild(icon);
+    button.appendChild(document.createTextNode(item.text));
+    li.appendChild(button);
+    tabNav.appendChild(li);
   });
-}
+
+  tabsContainer.appendChild(tabNav);
+
+  // Create tab content container
+  const tabContent = document.createElement('div');
+  tabContent.className = 'tab-content p-3 border border-top-0 rounded-bottom';
+  tabContent.id = 'resultTabsContent';
+
+  // Create visualization tab content
+  const vizTab = document.createElement('div');
+  vizTab.className = `tab-pane fade ${activeTabId === 'visualization' ? 'show active' : ''}`;
+  vizTab.id = 'visualization';
+  vizTab.setAttribute('role', 'tabpanel');
+  vizTab.setAttribute('aria-labelledby', 'visualization-tab');
+
+  // Add circuit SVG if available
+  if (data.output && data.output.circuit_svg) {
+    const circuitTitle = document.createElement('h5');
+    circuitTitle.className = 'mb-3';
+    circuitTitle.textContent = 'Circuit Diagram';
+    vizTab.appendChild(circuitTitle);
+    
+    const circuitContainer = document.createElement('div');
+    circuitContainer.className = 'circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto position-relative';
+    
+    // IMPORTANT FIX: Use a proper DOM parser for SVG instead of innerHTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = data.output.circuit_svg;
+    
+    // Append the SVG element(s) to the circuit container
+    while (tempDiv.firstChild) {
+      circuitContainer.appendChild(tempDiv.firstChild);
+    }
+    
+    vizTab.appendChild(circuitContainer);
+  }
+
+  // When dynamically loading results, call our new function to add download buttons
+  setTimeout(addCircuitDownloadButtons, 100); // Short delay to ensure DOM is updated
+
+  // Add specific visualization containers based on plugin type
+  const vizRow = document.createElement('div');
+  vizRow.className = 'row';
+
+  // Add appropriate visualization containers based on plugin type
+  if (pluginKey === 'bb84') {
+    const bitDistCol = createVisualizationCard('Bit Distribution', 'bit-distribution-chart');
+    vizRow.appendChild(bitDistCol);
+  }
+
+  if (pluginKey === 'teleport' || pluginKey === 'handshake' || pluginKey === 'auth') {
+    const stateVizCol = createVisualizationCard('Quantum State', 'quantum-state-viz');
+    vizRow.appendChild(stateVizCol);
+  }
+
+  if (pluginKey === 'grover' || pluginKey === 'quantum_decryption_grover') {
+    const probDistCol = createVisualizationCard('Probability Distribution', 'probability-distribution');
+    vizRow.appendChild(probDistCol);
+  }
+
+  if (pluginKey === 'vqe') {
+    const energyCol = createVisualizationCard('Energy Convergence', 'energy-convergence');
+    vizRow.appendChild(energyCol);
+  }
+
+  vizTab.appendChild(vizRow);
+  tabContent.appendChild(vizTab);
+
+  // Create raw data tab content
+  const rawDataTab = document.createElement('div');
+  rawDataTab.className = `tab-pane fade ${activeTabId === 'raw-data' ? 'show active' : ''}`;
+  rawDataTab.id = 'raw-data';
+  rawDataTab.setAttribute('role', 'tabpanel');
+  rawDataTab.setAttribute('aria-labelledby', 'raw-data-tab');
+
+  const rawDataRow = document.createElement('div');
+  rawDataRow.className = 'row';
+
+  const rawDataCol = document.createElement('div');
+  rawDataCol.className = 'col-12';
+
+  const rawDataPre = document.createElement('pre');
+  rawDataPre.className = 'mb-0';
+  rawDataPre.textContent = JSON.stringify(data.output, null, 2);
+
+  rawDataCol.appendChild(rawDataPre);
+  rawDataRow.appendChild(rawDataCol);
+  rawDataTab.appendChild(rawDataRow);
+  tabContent.appendChild(rawDataTab);
+
+  // Create log tab content
+  const logTab = document.createElement('div');
+  logTab.className = `tab-pane fade ${activeTabId === 'log' ? 'show active' : ''}`;
+  logTab.id = 'log';
+  logTab.setAttribute('role', 'tabpanel');
+  logTab.setAttribute('aria-labelledby', 'log-tab');
+
+  const logDiv = document.createElement('div');
+  logDiv.className = 'bg-dark text-light p-3 rounded';
+
+  const logPre = document.createElement('pre');
+  logPre.className = 'mb-0 terminal-log';
+  logPre.textContent = data.log || 'No log data available';
+
+  logDiv.appendChild(logPre);
+  logTab.appendChild(logDiv);
+  tabContent.appendChild(logTab);
+
+  tabsContainer.appendChild(tabContent);
+  resultsContainer.appendChild(tabsContainer);
+
+  // Initialize visualization components
+  if (window.QuantumVisualizer) {
+    window.QuantumVisualizer.init(pluginKey, data);
+  }
+
+  // Initialize Bootstrap tabs
+  if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
+    document.querySelectorAll('#resultTabs button').forEach(button => {
+      new bootstrap.Tab(button);
+    });
+  }
 }
 
 // Helper function to create visualization cards
