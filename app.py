@@ -628,11 +628,11 @@ PLUGINS = {
     }
 }
 
-def get_educational_content_template(plugin_key):
+def get_template_path(plugin_key):
     """
-    Returns the appropriate template file name for the plugin's educational content
+    Returns the appropriate template file path for the plugin's educational content.
+    This function only returns the path, it doesn't extract content.
     """
-    # Map plugin keys to their educational content template files
     templates = {
         'bb84': 'educational/bb84.html',
         'teleport': 'educational/teleport.html',
@@ -651,30 +651,64 @@ def get_educational_content_template(plugin_key):
         'qaoa': 'educational/qaoa.html',
     }
     
-    # Return the template name or a default if not found
-    return templates.get(plugin_key, 'educational/default.html')
+    # Return the template path or a default
+    template_name = templates.get(plugin_key, 'educational/default.html')
+    return os.path.join('templates', template_name)
 
-def extract_mini_explanation(template_path):
+def extract_educational_content(template_path):
     """
-    Extracts mini explanation from a template file.
-    
-    Looks for content between <!-- MINI_EXPLANATION_START --> and <!-- MINI_EXPLANATION_END -->
-    markers. If not found, returns None.
+    Extracts the full educational content from a template file.
+    Looks for content between <!-- EDUCATIONAL-CONTENT BEGIN --> and <!-- EDUCATIONAL-CONTENT END -->
     """
     try:
         if not os.path.exists(template_path):
+            logger.warning(f"Template file not found: {template_path}")
             return None
             
         with open(template_path, 'r') as f:
             content = f.read()
             
         # Use regex to extract content between markers
-        mini_pattern = re.compile(r'<!-- MINI_EXPLANATION_START -->(.*?)<!-- MINI_EXPLANATION_END -->', 
-                                 re.DOTALL)
-        match = mini_pattern.search(content)
+        content_pattern = re.compile(r'<!-- EDUCATIONAL-CONTENT BEGIN -->(.*?)<!-- EDUCATIONAL-CONTENT END -->', 
+                                    re.DOTALL)
+        match = content_pattern.search(content)
         
         if match:
             return match.group(1).strip()
+        else:
+            logger.warning(f"Educational content markers not found in {template_path}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error extracting educational content: {e}")
+        return None
+
+def extract_mini_explanation(template_path):
+    """
+    Extracts mini explanation from a template file.
+    """
+    try:
+        if not os.path.exists(template_path):
+            logger.warning(f"Template file not found: {template_path}")
+            return None
+            
+        with open(template_path, 'r') as f:
+            content = f.read()
+        
+        # Try all possible marker formats
+        marker_patterns = [
+            r'<!-- MINI_EXPLANATION_START -->(.*?)<!-- MINI_EXPLANATION_END -->'
+        ]
+        
+        for pattern in marker_patterns:
+            mini_pattern = re.compile(pattern, re.DOTALL)
+            match = mini_pattern.search(content)
+            
+            if match:
+                logger.info(f"Found mini explanation using pattern: {pattern}")
+                return match.group(1).strip()
+        
+        logger.warning(f"No mini explanation markers found in {template_path}")
         return None
     except Exception as e:
         logger.error(f"Error extracting mini explanation: {e}")
@@ -685,8 +719,8 @@ def get_mini_explanation(plugin_key):
     Gets the mini explanation for a plugin, either from its template file
     or returns a default explanation based on the plugin info.
     """
-    template_name = get_educational_content_template(plugin_key)
-    template_path = os.path.join('templates', template_name)
+    # Get the template path
+    template_path = get_template_path(plugin_key)
     
     # Try to extract from template file
     mini_content = extract_mini_explanation(template_path)
@@ -699,12 +733,19 @@ def get_mini_explanation(plugin_key):
     plugin_name = plugin.get('name', plugin_key.replace('_', ' ').title())
     
     return f"""
-    <h5>{plugin_name}</h5>
+    <h5 class="fw-bold">{plugin_name}</h5>
     <p>This simulation demonstrates key quantum computing concepts including superposition, entanglement, and measurement.</p>
     <div class="alert alert-primary">
         <strong>Key Quantum Concept:</strong> Quantum simulations provide insight into quantum behavior without requiring actual quantum hardware.
     </div>
     """
+
+def get_educational_content(plugin_key):
+    """
+    Gets the educational content for a plugin's modal.
+    """
+    template_path = get_template_path(plugin_key)
+    return extract_educational_content(template_path)
 
 # --- Route handlers ---
 @app.route("/")
@@ -783,8 +824,8 @@ def plugin_view(plugin_key):
     plugin = PLUGINS[plugin_key]
     result = None
     
-    educational_template = get_educational_content_template(plugin_key)
     mini_explanation = get_mini_explanation(plugin_key)
+    educational_content = get_educational_content(plugin_key)
 
     if request.method == "POST":
         # Extract parameters from the form
@@ -817,7 +858,7 @@ def plugin_view(plugin_key):
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return jsonify(result)
     
-    return render_template("plugin.html", plugin=plugin, result=result, educational_template=educational_template, mini_explanation=mini_explanation)
+    return render_template("plugin.html", plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
