@@ -31,7 +31,7 @@ Quantum Field Kit follows a modern web application architecture with a focus on 
 ### System Architecture Overview
 
 
-![System Architecture](static\img\image-1.png)
+![System Architecture](static/img/image-1.png)
 
 
 ### Component Breakdown
