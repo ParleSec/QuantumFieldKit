@@ -745,6 +745,7 @@ def get_educational_content(plugin_key):
     Gets the educational content for a plugin's modal.
     """
     template_path = get_template_path(plugin_key)
+    print(f"Template path: {template_path}")
     return extract_educational_content(template_path)
 
 # --- Route handlers ---
@@ -824,9 +825,13 @@ def plugin_view(plugin_key):
     plugin = PLUGINS[plugin_key]
     result = None
     
+    # Get mini explanation (already working)
     mini_explanation = get_mini_explanation(plugin_key)
+    
+    # Get educational content directly
     educational_content = get_educational_content(plugin_key)
-
+    
+    # Process form submission...
     if request.method == "POST":
         # Extract parameters from the form
         raw_params = {}

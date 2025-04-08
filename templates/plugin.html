@@ -440,16 +440,16 @@
       </div>
       <div class="modal-body">
         <!-- Include the appropriate educational content template based on plugin key -->
-      {% if educational_template %}
-        {% include educational_template ignore missing %}
-      {% endif %}
+        {% if educational_content %}
+          {{ educational_content|safe }}
+        {% else %}
         <script>
           // Wait for DOM to be ready
           document.addEventListener('DOMContentLoaded', function() {
             // Check if there's content
             document.getElementById('learningModal').addEventListener('shown.bs.modal', function() {
               const modalBody = document.querySelector('#learningModal .modal-body');
-              // If modal body has contnet, use fallback
+              // If modal body has no content, use fallback
               if (modalBody.children.length <= 1) {
                 modalBody.innerHTML = `
                   <h4>{{ plugin.name }}</h4>
@@ -541,6 +541,7 @@
             });
           });
         </script>
+      {% endif %}
       </div>
     </div>
   </div>
