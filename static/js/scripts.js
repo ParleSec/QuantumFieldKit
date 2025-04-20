@@ -246,6 +246,13 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
   
+  if (window.location.pathname.includes('/glossary')) {
+    document.body.classList.add('loading-glossary');
+    window.addEventListener('load', function() {
+      document.body.classList.remove('loading-glossary');
+    });
+  }
+
   // Form input interactivity for range and number input synchronization
   const syncRangeInputs = () => {
     document.querySelectorAll('input[type="range"]').forEach(range => {
@@ -272,6 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
   };
   
   syncRangeInputs();
+  
   
   // Handle form reset to properly update range inputs
   document.querySelectorAll('form').forEach(form => {

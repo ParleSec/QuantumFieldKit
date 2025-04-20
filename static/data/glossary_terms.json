@@ -1,0 +1,14 @@
+[
+    {
+      "term": "Qubit",
+      "definition": "The fundamental unit of quantum information. Unlike classical bits, qubits can exist in a superposition of states, allowing them to be both 0 and 1 simultaneously."
+    },
+    {
+      "term": "Superposition",
+      "definition": "A quantum mechanical property that allows particles to exist in multiple states simultaneously until measured."
+    },
+    {
+      "term": "Entanglement",
+      "definition": "A quantum phenomenon where pairs or groups of particles become correlated such that the quantum state of each particle cannot be described independently."
+    }
+  ]
