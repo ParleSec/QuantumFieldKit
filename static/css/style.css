@@ -98,15 +98,13 @@
      Navigation
      ===================== */
   #mainNav {
-    background-color: transparent;
-    box-shadow: var(--shadow-md);
     transition: background-color 0.3s ease;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    background-color: rgba(0, 0, 0, 0.8);
+    box-shadow: var(--shadow-md);
   }
   
   #mainNav.scrolled {
-    background-color: var(--dark) !important;
+    background-color: var(--dark);
   }
   
   #mainNav .navbar-brand {
@@ -117,13 +115,9 @@
   #mainNav .navbar-brand i {
     font-size: 1.5rem;
   }
-
-  #mainNav .nav-item {
-    margin: 0 0.25rem;
-  }
   
   #mainNav .nav-link {
-    padding: 0.5rem 0.25rem 0.5rem 0.25rem;
+    padding: 0.5rem 1rem;
     position: relative;
   }
   
@@ -282,7 +276,7 @@
      Hero Section
      ===================== */
   .hero-container {
-    height: 150vh;
+    height: 100vh;
     min-height: 500px;
     background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
     position: relative;
@@ -535,7 +529,6 @@
   @media (max-width: 991.98px) {
     #mainNav .navbar-nav {
       padding: 1rem 0;
-      margin-bottom: 0 !important; 
     }
     
     #mainNav .nav-link::after {
@@ -626,7 +619,7 @@
     align-items: center;
     justify-content: center;
   }
-
+  
   .loading-glossary::before {
     content: "Loading glossary...";
     position: fixed;
