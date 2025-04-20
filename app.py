@@ -778,30 +778,74 @@ def sitemap():
     else:
         base_url = request.url_root.rstrip('/')
     
+    # Current date for lastmod
+    import datetime
+    today = datetime.date.today().isoformat()
+    
     # Build the sitemap XML string
     xml = ['<?xml version="1.0" encoding="UTF-8"?>',
            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
            '  <url>',
            f'    <loc>{base_url}/</loc>',
-           '    <changefreq>monthly</changefreq>',
+           f'    <lastmod>{today}</lastmod>',
+           '    <changefreq>weekly</changefreq>',
            '    <priority>1.0</priority>',
            '  </url>']
     
-    # Add all plugin pages
-    for plugin_key in PLUGINS:
+     # Add glossary page
+    xml.append('  <url>')
+    xml.append(f'    <loc>{base_url}/glossary</loc>')
+    xml.append(f'    <lastmod>{today}</lastmod>')
+    xml.append('    <changefreq>monthly</changefreq>')
+    xml.append('    <priority>0.8</priority>')
+    xml.append('  </url>')
+    
+    
+    # Add all plugin pages with categorization
+    for plugin_key, plugin in PLUGINS.items():
+        # Group plugins by category for better SEO
+        category = plugin.get("category", "other")
         xml.append('  <url>')
         xml.append(f'    <loc>{base_url}/plugin/{plugin_key}</loc>')
+        xml.append(f'    <lastmod>{today}</lastmod>')
         xml.append('    <changefreq>monthly</changefreq>')
         xml.append('    <priority>0.8</priority>')
         xml.append('  </url>')
     
+    # Add category pages if you implement them
+    categories = set(plugin.get("category", "other") for plugin in PLUGINS.values())
+    for category in categories:
+        xml.append('  <url>')
+        xml.append(f'    <loc>{base_url}/category/{category}</loc>')
+        xml.append(f'    <lastmod>{today}</lastmod>')
+        xml.append('    <changefreq>monthly</changefreq>')
+        xml.append('    <priority>0.7</priority>')
+        xml.append('  </url>')
+    
     xml.append('</urlset>')
     
-    # Return the sitemap with the correct MIME type
     return app.response_class(
         response='\n'.join(xml),
         status=200,
         mimetype='application/xml'
+    )
+
+@app.route("/sitemap")
+def html_sitemap():
+    """HTML sitemap for users and SEO."""
+    # Group plugins by category
+    categories = {}
+    for key, plugin in PLUGINS.items():
+        category = plugin.get("category", "other")
+        if category not in categories:
+            categories[category] = []
+        categories[category].append({"key": key, **plugin})
+    
+    return render_template(
+        "sitemap.html",
+        categories=categories,
+        meta_title="Site Map | Quantum Field Kit",
+        meta_description="Comprehensive site map of Quantum Field Kit's quantum computing simulations, educational resources, and tools."
     )
 
 @app.route('/robots.txt')
@@ -822,6 +866,70 @@ Sitemap: {base_url}/sitemap.xml
         status=200,
         mimetype='text/plain'
     )
+
+@app.route("/category/<category>")
+def category_view(category):
+    """Display all plugins in a specific category with SEO optimizations."""
+    # Filter plugins by category
+    plugins_in_category = {k: v for k, v in PLUGINS.items() if v.get("category", "other") == category}
+    
+    if not plugins_in_category:
+        abort(404)
+    
+    # Properly formatted category name for display
+    display_category = category.replace('-', ' ').title()
+    
+    return render_template(
+        "category.html", 
+        category=category,
+        display_category=display_category,
+        plugins=plugins_in_category,
+        meta_description=f"Explore {display_category} quantum computing simulations including {', '.join([p['name'] for p in list(plugins_in_category.values())[:3]])} and more.",
+        meta_title=f"{display_category} Quantum Computing Simulations | Quantum Field Kit"
+    )
+
+@app.route("/glossary")
+def glossary():
+    """Quantum computing glossary page."""
+    import datetime
+    current_year = datetime.datetime.now().year
+    # Load terms from JSON file
+    terms_file = os.path.join(app.static_folder, 'data', 'glossary_terms.json')
+    
+    try:
+        with open(terms_file, 'r') as f:
+            terms = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        app.logger.error(f"Error loading glossary terms: {e}")
+        # Fallback to minimal terms if file can't be loaded
+        terms = [
+            {"term": "Qubit", "definition": "The fundamental unit of quantum information."},
+            {"term": "Superposition", "definition": "A quantum property allowing particles to exist in multiple states."}
+        ]
+    
+    return render_template(
+        "glossary.html", 
+        terms=terms,
+        current_year=current_year,
+        meta_title="Quantum Computing Glossary | Quantum Field Kit",
+        meta_description="Comprehensive glossary of quantum computing terms, concepts, and principles explained in simple language."
+    )
+
+@app.after_request
+def add_cache_headers(response):
+    """Add cache headers to responses to improve performance."""
+    import datetime
+    # Don't cache dynamic content
+    if request.path.startswith('/static/'):
+        # Cache static files for 1 week
+        expiry = datetime.datetime.now() + datetime.timedelta(days=7)
+        response.headers['Cache-Control'] = 'public, max-age=604800'
+        response.headers['Expires'] = expiry.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    else:
+        # Don't cache dynamic content
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    
+    return response
 
 @app.route("/plugin/<plugin_key>", methods=["GET", "POST"])
 def plugin_view(plugin_key):

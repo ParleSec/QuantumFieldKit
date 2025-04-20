@@ -90,6 +90,9 @@
             <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#learningModal">
               <i class="fas fa-graduation-cap me-2"></i> Learning Center
             </button>
+            <a href="{{ url_for('glossary') }}" class="btn btn-outline-primary">
+              <i class="fas fa-home me-2"></i> Quantum Computing Glossary
+            </a>
           </div>
         </div>
       </div>
@@ -568,4 +571,25 @@
     {% endif %}
   });
 </script>
+
+<!-- <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "{{ plugin.name }}",
+    "applicationCategory": "EducationalApplication",
+    "description": "{{ plugin.description }}",
+    "url": "{{ request.url }}",
+    "creator": {
+      "@type": "Organization",
+      "name": "ParleSec"
+    },
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "AUD"
+    }
+  }
+  </script>
+-->
 {% endblock %}
