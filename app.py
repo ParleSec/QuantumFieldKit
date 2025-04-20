@@ -512,18 +512,25 @@ PLUGINS = {
     
     "vqe": {
         "name": "Variational Quantum Eigensolver (VQE)",
-        "description": "Simulate VQE to find the ground state energy of a Hamiltonian.",
+        "description": "Simulate VQE to find the ground state energy of a hydrogen molecule with quantum chemical accuracy.",
         "icon": "fa-wave-square",
         "category": "algorithms",
         "parameters": [
             {"name": "num_qubits", "type": "int", "default": 2, "description": "Number of qubits",
-             "min": 1, "max": 6},
-            {"name": "noise", "type": "float", "default": 0.01, "description": "Noise probability",
-             "min": 0.0, "max": 0.3},
-            {"name": "max_iter", "type": "int", "default": 5, "description": "Maximum iterations",
-             "min": 1, "max": 20}
+            "min": 2, "max": 4},
+            {"name": "noise_prob", "type": "float", "default": 0.01, "description": "Noise probability",
+            "min": 0.0, "max": 0.3},
+            {"name": "max_iter", "type": "int", "default": 3, "description": "Maximum iterations",
+            "min": 1, "max": 5},
+            {"name": "bond_distance", "type": "float", "default": 0.7414, "description": "H-H bond distance (Å)",
+            "min": 0.0, "max": 2.5}
         ],
-        "run": lambda p: run_plugin(run_vqe, _plugin_key="vqe", num_qubits=p["num_qubits"], noise_prob=p["noise"], max_iter=p["max_iter"])
+        "run": lambda p: run_plugin(run_vqe, 
+                                _plugin_key="vqe", 
+                                num_qubits=p["num_qubits"], 
+                                noise_prob=p["noise_prob"], 
+                                max_iter=p["max_iter"],
+                                bond_distance=p["bond_distance"])
     },
     
     "quantum_decryption_grover": {
