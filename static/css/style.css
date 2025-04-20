@@ -1,7 +1,6 @@
 /* Quantum Field Kit - Modern CSS Styles
  * A comprehensive styling system for the quantum simulation web interface
  */
-
 /* =====================
    Base Styles
    ===================== */
@@ -56,11 +55,11 @@
     flex-direction: column;
     overflow-x: hidden;
     position: relative;
+    padding-top: 56px;
   }
   
   main {
     flex-grow: 1;
-    padding-top: 56px; /* Navbar height */
   }
   
   a {
@@ -95,32 +94,75 @@
   }
   
   /* =====================
-     Navigation
+     Navigation - FIXED HEADER
      ===================== */
   #mainNav {
     transition: background-color 0.3s ease;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: var(--dark);
     box-shadow: var(--shadow-md);
+    z-index: 1030; /* Ensure navbar is above other content */
+    padding: 0.5rem 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
   }
   
   #mainNav.scrolled {
     background-color: var(--dark);
   }
   
+  /* Brand styling */
   #mainNav .navbar-brand {
     font-weight: 700;
     font-size: 1.25rem;
+    display: flex;
+    align-items: center;
   }
   
   #mainNav .navbar-brand i {
     font-size: 1.5rem;
+    margin-right: 0.5rem;
   }
   
-  #mainNav .nav-link {
-    padding: 0.5rem 1rem;
+  /* Navbar structure fix */
+  #mainNav .navbar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    margin-left: auto;
+  }
+  
+  /* Nav item styling */
+  #mainNav .nav-item {
+    margin-right: 0.5rem;
     position: relative;
   }
   
+  /* Critical fix for nav-link display */
+  #mainNav .nav-link {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    white-space: nowrap !important;
+    padding: 0.5rem 0.75rem !important;
+    position: relative;
+  }
+  
+  /* Ensure icons display properly */
+  #mainNav .nav-link i,
+  #mainNav .nav-link .fas,
+  #mainNav .nav-link .fab {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    margin-right: 0.4rem !important;
+    margin-top: 0 !important;
+    font-size: 1rem !important;
+  }
+  
+  /* Nav link hover effect */
   #mainNav .nav-link::after {
     content: '';
     position: absolute;
@@ -137,6 +179,7 @@
     width: 80%;
   }
   
+  /* Dropdown styling */
   .dropdown-menu {
     padding: 0.7rem 0;
     margin-top: 0.5rem;
@@ -160,6 +203,18 @@
       opacity: 1;
       transform: translateY(0) scale(1);
     }
+  }
+  
+  /* Dropdown toggle caret */
+  .dropdown-toggle::after {
+    transition: transform 0.2s ease;
+    vertical-align: middle !important;
+    margin-left: 0.4em !important;
+    margin-top: 0.1em;
+  }
+  
+  .dropdown-toggle[aria-expanded="true"]::after {
+    transform: rotate(180deg);
   }
   
   /* Dropdown items with hover effects */
@@ -208,21 +263,6 @@
     margin: 0.5rem 1rem;
   }
   
-  /* Dropdown toggle */
-  .nav-item.dropdown {
-    position: relative;
-  }
-  
-  .dropdown-toggle::after {
-    transition: transform 0.2s ease;
-    vertical-align: middle;
-    margin-left: 0.4em;
-  }
-  
-  .dropdown-toggle[aria-expanded="true"]::after {
-    transform: rotate(180deg);
-  }
-  
   /* Dropdown show/hide states */
   .navbar-nav .dropdown:hover > .nav-link {
     color: var(--accent);
@@ -239,27 +279,6 @@
     box-shadow: 0 0 0 2px var(--accent);
   }
   
-  /* Mobile dropdown styles */
-  @media (max-width: 991.98px) {
-    .dropdown-menu {
-      background-color: rgba(30, 30, 45, 0.5);
-      box-shadow: none;
-      padding: 0.5rem;
-      margin-top: 0;
-      animation: none;
-    }
-    
-    .dropdown-item {
-      padding: 0.6rem 1rem;
-      margin: 0.2rem 0;
-      border-radius: var(--border-radius-sm);
-    }
-    
-    .dropdown-item:hover {
-      transform: none;
-    }
-  }
-  
   /* Highlight active dropdown item */
   .dropdown-item.active, 
   .dropdown-item:active {
@@ -267,9 +286,22 @@
     color: white;
   }
   
-  /* Arrow indicator */
-  .dropdown-toggle::after {
-    margin-top: 0.1em;
+  /* Mobile navbar toggler */
+  .navbar-toggler {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.25rem;
+  }
+  
+  .navbar-toggler:focus {
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.15);
+  }
+  
+  .navbar-toggler-icon {
+    display: inline-block;
+    width: 1.5em;
+    height: 1.5em;
+    vertical-align: middle;
   }
   
   /* =====================
@@ -438,11 +470,14 @@
      Visualizations
      ===================== */
   .circuit-svg {
-    max-width: 100%;
-    overflow-x: auto;
+    position: relative;
     background-color: #fff;
     padding: 1rem;
     border-radius: var(--border-radius-md);
+    margin-bottom: 1.5rem;
+    text-align: center;
+    overflow: auto;
+    max-width: 100%;
   }
   
   .chart-container {
@@ -463,9 +498,64 @@
     border-radius: 8px;
     overflow: hidden;
   }
-
+  
   .demo-container {
     height: 400px;
+  }
+  
+  /* Download button styling */
+  .circuit-download-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    background-color: var(--primary);
+    border-color: var(--primary);
+    font-size: 0.85rem;
+  }
+  
+  .circuit-download-btn:hover {
+    opacity: 1;
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+  
+  /* Ensure SVG responsiveness */
+  .circuit-svg svg {
+    max-width: none;
+    height: auto;
+  }
+  
+  .circuit-svg-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    position: relative;
+  }
+  
+  /* BB84 Visualization Styles */
+  .pipeline-step {
+    position: relative;
+  }
+  
+  .step-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+  }
+  
+  .key-pipeline .progress {
+    height: 24px;
+  }
+  
+  .key-pipeline .progress-bar {
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   /* =====================
@@ -513,113 +603,7 @@
     background-color: var(--primary-dark);
   }
   
-  /* =====================
-     Media Queries
-     ===================== */
-  @media (max-width: 767.98px) {
-    .hero-title {
-      font-size: 2.5rem;
-    }
-    
-    .hero-subtitle {
-      font-size: 1rem;
-    }
-  }
-  
-  @media (max-width: 991.98px) {
-    #mainNav .navbar-nav {
-      padding: 1rem 0;
-    }
-    
-    #mainNav .nav-link::after {
-      display: none;
-    }
-  }
-  
-  @media (min-width: 992px) {
-    .hero-content {
-      padding: 0 2rem;
-    }
-    
-    .plugin-card .card-body {
-      padding: 2rem;
-    }
-  }
-
-  /* Circuit visualization container styling */
-  .circuit-svg {
-    position: relative;
-    background-color: #fff;
-    padding: 1rem;
-    border-radius: var(--border-radius-md);
-    margin-bottom: 1.5rem;
-    text-align: center;
-    overflow: auto;
-    max-width: 100%;
-  }
-
-  /* Download button styling */
-  .circuit-download-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 100;
-    opacity: 0.8;
-    transition: opacity 0.2s ease;
-    background-color: var(--primary);
-    border-color: var(--primary);
-    font-size: 0.85rem;
-  }
-
-  .circuit-download-btn:hover {
-    opacity: 1;
-    background-color: var(--primary-dark);
-    border-color: var(--primary-dark);
-  }
-
-  /* Hide download button when printing */
-  @media print {
-    .circuit-download-btn {
-      display: none;
-    }
-  }
-
-  /* Ensure SVG responsiveness */
-  .circuit-svg svg {
-    max-width: none;
-    height: auto;
-  }
-
-  .circuit-svg-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    position: relative;
-  }
-
-  /* BB84 Visualization Styles */
-  .pipeline-step {
-    position: relative;
-  }
-
-  .step-header {
-    display: flex;
-    align-items: center;
-    margin-bottom: 5px;
-  }
-
-  .key-pipeline .progress {
-    height: 24px;
-  }
-
-  .key-pipeline .progress-bar {
-    color: #fff;
-    font-weight: bold;
-    text-shadow: 0 0 3px rgba(0,0,0,0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
+  /* Glossary styles */
   .loading-glossary::before {
     content: "Loading glossary...";
     position: fixed;
@@ -634,13 +618,94 @@
     z-index: 9999;
     font-size: 1.5rem;
   }
-
+  
   .highlight-term {
     animation: highlight-pulse 2s ease-in-out;
   }
+  
   
   @keyframes highlight-pulse {
     0% { background-color: transparent; }
     30% { background-color: rgba(124, 58, 237, 0.2); }
     100% { background-color: transparent; }
+  }
+  
+  /* Hide download button when printing */
+  @media print {
+    .circuit-download-btn {
+      display: none;
+    }
+  }
+  
+  /* =====================
+     Media Queries
+     ===================== */
+  @media (max-width: 1200px) {
+    #mainNav .navbar-brand span {
+      display: none; /* Hide brand text on medium screens */
+    }
+  }
+  
+  @media (max-width: 991.98px) {
+    /* Mobile navigation adjustments */
+    #mainNav .navbar-nav {
+      flex-direction: column !important;
+      padding: 1rem 0;
+      overflow-x: visible;
+    }
+    
+    #mainNav .nav-link {
+      padding: 0.7rem !important;
+      justify-content: flex-start !important;
+    }
+    
+    #mainNav .nav-link::after {
+      display: none;
+    }
+    
+    /* Mobile dropdown styles */
+    .dropdown-menu {
+      background-color: rgba(30, 30, 45, 0.5);
+      box-shadow: none;
+      padding: 0.5rem;
+      margin-top: 0;
+      animation: none;
+    }
+    
+    .dropdown-item {
+      padding: 0.6rem 1rem;
+      margin: 0.2rem 0;
+      border-radius: var(--border-radius-sm);
+    }
+    
+    .dropdown-item:hover {
+      transform: none;
+    }
+  }
+  
+  @media (max-width: 767.98px) {
+    /* Small screen adjustments */
+    .hero-title {
+      font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (min-width: 992px) {
+    /* Desktop adjustments */
+    .hero-content {
+      padding: 0 2rem;
+    }
+    
+    .plugin-card .card-body {
+      padding: 2rem;
+    }
+    
+    /* Ensure desktop navigation stays horizontal */
+    #mainNav .navbar-nav {
+      flex-direction: row !important;
+    }
   }
