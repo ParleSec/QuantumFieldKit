@@ -15,7 +15,7 @@ import psutil
 import re
 
 # Import simulation functions from plugins
-from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
+from plugins.authentication.auth import generate_quantum_fingerprint_cirq
 from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
 from plugins.error_correction.shor_code import run_shor_code
 from plugins.grover.grover import run_grover
@@ -380,20 +380,19 @@ def validate_parameters(plugin, params):
 # --- Plugin Registry ---
 # Define all available quantum simulation plugins
 PLUGINS = {
-    "auth": {
-        "name": "Quantum Authentication",
-        "description": "Simulate quantum fingerprint authentication using Cirq.",
-        "icon": "fa-fingerprint",
-        "category": "security",
-        "parameters": [
-            {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate", 
-             "max_length": 64},
-            {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use",
-             "min": 1, "max": 10}
+    'auth': {
+        'name': 'Post-Quantum Authentication',
+        'description': 'Simulate a lattice-based authentication system that remains secure against quantum computer attacks, based on the Ring-LWE problem.',
+        'icon': 'fa-lock',
+        'category': 'security',
+        'parameters': [
+            {'name': 'username', 'type': 'str', 'default': 'Bob', 'description': 'Username for authentication'},
+            {'name': 'noise', 'type': 'float', 'default': 0.0, 'description': 'Noise level (0.0 - 0.2)',"min": 0, "max": 0.2},
+            {'name': 'dimension', 'type': 'int', 'default': 4, 'description': 'Lattice dimension parameter',"min": 1, "max": 32}
         ],
-        "run": lambda p: run_plugin(generate_quantum_fingerprint_cirq, _plugin_key="auth", data=p["data"], num_qubits=p["num_qubits"])
+        'function': generate_quantum_fingerprint_cirq
     },
-    
+
     "bb84": {
         "name": "BB84 Protocol Simulation",
         "description": "Simulate the BB84 quantum key distribution protocol with realistic physical effects.",
@@ -947,38 +946,89 @@ def plugin_view(plugin_key):
     educational_content = get_educational_content(plugin_key)
     
     # Process form submission...
-    if request.method == "POST":
-        # Extract parameters from the form
-        raw_params = {}
-        for param in plugin["parameters"]:
-            raw_params[param["name"]] = request.form.get(param["name"], param.get("default", ""))
-        
+    result = None
+    if request.method == 'POST':
         try:
-            # Validate parameters
-            params = validate_parameters(plugin, raw_params)
+            # Get plugin function
+            plugin_function = plugin.get('function')
+            if not plugin_function:
+                raise ValueError(f"Plugin function not found for {plugin_key}")
             
-            # Add plugin key for better error reporting
-            params['_plugin_key'] = plugin_key
+            # Special handling for auth plugin
+            if plugin_key == 'auth':
+                username = request.form.get('username', 'user123')
+                noise = float(request.form.get('noise', 0.0))
+                dimension = int(request.form.get('dimension', 4))
+                
+                # Call the function with updated parameters for the lattice-based implementation
+                output = plugin_function(username, dimension)
+                
+                # Process log for display
+                log = output.get('log', '')
+                
+                result = {
+                    'output': output,
+                    'log': log
+                }
+            else:
+                # Process parameters from form
+                params = {}
+                for param in plugin.get('parameters', []):
+                    param_name = param['name']
+                    param_type = param['type']
+                    
+                    # Get form value
+                    form_value = request.form.get(param_name)
+                    if form_value is None:
+                        continue
+                    
+                    # Convert value to appropriate type
+                    if param_type == 'int':
+                        params[param_name] = int(form_value)
+                    elif param_type == 'float':
+                        params[param_name] = float(form_value)
+                    else:
+                        params[param_name] = form_value
+                
+                # Call the plugin function with parameters
+                output = plugin_function(**params)
+                
+                # Process log for display
+                if isinstance(output, dict) and 'log' in output:
+                    log = output.get('log', '')
+                else:
+                    log = f"Execution complete. No detailed log available."
+                
+                result = {
+                    'output': output,
+                    'log': log
+                }
             
-            # Execute the plugin with the validated parameters
-            result = plugin["run"](params)
-            
-            # If this is an AJAX request, return JSON
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(result)
                 
-        except SimulationError as e:
-            # Handle validation errors
-            error_msg = str(e)
-            if hasattr(e, 'suggestion') and e.suggestion:
-                error_msg += f"\n\nSuggestion: {e.suggestion}"
-                
-            result = {"output": None, "log": None, "error": error_msg}
+        except Exception as e:
+            error_message = str(e)
+            stack_trace = traceback.format_exc()
             
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            # Add suggestion for common errors
+            suggestion = ""
+            if "target" in error_message.lower() and "bits" in error_message.lower():
+                suggestion = "Suggestion: Make sure your target state binary string length matches the number of qubits."
+            
+            error_details = f"{error_message}\n\n{stack_trace}\n\n{suggestion}"
+            
+            result = {
+                'error': error_details
+            }
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(result)
     
-    return render_template("plugin.html", plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
+    # Render template
+    return render_template('plugin.html', plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
