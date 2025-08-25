@@ -1,0 +1,42 @@
+[
+  {
+    "term": "Qubit",
+    "definition": "The fundamental unit of quantum information, analogous to a classical bit but with the ability to exist in a superposition of states."
+  },
+  {
+    "term": "Superposition",
+    "definition": "A quantum mechanical principle where a quantum system can exist in multiple states simultaneously until measured."
+  },
+  {
+    "term": "Entanglement",
+    "definition": "A quantum mechanical phenomenon where particles become correlated to predictably interact with each other regardless of distance."
+  },
+  {
+    "term": "Quantum Gate",
+    "definition": "A basic quantum circuit operating on a small number of qubits, analogous to classical logic gates."
+  },
+  {
+    "term": "Measurement",
+    "definition": "The process of observing a quantum system, which causes it to collapse from a superposition of states into a definite state."
+  },
+  {
+    "term": "Quantum Circuit",
+    "definition": "A sequence of quantum gates applied to a set of qubits to perform a quantum computation."
+  },
+  {
+    "term": "Quantum Algorithm",
+    "definition": "An algorithm that runs on a quantum computer, taking advantage of quantum mechanical phenomena like superposition and entanglement."
+  },
+  {
+    "term": "Quantum Error Correction",
+    "definition": "Techniques used to protect quantum information from errors due to decoherence and other quantum noise."
+  },
+  {
+    "term": "Decoherence",
+    "definition": "The loss of quantum coherence due to interaction with the environment, leading to the collapse of quantum states."
+  },
+  {
+    "term": "Quantum Teleportation",
+    "definition": "A process by which quantum information can be transmitted from one location to another, using a classical communication channel and quantum entanglement."
+  }
+] 
