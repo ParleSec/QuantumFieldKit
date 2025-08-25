@@ -2,7 +2,7 @@ import os
 import traceback
 import json
 import logging
-from flask import Flask, request, render_template, jsonify, session, abort
+from flask import Flask, request, render_template, jsonify, session, abort, send_from_directory
 from flask_socketio import SocketIO, emit
 from werkzeug.middleware.proxy_fix import ProxyFix
 import signal
@@ -13,9 +13,10 @@ import concurrent.futures
 from datetime import datetime
 import psutil
 import re
+from flask_cors import CORS
 
 # Import simulation functions from plugins
-from plugins.authentication.auth import generate_quantum_fingerprint_cirq, verify_fingerprint_cirq
+from plugins.authentication.auth import generate_quantum_fingerprint_cirq
 from plugins.encryption_bb84.bb84 import bb84_protocol_cirq
 from plugins.error_correction.shor_code import run_shor_code
 from plugins.grover.grover import run_grover
@@ -83,7 +84,14 @@ def configure_logging():
 logger = configure_logging()
 
 # Initialize Flask application
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend/build')
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24))
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
@@ -380,20 +388,19 @@ def validate_parameters(plugin, params):
 # --- Plugin Registry ---
 # Define all available quantum simulation plugins
 PLUGINS = {
-    "auth": {
-        "name": "Quantum Authentication",
-        "description": "Simulate quantum fingerprint authentication using Cirq.",
-        "icon": "fa-fingerprint",
-        "category": "security",
-        "parameters": [
-            {"name": "data", "type": "str", "default": "example_user", "description": "Data to authenticate", 
-             "max_length": 64},
-            {"name": "num_qubits", "type": "int", "default": 8, "description": "Number of qubits to use",
-             "min": 1, "max": 10}
+    'auth': {
+        'name': 'Post-Quantum Authentication',
+        'description': 'Simulate a lattice-based authentication system that remains secure against quantum computer attacks, based on the Ring-LWE problem.',
+        'icon': 'fa-lock',
+        'category': 'security',
+        'parameters': [
+            {'name': 'username', 'type': 'str', 'default': 'Bob', 'description': 'Username for authentication'},
+            {'name': 'noise', 'type': 'float', 'default': 0.0, 'description': 'Noise level (0.0 - 0.2)',"min": 0, "max": 0.2},
+            {'name': 'dimension', 'type': 'int', 'default': 4, 'description': 'Lattice dimension parameter',"min": 1, "max": 32}
         ],
-        "run": lambda p: run_plugin(generate_quantum_fingerprint_cirq, _plugin_key="auth", data=p["data"], num_qubits=p["num_qubits"])
+        'function': generate_quantum_fingerprint_cirq
     },
-    
+
     "bb84": {
         "name": "BB84 Protocol Simulation",
         "description": "Simulate the BB84 quantum key distribution protocol with realistic physical effects.",
@@ -947,86 +954,445 @@ def plugin_view(plugin_key):
     educational_content = get_educational_content(plugin_key)
     
     # Process form submission...
-    if request.method == "POST":
-        # Extract parameters from the form
-        raw_params = {}
-        for param in plugin["parameters"]:
-            raw_params[param["name"]] = request.form.get(param["name"], param.get("default", ""))
-        
+    result = None
+    if request.method == 'POST':
         try:
-            # Validate parameters
-            params = validate_parameters(plugin, raw_params)
+            # Get plugin function
+            plugin_function = plugin.get('function')
+            if not plugin_function:
+                raise ValueError(f"Plugin function not found for {plugin_key}")
             
-            # Add plugin key for better error reporting
-            params['_plugin_key'] = plugin_key
+            # Special handling for auth plugin
+            if plugin_key == 'auth':
+                username = request.form.get('username', 'user123')
+                noise = float(request.form.get('noise', 0.0))
+                dimension = int(request.form.get('dimension', 4))
+                
+                # Call the function with updated parameters for the lattice-based implementation
+                output = plugin_function(username, dimension)
+                
+                # Process log for display
+                log = output.get('log', '')
+                
+                result = {
+                    'output': output,
+                    'log': log
+                }
+            else:
+                # Process parameters from form
+                params = {}
+                for param in plugin.get('parameters', []):
+                    param_name = param['name']
+                    param_type = param['type']
+                    
+                    # Get form value
+                    form_value = request.form.get(param_name)
+                    if form_value is None:
+                        continue
+                    
+                    # Convert value to appropriate type
+                    if param_type == 'int':
+                        params[param_name] = int(form_value)
+                    elif param_type == 'float':
+                        params[param_name] = float(form_value)
+                    else:
+                        params[param_name] = form_value
+                
+                # Call the plugin function with parameters
+                output = plugin_function(**params)
+                
+                # Process log for display
+                if isinstance(output, dict) and 'log' in output:
+                    log = output.get('log', '')
+                else:
+                    log = f"Execution complete. No detailed log available."
+                
+                result = {
+                    'output': output,
+                    'log': log
+                }
             
-            # Execute the plugin with the validated parameters
-            result = plugin["run"](params)
-            
-            # If this is an AJAX request, return JSON
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(result)
                 
-        except SimulationError as e:
-            # Handle validation errors
-            error_msg = str(e)
-            if hasattr(e, 'suggestion') and e.suggestion:
-                error_msg += f"\n\nSuggestion: {e.suggestion}"
-                
-            result = {"output": None, "log": None, "error": error_msg}
+        except Exception as e:
+            error_message = str(e)
+            stack_trace = traceback.format_exc()
             
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+            # Add suggestion for common errors
+            suggestion = ""
+            if "target" in error_message.lower() and "bits" in error_message.lower():
+                suggestion = "Suggestion: Make sure your target state binary string length matches the number of qubits."
+            
+            error_details = f"{error_message}\n\n{stack_trace}\n\n{suggestion}"
+            
+            result = {
+                'error': error_details
+            }
+            
+            # Return JSON response for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(result)
     
-    return render_template("plugin.html", plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
+    # Render template
+    return render_template('plugin.html', plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
-    """API endpoint to get a list of all available plugins."""
-    return jsonify({
-        "plugins": {k: {
-            "name": v["name"],
-            "description": v["description"],
-            "category": v["category"],
-            "parameters": v["parameters"]
-        } for k, v in PLUGINS.items()}
-    })
+    """Return a list of available plugins."""
+    categories = {}
+    for key, plugin in PLUGINS.items():
+        category = plugin.get("category", "other")
+        if category not in categories:
+            categories[category] = []
+        # Only include serializable data
+        serializable_plugin = {
+            "key": key,
+            "name": plugin.get("name"),
+            "description": plugin.get("description"),
+            "icon": plugin.get("icon"),
+            "category": plugin.get("category"),
+            "parameters": plugin.get("parameters", [])
+        }
+        categories[category].append(serializable_plugin)
+    return jsonify(categories)
+
+@app.route("/api/plugin/<plugin_key>", methods=["GET"])
+def api_plugin(plugin_key):
+    """Return details for a specific plugin."""
+    if plugin_key not in PLUGINS:
+        return jsonify({"error": "Plugin not found"}), 404
+    
+    plugin = PLUGINS[plugin_key]
+    # Only include serializable data
+    serializable_plugin = {
+        "key": plugin_key,
+        "name": plugin.get("name"),
+        "description": plugin.get("description"),
+        "icon": plugin.get("icon"),
+        "category": plugin.get("category"),
+        "parameters": plugin.get("parameters", [])
+    }
+    return jsonify(serializable_plugin)
 
 @app.route("/api/run/<plugin_key>", methods=["POST"])
 def api_run_plugin(plugin_key):
-    """API endpoint to run a plugin with JSON parameters."""
+    """Run a plugin simulation."""
     if plugin_key not in PLUGINS:
-        return jsonify({"error": f"Plugin '{plugin_key}' not found"}), 404
-    
-    plugin = PLUGINS[plugin_key]
-    
-    # Parse JSON parameters
+        return jsonify({"error": "Plugin not found"}), 404
     try:
-        raw_params = request.json or {}
-    except Exception:
-        return jsonify({"error": "Invalid JSON data"}), 400
-    
-    try:
-        # Validate and convert parameters
-        params = validate_parameters(plugin, raw_params)
-        
-        # Add plugin key for better error reporting
-        params['_plugin_key'] = plugin_key
-        
-        # Run the plugin
-        result = plugin["run"](params)
+        params = request.get_json()
+        result = run_plugin(PLUGINS[plugin_key]["function"], **params)
         return jsonify(result)
-        
-    except SimulationError as e:
-        # Handle validation errors
-        error_msg = str(e)
-        if hasattr(e, 'suggestion') and e.suggestion:
-            error_msg += f"\n\nSuggestion: {e.suggestion}"
-            
-        return jsonify({"output": None, "log": None, "error": error_msg}), 400
     except Exception as e:
-        logger.error(f"Unexpected error running plugin {plugin_key} via API: {str(e)}\n{traceback.format_exc()}")
-        return jsonify({"output": None, "log": None, "error": f"Server error: {str(e)}"}), 500
+        return jsonify({"error": str(e)}), 400
+
+@app.route("/api/glossary", methods=["GET"])
+def api_glossary():
+    """Return glossary terms."""
+    terms_file = os.path.join(app.static_folder, 'data', 'glossary_terms.json')
+    try:
+        with open(terms_file, 'r') as f:
+            terms = json.load(f)
+        return jsonify(terms)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        app.logger.error(f"Error loading glossary terms: {e}")
+        return jsonify([{"term": "Qubit", "definition": "The fundamental unit of quantum information."},
+                       {"term": "Superposition", "definition": "A quantum property allowing particles to exist in multiple states."}])
+
+@app.route("/api/category/<category>", methods=["GET"])
+def api_category(category):
+    """Return plugins in a specific category."""
+    plugins_in_category = {k: v for k, v in PLUGINS.items() if v.get("category", "other") == category}
+    if not plugins_in_category:
+        return jsonify({"error": "Category not found"}), 404
+    return jsonify(plugins_in_category)
+
+@app.route("/api/educational/<plugin_key>", methods=["GET"])
+def api_educational(plugin_key):
+    """Return educational content for a specific plugin."""
+    if plugin_key not in PLUGINS:
+        return jsonify({"error": "Plugin not found"}), 404
+    
+    try:
+        # Get the template path for the plugin
+        template_path = get_template_path(plugin_key)
+        
+        # Extract educational content
+        content = extract_educational_content(template_path)
+        
+        if content:
+            return jsonify({"content": content})
+        else:
+            return jsonify({"error": "Educational content not found"}), 404
+            
+    except Exception as e:
+        logger.error(f"Error loading educational content: {e}")
+        return jsonify({"error": "Failed to load educational content"}), 500
+
+@app.route("/api/validate/<plugin_key>", methods=["POST", "OPTIONS"])
+def api_validate(plugin_key):
+    """Validate parameters for a specific plugin."""
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+        
+    if plugin_key not in PLUGINS:
+        return jsonify({"error": "Plugin not found"}), 404
+        
+    try:
+        params = request.get_json()
+        plugin = PLUGINS[plugin_key]
+        validated_params = validate_parameters(plugin, params)
+        return jsonify({"status": "valid", "params": validated_params})
+    except ParameterError as e:
+        return jsonify({
+            "status": "invalid",
+            "error": e.message,
+            "param_info": e.param_info,
+            "suggestion": e.suggestion
+        }), 400
+    except Exception as e:
+        return jsonify({"status": "error", "error": str(e)}), 500
+
+@app.route("/circuit")
+def circuit_designer():
+    """Render the circuit designer template"""
+    return render_template("circuit_designer.html")
+
+# API routes for Circuit Designer
+
+@app.route("/api/circuit/gates", methods=["GET"])
+def api_circuit_gates():
+    """Get available quantum gates for the circuit designer"""
+    try:
+        # Basic set of gates organized by categories
+        gates = {
+            "single_qubit": [
+                {"id": "x", "name": "X", "description": "Pauli-X gate (NOT gate)", "symbol": "X"},
+                {"id": "y", "name": "Y", "description": "Pauli-Y gate", "symbol": "Y"},
+                {"id": "z", "name": "Z", "description": "Pauli-Z gate", "symbol": "Z"},
+                {"id": "h", "name": "H", "description": "Hadamard gate", "symbol": "H"},
+                {"id": "s", "name": "S", "description": "Phase gate (S)", "symbol": "S"},
+                {"id": "t", "name": "T", "description": "π/8 gate (T)", "symbol": "T"},
+                {"id": "rx", "name": "RX", "description": "Rotation around X-axis", "symbol": "RX", "params": [{"name": "theta", "default": "π/2"}]},
+                {"id": "ry", "name": "RY", "description": "Rotation around Y-axis", "symbol": "RY", "params": [{"name": "theta", "default": "π/2"}]},
+                {"id": "rz", "name": "RZ", "description": "Rotation around Z-axis", "symbol": "RZ", "params": [{"name": "theta", "default": "π/2"}]}
+            ],
+            "multi_qubit": [
+                {"id": "cnot", "name": "CNOT", "description": "Controlled-NOT gate", "symbol": "CNOT", "qubits": 2},
+                {"id": "cz", "name": "CZ", "description": "Controlled-Z gate", "symbol": "CZ", "qubits": 2},
+                {"id": "swap", "name": "SWAP", "description": "SWAP gate", "symbol": "SWAP", "qubits": 2},
+                {"id": "ccx", "name": "Toffoli", "description": "Toffoli gate (CCX)", "symbol": "CCX", "qubits": 3},
+                {"id": "cswap", "name": "Fredkin", "description": "Fredkin gate (CSWAP)", "symbol": "CSWAP", "qubits": 3}
+            ],
+            "special": [
+                {"id": "measure", "name": "Measure", "description": "Measurement operation", "symbol": "M"},
+                {"id": "reset", "name": "Reset", "description": "Reset qubit to |0⟩", "symbol": "R"}
+            ]
+        }
+        return jsonify(gates)
+    except Exception as e:
+        logger.error(f"Error getting available gates: {str(e)}")
+        return jsonify({"error": "Failed to get available gates"}), 500
+
+@app.route("/api/circuit/simulate", methods=["POST"])
+def api_circuit_simulate():
+    """Simulate a quantum circuit"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No circuit data provided"}), 400
+            
+        circuit = data.get("circuit")
+        shots = data.get("shots", 1024)
+        
+        if not circuit:
+            return jsonify({"error": "No circuit definition provided"}), 400
+            
+        # Ensure shots is an integer and within reasonable limits
+        try:
+            shots = int(shots)
+            if shots < 1 or shots > 10000:
+                return jsonify({"error": "Shots must be between 1 and 10000"}), 400
+        except ValueError:
+            return jsonify({"error": "Shots must be an integer"}), 400
+        
+        # This is where we'd build and simulate the circuit using Cirq
+        # For now, we'll use mock data
+        
+        import numpy as np
+        import cirq
+        
+        # Convert JSON circuit representation to a Cirq circuit
+        cirq_circuit = cirq.Circuit()
+        qubits = [cirq.LineQubit(i) for i in range(circuit.get("num_qubits", 3))]
+        
+        # Add gates to circuit based on the circuit data
+        # This would need to be implemented based on your circuit JSON schema
+        
+        # For now, return mock simulation results
+        result = {
+            "state_vector": {
+                "amplitudes": [
+                    {"state": "000", "amplitude": 1.0, "probability": 1.0}
+                    # Additional states would be added here in a real implementation
+                ],
+                "visualization_data": {}  # Visualization data would go here
+            },
+            "measurements": {
+                "counts": {"000": shots},
+                "probabilities": {"000": 1.0}
+            },
+            "circuit_representation": {
+                "qubits": circuit.get("num_qubits", 3),
+                "depth": len(circuit.get("gates", [])),
+                "gates": circuit.get("gates", [])
+            }
+        }
+        
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error simulating circuit: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({"error": f"Failed to simulate circuit: {str(e)}"}), 500
+
+@app.route("/api/circuit/save", methods=["POST"])
+def api_circuit_save():
+    """Save a quantum circuit"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No circuit data provided"}), 400
+            
+        # Here you would save the circuit to a database or file
+        # For this example, we'll pretend to save it and return a mock ID
+        
+        circuit_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        
+        return jsonify({
+            "id": circuit_id,
+            "name": data.get("name", "Unnamed Circuit"),
+            "saved": True,
+            "timestamp": datetime.now().isoformat()
+        })
+    except Exception as e:
+        logger.error(f"Error saving circuit: {str(e)}")
+        return jsonify({"error": f"Failed to save circuit: {str(e)}"}), 500
+
+@app.route("/api/circuit/load/<circuit_id>", methods=["GET"])
+def api_circuit_load(circuit_id):
+    """Load a saved quantum circuit"""
+    try:
+        # Here you would load the circuit from a database or file
+        # For this example, we'll return a mock circuit
+        
+        mock_circuit = {
+            "id": circuit_id,
+            "name": f"Circuit {circuit_id}",
+            "num_qubits": 3,
+            "gates": [
+                {"type": "h", "targets": [0]},
+                {"type": "cnot", "controls": [0], "targets": [1]},
+                {"type": "measure", "targets": [0, 1]}
+            ],
+            "created_at": datetime.now().isoformat()
+        }
+        
+        return jsonify(mock_circuit)
+    except Exception as e:
+        logger.error(f"Error loading circuit {circuit_id}: {str(e)}")
+        return jsonify({"error": f"Failed to load circuit: {str(e)}"}), 500
+
+@app.route("/api/circuit/saved", methods=["GET"])
+def api_circuit_saved():
+    """Get list of saved circuits"""
+    try:
+        # Here you would query a database for saved circuits
+        # For this example, we'll return mock data
+        
+        mock_saved_circuits = [
+            {"id": "20230512120000", "name": "Bell State", "num_qubits": 2, "created_at": "2023-05-12T12:00:00"},
+            {"id": "20230513130000", "name": "GHZ State", "num_qubits": 3, "created_at": "2023-05-13T13:00:00"},
+            {"id": "20230514140000", "name": "Quantum Teleportation", "num_qubits": 3, "created_at": "2023-05-14T14:00:00"}
+        ]
+        
+        return jsonify(mock_saved_circuits)
+    except Exception as e:
+        logger.error(f"Error getting saved circuits: {str(e)}")
+        return jsonify({"error": f"Failed to get saved circuits: {str(e)}"}), 500
+
+@app.route("/api/circuit/export", methods=["POST"])
+def api_circuit_export():
+    """Export circuit to code (Cirq, Qiskit, etc.)"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No circuit data provided"}), 400
+            
+        circuit = data.get("circuit")
+        format = data.get("format", "cirq").lower()
+        
+        if not circuit:
+            return jsonify({"error": "No circuit definition provided"}), 400
+            
+        if format not in ["cirq", "qiskit"]:
+            return jsonify({"error": f"Unsupported export format: {format}"}), 400
+            
+        # Generate code based on the circuit definition
+        num_qubits = circuit.get("num_qubits", 3)
+        
+        if format == "cirq":
+            code = f"""
+import cirq
+import numpy as np
+
+# Create a circuit with {num_qubits} qubits
+circuit = cirq.Circuit()
+
+# Define qubits
+qubits = [cirq.LineQubit(i) for i in range({num_qubits})]
+
+# Add gates
+"""
+            # Here you would iterate through the gates and add them to the code
+            
+            code += """
+# Simulate
+simulator = cirq.Simulator()
+result = simulator.simulate(circuit)
+
+print("Final state vector:")
+print(result.final_state_vector)
+"""
+        elif format == "qiskit":
+            code = f"""
+from qiskit import QuantumCircuit, Aer, execute
+import numpy as np
+
+# Create a circuit with {num_qubits} qubits and {num_qubits} classical bits
+qc = QuantumCircuit({num_qubits}, {num_qubits})
+
+# Add gates
+"""
+            # Here you would iterate through the gates and add them to the code
+            
+            code += """
+# Simulate
+simulator = Aer.get_backend('statevector_simulator')
+result = execute(qc, simulator).result()
+statevector = result.get_statevector()
+
+print("Final state vector:")
+print(statevector)
+"""
+        
+        return jsonify({
+            "code": code,
+            "format": format
+        })
+    except Exception as e:
+        logger.error(f"Error exporting circuit: {str(e)}")
+        return jsonify({"error": f"Failed to export circuit: {str(e)}"}), 500
 
 # --- Socket.IO event handlers for real-time updates ---
 @socketio.on('connect')
@@ -1099,18 +1465,11 @@ def server_error(e):
     return render_template("error.html", error="Server error"), 500
 
 # --- Main entry point ---
-'''
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    debug = os.environ.get("FLASK_ENV") == "development"
-    
-    logger.info(f"Starting Quantum Field Kit Web Server on port {port}")
-    logger.info(f"Debug mode: {debug}")
-    logger.info(f"Available plugins: {', '.join(PLUGINS.keys())}")
-    
-    socketio.run(app, host="0.0.0.0", port=port, debug=debug)
-'''
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    socketio.run(app, host="0.0.0.0", port=port)
+    # SSL Configuration for production
+    if os.environ.get('FLASK_ENV') == 'production' and os.path.exists('cert.pem') and os.path.exists('key.pem'):
+        socketio.run(app, debug=False, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)),
+                     certfile='cert.pem', keyfile='key.pem')
+    else:
+        # Development environment
+        socketio.run(app, debug=True, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
