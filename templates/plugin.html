@@ -91,7 +91,7 @@
               <i class="fas fa-graduation-cap me-2"></i> Learning Center
             </button>
             <a href="{{ url_for('glossary') }}" class="btn btn-outline-primary">
-              <i class="fas fa-home me-2"></i> Quantum Computing Glossary
+              <i class="fas fa-book me-2"></i> Quantum Computing Glossary
             </a>
           </div>
         </div>
@@ -183,6 +183,57 @@
                     
                     <!-- Specific visualizations based on plugin type -->
                     <div class="row">
+                      {% if plugin.key == 'auth' %}
+                        <!-- Special handling for auth plugin with lattice-based visualization -->
+                        <div class="col-md-6 mb-4">
+                          <div class="card h-100">
+                            <div class="card-header d-flex align-items-center bg-primary text-white">
+                              <i class="fas fa-cubes me-2"></i>
+                              <h5 class="mb-0">Lattice Visualization</h5>
+                            </div>
+                            <div class="card-body">
+                              <div id="lattice-visualization" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-4">
+                          <div class="card h-100">
+                            <div class="card-header d-flex align-items-center bg-primary text-white">
+                              <i class="fas fa-atom me-2"></i>
+                              <h5 class="mb-0">Quantum State Representation</h5>
+                            </div>
+                            <div class="card-body">
+                              <div id="quantum-state-viz" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-12 mb-4">
+                          <div class="card">
+                            <div class="card-header d-flex align-items-center bg-info text-white">
+                              <i class="fas fa-exchange-alt me-2"></i>
+                              <h5 class="mb-0">Authentication Protocol</h5>
+                            </div>
+                            <div class="card-body">
+                              <div id="auth-protocol-visualization" class="protocol-visualization"></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="col-md-12 mb-4">
+                          <div class="card">
+                            <div class="card-header d-flex align-items-center bg-secondary text-white">
+                              <i class="fas fa-shield-alt me-2"></i>
+                              <h5 class="mb-0">Security Strength Comparison</h5>
+                            </div>
+                            <div class="card-body">
+                              <div id="security-strength-visualization" class="chart-container"></div>
+                            </div>
+                          </div>
+                        </div>
+                      {% endif %}
+
                       {% if plugin.key == 'bb84' %}
                         <div class="col-md-6 mb-4">
                           <div class="card">
@@ -225,7 +276,7 @@
                       </div>
                     {% endif %}
 
-                      {% if plugin.key == 'teleport' or plugin.key == 'handshake' or plugin.key == 'auth' %}
+                      {% if plugin.key == 'teleport' or plugin.key == 'handshake' %}
                         <div class="col-md-6 mb-4">
                           <div class="card">
                             <div class="card-header">Quantum State</div>
@@ -309,7 +360,7 @@
                     <div class="row">
                       {% if result.output is mapping %}
                         {% for key, value in result.output.items() %}
-                          {% if key != 'circuit_svg' %}
+                          {% if key != 'circuit_svg' and key != 'lattice_viz' %}
                             <div class="col-md-6 mb-4">
                               <div class="card">
                                 <div class="card-header">{{ key | replace('_', ' ') | title }}</div>
@@ -360,6 +411,22 @@
               <strong>Key Quantum Concept:</strong> Quantum simulations provide insight into quantum behavior without requiring actual quantum hardware.
             </div>
         {% endif %}
+
+        <!-- Special explanation for auth plugin with lattice-based cryptography -->
+        {% if plugin.key == 'auth' %}
+          <div class="mt-4 p-3 bg-light rounded border-start border-4 border-primary">
+            <h5><i class="fas fa-lock me-2"></i>Post-Quantum Cryptography</h5>
+            <p>
+              Lattice-based cryptography is a cornerstone of post-quantum security. Unlike RSA and ECC which 
+              are vulnerable to quantum attacks using Shor's algorithm, lattice-based methods remain secure 
+              against both classical and quantum computers.
+            </p>
+            <p class="mb-0">
+              The Ring-LWE (Ring Learning With Errors) scheme used in this simulation is related to 
+              NIST's post-quantum cryptography standards like CRYSTALS-Kyber.
+            </p>
+          </div>
+        {% endif %}
         </div>
       </div>
     </div>
@@ -403,6 +470,11 @@
                 <li>Search outcome (target state)</li>
                 <li>Probability distribution</li>
                 <li>Quantum circuit diagram</li>
+              {% elif plugin.key == 'auth' %}
+                <li>Lattice-based authentication results</li>
+                <li>Cryptographic security measurements</li>
+                <li>Lattice coefficient visualizations</li>
+                <li>Protocol illustration with security comparisons</li>
               {% else %}
                 <li>Simulation results specific to this quantum protocol</li>
                 <li>Quantum state information</li>
@@ -414,6 +486,24 @@
         </div>
         <hr>
         <h5>How It Works</h5>
+        {% if plugin.key == 'auth' %}
+        <div class="alert alert-info">
+          <h6><i class="fas fa-info-circle me-2"></i>About Lattice-Based Authentication</h6>
+          <p>
+            This authentication system uses Ring Learning With Errors (Ring-LWE), a lattice-based cryptographic primitive
+            that is resistant to attacks from both classical and quantum computers. The system works as follows:
+          </p>
+          <ol>
+            <li>Generate a key pair based on the hardness of lattice problems</li>
+            <li>Create an authentication challenge that only the possessor of the private key can solve</li>
+            <li>Verify the response using the mathematical properties of lattice structures</li>
+          </ol>
+          <p class="mb-0">
+            This approach represents the cutting edge of post-quantum cryptography research
+            and forms the foundation of several NIST standardization candidates.
+          </p>
+        </div>
+        {% else %}
         <p>This simulation uses Google Cirq, a Python framework for creating, editing, and invoking Noisy Intermediate Scale Quantum (NISQ) circuits. The backend performs these steps:</p>
         <ol>
           <li>Constructs quantum circuit based on your parameters</li>
@@ -422,7 +512,8 @@
           <li>Performs measurements and collects results</li>
           <li>Renders visualizations of the quantum behavior</li>
         </ol>
-        <p>You can download the quantum circuit diagram as an SVG file by clicking the download button that appears in the top-right corner of the circuit visualization.</p>
+        {% endif %}
+        <p>You can download the circuit diagram as an SVG file by clicking the download button that appears in the top-right corner of the circuit visualization.</p>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -571,25 +662,4 @@
     {% endif %}
   });
 </script>
-
-<!-- <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    "name": "{{ plugin.name }}",
-    "applicationCategory": "EducationalApplication",
-    "description": "{{ plugin.description }}",
-    "url": "{{ request.url }}",
-    "creator": {
-      "@type": "Organization",
-      "name": "ParleSec"
-    },
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "AUD"
-    }
-  }
-  </script>
--->
 {% endblock %}

@@ -709,3 +709,161 @@
       flex-direction: row !important;
     }
   }
+
+    /* =====================
+    Lattice Authentication Styles
+    ===================== */
+    /* Lattice Visualization Container */
+  #lattice-visualization {
+    background-color: var(--light);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #lattice-visualization:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .lattice-explanation {
+    background-color: rgba(79, 70, 229, 0.05);
+    border-left: 4px solid var(--lattice-primary);
+    padding: 0.75rem;
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+    margin: 1rem 0;
+  }
+
+  /* Authentication Protocol Visualization */
+  #auth-protocol-visualization {
+    padding: 1rem;
+    border-radius: var(--border-radius-lg);
+    background-color: var(--light);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .auth-status-banner {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .auth-status-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+  }
+
+  .protocol-steps {
+    counter-reset: step-counter;
+  }
+
+  .protocol-step {
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .protocol-step:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .protocol-step .card-header {
+    background-color: rgba(79, 70, 229, 0.05);
+  }
+
+  .step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    font-weight: bold;
+  }
+
+  .step-details {
+    display: none;
+    padding: 0.75rem;
+    background-color: rgba(79, 70, 229, 0.05);
+    border-radius: var(--border-radius-sm);
+    margin-top: 0.5rem;
+  }
+
+  .protocol-step:hover .step-details {
+    display: block;
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .crypto-comparison .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .crypto-comparison .card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Security Strength Visualization */
+  #security-strength-visualization {
+    padding: 1rem;
+    border-radius: var(--border-radius-lg);
+    background-color: var(--light);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .security-levels {
+    width: 100%;
+    position: relative;
+  }
+
+  .security-explanation {
+    border-left: 4px solid var(--info);
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+
+  /* 3D Lattice Point Visualization */
+  .lattice-3d-container {
+    width: 100%;
+    height: 400px;
+    position: relative;
+    background-color: #141424;
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+  }
+
+  .lattice-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: var(--lattice-tertiary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: background-color 0.3s ease;
+  }
+
+  .lattice-point:hover {
+    background-color: var(--lattice-accent);
+    box-shadow: 0 0 10px var(--lattice-accent);
+  }
+
+  .lattice-line {
+    position: absolute;
+    background-color: rgba(124, 58, 237, 0.3);
+    transform-origin: 0 0;
+    pointer-events: none;
+  }

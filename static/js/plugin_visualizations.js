@@ -19,9 +19,12 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
     switch(pluginKey) {
       case 'teleport':
       case 'handshake':
-      case 'auth':
         console.log('Initializing quantum state visualization');
         this.initQuantumStateViz(resultData);
+        break;
+      case 'auth':
+        console.log('Initializing lattice-based authentication visualization');
+        this.initLatticeAuthViz(resultData);
         break;
       case 'qrng':
         console.log('Initializing enhanced QRNG visualization');
@@ -46,7 +49,291 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
     }
   },
 
-  // Modify the existing initBitDistribution function:
+  initLatticeAuthViz: function(resultData) {
+    console.log('Setting up lattice-based authentication visualizations');
+    
+    // Get the output data from the result
+    const outputData = resultData.output || {};
+    
+    // Create the lattice visualization from base64 image if provided
+    if (outputData.lattice_viz) {
+      this.createLatticeVizFromImage(outputData.lattice_viz);
+    }
+    
+    // Create the authentication protocol visualization
+    this.createAuthProtocolViz(outputData);
+    
+    // Initialize quantum state visualization for compatibility
+    this.initQuantumStateViz(resultData);
+    
+    // Create security strength visualization
+    this.createSecurityStrengthViz(outputData);
+  },
+  
+  // Create lattice visualization from base64 image
+  createLatticeVizFromImage: function(base64Data) {
+    const container = document.getElementById('lattice-visualization');
+    if (!container) {
+      console.warn('Lattice visualization container not found');
+      return;
+    }
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Create the image element
+    const img = document.createElement('img');
+    img.src = 'data:image/png;base64,' + base64Data;
+    img.className = 'img-fluid rounded';
+    img.alt = 'Lattice Coefficient Distribution';
+    
+    // Add the image to the container
+    container.appendChild(img);
+    
+    // Add explanation text
+    const explanation = document.createElement('div');
+    explanation.className = 'mt-3 text-center lattice-explanation';
+    explanation.innerHTML = `
+      <p class="text-muted">
+        <i class="fas fa-info-circle me-1"></i>
+        The lattice visualization shows the distribution of coefficients used in the Ring-LWE cryptographic system.
+        These coefficients form the mathematical foundation of the post-quantum secure authentication protocol.
+      </p>
+    `;
+    container.appendChild(explanation);
+    
+    console.log('Lattice visualization created from base64 image');
+  },
+  
+  // Create authentication protocol visualization
+  createAuthProtocolViz: function(outputData) {
+    const container = document.getElementById('auth-protocol-visualization');
+    if (!container) {
+      console.warn('Auth protocol visualization container not found');
+      return;
+    }
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Create auth status banner
+    const authSuccess = outputData.auth_success;
+    const statusBanner = document.createElement('div');
+    statusBanner.className = 'auth-status-banner text-center p-3 mb-4 rounded ' + 
+                           (authSuccess ? 'bg-success' : 'bg-danger');
+    
+    statusBanner.innerHTML = `
+      <h4 class="text-white mb-0">
+        <i class="fas ${authSuccess ? 'fa-check-circle' : 'fa-times-circle'} me-2"></i>
+        Authentication ${authSuccess ? 'Successful' : 'Failed'}
+      </h4>
+    `;
+    container.appendChild(statusBanner);
+    
+    // Create protocol steps visualization
+    const protocolSteps = document.createElement('div');
+    protocolSteps.className = 'protocol-steps';
+    
+    // Define the steps of the lattice authentication protocol
+    const steps = [
+      {
+        icon: 'key',
+        title: 'Key Generation',
+        description: 'Generate public and private keys based on lattice problems',
+        details: 'A lattice-based key pair is generated using the Ring-LWE (Ring Learning With Errors) problem. The public key consists of two polynomials (a,b), where b = a*s + e, with s being the private key and e a small error term.'
+      },
+      {
+        icon: 'question-circle', 
+        title: 'Challenge Creation',
+        description: 'Verifier creates a mathematical challenge based on the public key',
+        details: 'The verifier creates a challenge consisting of two polynomials (u,v), where u = a*r + e₁ and v = b*r + e₂. Here r, e₁, and e₂ are small error polynomials only known to the verifier.'
+      },
+      {
+        icon: 'reply',
+        title: 'Response Computation',
+        description: 'Prover computes response using private key',
+        details: 'The prover uses their private key s to compute w = v - u*s ≈ e₂ - e₁*s. From this, they can extract an approximation of r and hash it to create the response.'
+      },
+      {
+        icon: 'check-circle',
+        title: 'Verification',
+        description: 'Verifier checks if the response matches the expected value',
+        details: 'The verifier compares the prover\'s hashed response with the hash of the original r polynomial. If they match, authentication succeeds.'
+      }
+    ];
+    
+    // Create the step cards
+    steps.forEach((step, index) => {
+      const stepCard = document.createElement('div');
+      stepCard.className = 'card mb-3 protocol-step';
+      
+      stepCard.innerHTML = `
+        <div class="card-header d-flex align-items-center">
+          <div class="step-number rounded-circle bg-primary text-white me-3">
+            ${index + 1}
+          </div>
+          <h5 class="mb-0">
+            <i class="fas fa-${step.icon} me-2"></i>
+            ${step.title}
+          </h5>
+        </div>
+        <div class="card-body">
+          <p class="step-description">${step.description}</p>
+          <div class="step-details text-muted small">
+            ${step.details}
+          </div>
+        </div>
+      `;
+      
+      protocolSteps.appendChild(stepCard);
+    });
+    
+    container.appendChild(protocolSteps);
+    
+    // Add comparison with traditional crypto
+    const comparison = document.createElement('div');
+    comparison.className = 'crypto-comparison mt-4 p-3 bg-light rounded';
+    comparison.innerHTML = `
+      <h5 class="mb-3">Post-Quantum Security Advantage</h5>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="card h-100 bg-danger bg-opacity-10">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-unlock me-2"></i>
+                Traditional Cryptography
+              </h5>
+              <p class="card-text">RSA and ECC rely on integer factorization and discrete logarithm problems that can be efficiently solved by quantum computers using Shor's algorithm.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="card h-100 bg-success bg-opacity-10">
+            <div class="card-body">
+              <h5 class="card-title">
+                <i class="fas fa-lock me-2"></i>
+                Lattice-Based Cryptography
+              </h5>
+              <p class="card-text">Based on the hardness of solving lattice problems that remain difficult even for quantum computers, making it a foundation for post-quantum security.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    container.appendChild(comparison);
+    
+    console.log('Authentication protocol visualization created');
+  },
+  
+  // Create security strength visualization
+  createSecurityStrengthViz: function(outputData) {
+    const container = document.getElementById('security-strength-visualization');
+    if (!container) {
+      console.warn('Security strength visualization container not found');
+      return;
+    }
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Security levels comparison
+    const securityLevels = document.createElement('div');
+    securityLevels.className = 'security-levels';
+    
+    // Create a canvas for the security strength chart
+    const canvas = document.createElement('canvas');
+    canvas.id = 'security-strength-chart';
+    canvas.height = 250;
+    securityLevels.appendChild(canvas);
+    
+    // Add the security levels to the container
+    container.appendChild(securityLevels);
+    
+    // Create the security strength chart
+    const ctx = canvas.getContext('2d');
+    
+    // Security strength data (bits)
+    const securityData = {
+      labels: ['RSA-2048', 'ECC-256', 'AES-256', 'Lattice-Based (n=512)', 'Lattice-Based (n=1024)'],
+      datasets: [
+        {
+          label: 'Classical Security (bits)',
+          data: [112, 128, 256, 128, 256],
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1
+        },
+        {
+          label: 'Quantum Security (bits)',
+          data: [0, 0, 128, 128, 256], // RSA and ECC are broken by quantum computers
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1
+        }
+      ]
+    };
+    
+    new Chart(ctx, {
+      type: 'bar',
+      data: securityData,
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Security Strength (bits)'
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: 'Cryptographic Algorithm'
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: function(context) {
+                const datasetIndex = context.datasetIndex;
+                const dataIndex = context.dataIndex;
+                
+                if (datasetIndex === 1 && dataIndex <= 1 && context.raw === 0) {
+                  return 'Vulnerable to quantum attacks';
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    // Add explanation
+    const explanation = document.createElement('div');
+    explanation.className = 'mt-3 security-explanation alert alert-info';
+    explanation.innerHTML = `
+      <h5><i class="fas fa-shield-alt me-2"></i>Security Strength Explanation</h5>
+      <p>
+        <strong>Quantum Security:</strong> Lattice-based cryptography maintains its security level even against quantum computers, 
+        while traditional methods like RSA and ECC are compromised by quantum algorithms like Shor's.
+      </p>
+      <p class="mb-0">
+        <strong>NIST Standardization:</strong> Lattice-based cryptography forms the foundation of several NIST post-quantum 
+        cryptography standards, acknowledging its robustness against both classical and quantum attacks.
+      </p>
+    `;
+    container.appendChild(explanation);
+    
+    console.log('Security strength visualization created');
+  },
+
+  // Existing implementation for bit distribution visualization
   initBitDistribution: function(resultData, pluginKey) {
     const chartContainer = document.getElementById('bit-distribution-chart');
     if (!chartContainer) return;
@@ -110,7 +397,185 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
     }
   },
 
-  // Add all the new functions as properties of the QuantumVisualizer object:
+  // Initialize Bloch sphere for quantum state visualization
+  initQuantumStateViz: function(resultData) {
+    const vizContainer = document.getElementById('quantum-state-viz');
+    if (!vizContainer) return;
+    
+    try {
+      // Clear any existing content
+      vizContainer.innerHTML = '';
+      
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = vizContainer.clientWidth || 300;
+      canvas.height = vizContainer.clientHeight || 300;
+      vizContainer.appendChild(canvas);
+      
+      // Get the 2D context
+      const ctx = canvas.getContext('2d');
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(centerX, centerY) - 20;
+      
+      // Set background
+      ctx.fillStyle = '#141424';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw the Bloch sphere (simplified 2D representation)
+      // Draw the circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+      ctx.strokeStyle = '#444';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw the axes
+      ctx.beginPath();
+      // Z-axis (vertical)
+      ctx.moveTo(centerX, centerY - radius);
+      ctx.lineTo(centerX, centerY + radius);
+      // X-axis (horizontal)
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Add labels
+      ctx.font = '14px Arial';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.fillText('|0⟩', centerX, centerY - radius - 10);
+      ctx.fillText('|1⟩', centerX, centerY + radius + 20);
+      ctx.fillText('|+⟩', centerX + radius + 20, centerY);
+      ctx.fillText('|-⟩', centerX - radius - 20, centerY);
+      
+      // Draw state vector based on result data
+      let theta = Math.PI / 4; // Default angle if no data
+      let phi = 0;
+      
+      // Extract state from result data if available
+      if (resultData.output && resultData.output.final_state) {
+        // Get the state data
+        const stateData = resultData.output.final_state;
+        
+        if (Array.isArray(stateData) && stateData.length >= 2) {
+          // Calculate theta and phi from state vector
+          const alpha = stateData[0];
+          const beta = stateData[1];
+          const alphaAbs = typeof alpha === 'object' ? 
+            Math.sqrt(alpha.real**2 + alpha.imag**2) : Math.abs(alpha);
+          
+          theta = 2 * Math.acos(alphaAbs);
+          if (alphaAbs < 0.9999 && Math.abs(beta) > 0.0001) {
+            if (typeof beta === 'object' && typeof alpha === 'object') {
+              phi = Math.atan2(beta.imag, beta.real) - Math.atan2(alpha.imag, alpha.real);
+            } else {
+              phi = beta >= 0 ? 0 : Math.PI;
+            }
+          }
+        }
+      } else if (resultData.output && resultData.output.fingerprint) {
+        // For auth plugin, use fingerprint to represent state
+        const fingerprint = resultData.output.fingerprint;
+        
+        // Calculate theta and phi based on fingerprint values
+        let stateVector = [0, 0, 0]; // Default state
+        
+        // Convert fingerprint to a 3D vector
+        if (fingerprint.length >= 3) {
+          // Use first 3 bits to determine state vector components
+          stateVector = [
+            fingerprint[0] === 1 ? 0.5 : -0.5,
+            fingerprint[1] === 1 ? 0.5 : -0.5,
+            fingerprint[2] === 1 ? 0.5 : -0.5
+          ];
+        } else if (fingerprint.length > 0) {
+          // With fewer bits, use simple mapping
+          if (fingerprint[0] === 1) {
+            // Map to |+⟩ state
+            theta = Math.PI/2;
+            phi = 0;
+          } else {
+            // Map to |0⟩ state
+            theta = 0;
+            phi = 0;
+          }
+        }
+        
+        // Only calculate theta/phi from vector if we didn't set it directly above
+        if (fingerprint.length >= 3) {
+          // Normalize the vector
+          const magnitude = Math.sqrt(stateVector[0]**2 + stateVector[1]**2 + stateVector[2]**2);
+          const normalizedVector = stateVector.map(v => v/magnitude);
+          
+          // Convert to spherical coordinates
+          theta = Math.acos(normalizedVector[2]);
+          phi = Math.atan2(normalizedVector[1], normalizedVector[0]);
+        }
+      }
+      
+      // Convert spherical coordinates to 2D projection
+      const x = radius * Math.sin(theta) * Math.cos(phi);
+      const y = radius * Math.sin(theta) * Math.sin(phi);
+      const z = radius * Math.cos(theta);
+      
+      // Project 3D point onto 2D
+      const projX = centerX + x;
+      const projY = centerY - z; // Negative to match conventional coordinates
+      
+      // Draw the state vector
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(projX, projY);
+      ctx.strokeStyle = '#ff3366';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      
+      // Draw arrowhead
+      const headSize = 10;
+      const angle = Math.atan2(projY - centerY, projX - centerX);
+      ctx.beginPath();
+      ctx.moveTo(projX, projY);
+      ctx.lineTo(
+        projX - headSize * Math.cos(angle - Math.PI/6),
+        projY - headSize * Math.sin(angle - Math.PI/6)
+      );
+      ctx.lineTo(
+        projX - headSize * Math.cos(angle + Math.PI/6),
+        projY - headSize * Math.sin(angle + Math.PI/6)
+      );
+      ctx.closePath();
+      ctx.fillStyle = '#ff3366';
+      ctx.fill();
+      
+      // Display state information
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText(`θ: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
+      ctx.fillText(`φ: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
+      
+      // For auth plugin, add explanation about lattice-state mapping
+      if (resultData.output && resultData.output.fingerprint) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fillRect(10, canvas.height - 70, canvas.width - 20, 60);
+        ctx.fillStyle = '#000';
+        ctx.font = '11px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Lattice Coefficient Representation', centerX, canvas.height - 55);
+        ctx.fillText('The lattice coefficients from the authentication protocol', centerX, canvas.height - 40);
+        ctx.fillText('are mapped to this quantum state for visualization.', centerX, canvas.height - 25);
+      }
+      
+      console.log("Successfully rendered 2D Bloch sphere visualization");
+    } catch (e) {
+      console.error('Error initializing quantum state visualization:', e);
+      // Display error message in the container
+      vizContainer.innerHTML = '<div class="alert alert-warning">Failed to initialize visualization</div>';
+    }
+  },
   
   // New function to create enhanced BB84 visualizations
   createBB84EnhancedVisualizations: function(outputData) {
