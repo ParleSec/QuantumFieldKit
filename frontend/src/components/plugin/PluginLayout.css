@@ -1,0 +1,27 @@
+.plugin-layout {
+    min-height: 80vh;
+  }
+  .plugin-sidebar {
+    background: transparent;
+    border-right: 1px solid rgba(229,231,235,1);
+    min-height: 100vh;
+    padding-top: 2rem;
+    position: sticky;
+    top: 4rem;
+  }
+  .plugin-main-content {
+    padding: 2rem 2rem 2rem 2rem;
+  }
+  @media (max-width: 1024px) {
+    .plugin-sidebar {
+      min-height: auto;
+      padding-top: 1rem;
+      position: static;
+      border-right: none;
+      border-bottom: 1px solid rgba(229,231,235,1);
+      margin-bottom: 1rem;
+    }
+    .plugin-main-content {
+      padding: 1rem;
+    }
+  }
