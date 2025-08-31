@@ -37,13 +37,8 @@ function Footer() {
             <h5 className="font-semibold mb-2">Contact</h5>
             <ul className="space-y-2 text-base-content/70">
               <li>
-                <a href="mailto:contact@quantumfieldkit.com" className="hover:text-primary transition-colors">
+                <a href="mailto:qfk@masonparle.com" className="hover:text-primary transition-colors">
                   <i className="fas fa-envelope mr-2"></i>Email
-                </a>
-              </li>
-              <li>
-                <a href="https://twitter.com/quantumfieldkit" className="hover:text-primary transition-colors" target="_blank" rel="noopener noreferrer">
-                  <i className="fab fa-twitter mr-2"></i>Twitter
                 </a>
               </li>
             </ul>
