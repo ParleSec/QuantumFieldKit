@@ -85,9 +85,15 @@ logger = configure_logging()
 
 # Initialize Flask application (serve React build in production)
 app = Flask(__name__, static_folder='frontend/build', static_url_path='/')
+
+# Configure CORS origins from environment variable
+cors_origins = os.environ.get('CORS_ORIGINS', 
+    'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5000,http://127.0.0.1:5000,https://quantumfieldkit.com,https://www.quantumfieldkit.com,https://quantumfieldkit.fly.dev'
+).split(',')
+
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5000", "http://127.0.0.1:5000"],
+        "origins": [origin.strip() for origin in cors_origins],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }

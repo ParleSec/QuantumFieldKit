@@ -1,13 +1,15 @@
 app = "quantumfieldkit"
 primary_region = "arn"
 kill_signal = "SIGINT"
-kill_timeout = "5s"
+kill_timeout = "10s"
 
 [build]
   dockerfile = "Dockerfile"
 
 [env]
   PORT = "8080"
+  FLASK_ENV = "production"
+  PYTHONPATH = "/app"
 
 [http_service]
   internal_port = 8080
@@ -15,6 +17,7 @@ kill_timeout = "5s"
   auto_stop_machines = true
   auto_start_machines = true
   min_machines_running = 0
+  max_machines_running = 2
   processes = ["app"]
 
   [http_service.concurrency]
@@ -22,7 +25,21 @@ kill_timeout = "5s"
     hard_limit = 1000
     soft_limit = 500
 
+  # Health check configuration
+  [http_service.checks]
+    [http_service.checks.health]
+      grace_period = "10s"
+      interval = "30s"
+      method = "GET"
+      path = "/api/plugins"
+      timeout = "5s"
+      headers = {}
+
 [[vm]]
   cpu_kind = "shared"
-  cpus = 1
-  memory_mb = 1024
+  cpus = 2
+  memory_mb = 2048  # Increased for quantum simulations
+
+# Optional: Add secrets for sensitive configuration
+# [secrets]
+#   SECRET_KEY = "your-secret-key"

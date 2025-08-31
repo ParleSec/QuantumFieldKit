@@ -1,13 +1,30 @@
-flask>=2.2.3
+# Core Flask dependencies
+flask>=2.3.0,<3.0.0
 flask-cors>=4.0.0
-Werkzeug>=2.2.3
-numpy>=1.24.2
+flask-socketio>=5.3.2
+Werkzeug>=2.3.0,<3.0.0
+
+# Quantum computing libraries
 cirq>=1.1.0
 cirq-core>=1.1.0
+numpy>=1.24.0,<2.0.0
 sympy>=1.11.1
-networkx>=3.0
+
+# Networking and async
 eventlet>=0.33.3
-flask-socketio>=5.3.2
-gunicorn>=20.1.0
+networkx>=3.0
+
+# Production server
+gunicorn>=21.2.0
+
+# Environment and configuration
 python-dotenv>=1.0.0
+
+# System monitoring
 psutil>=5.9.0
+
+# Security (if needed)
+cryptography>=41.0.0
+
+# Optional: For better JSON handling
+orjson>=3.9.0
