@@ -4,6 +4,7 @@ import { fetchGlossary } from '../services/api';
 import { ChevronDown, Search, BookOpen, Tag, Filter, X } from 'lucide-react';
 import { Card } from '../design-system';
 import SkeletonLoader from '../components/SkeletonLoader';
+import analytics from '../services/analytics';
 
 // Component to render mathematical notation properly
 const MathText = ({ text }) => {

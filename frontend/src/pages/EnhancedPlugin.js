@@ -17,6 +17,7 @@ import Card from '../design-system/components/Card';
 import EnhancedPluginParameterForm from '../components/plugin/EnhancedPluginParameterForm';
 import EnhancedPluginResultsPanel from '../components/plugin/EnhancedPluginResultsPanel';
 import SkeletonLoader from '../components/SkeletonLoader';
+import analytics from '../services/analytics';
 
 const EnhancedPlugin = () => {
   const { pluginKey } = useParams();
@@ -47,6 +48,9 @@ const EnhancedPlugin = () => {
         setPlugin(pluginData);
         setEducationalContent(eduData.content || '');
         
+        // Track plugin view
+        analytics.trackPluginInteraction(pluginKey, 'view');
+        
         // Set initial parameter values
         const initialValues = pluginData.parameters.reduce(
           (acc, param) => ({ ...acc, [param.name]: param.default }),
@@ -73,11 +77,20 @@ const EnhancedPlugin = () => {
       setError(null);
       setResult(null);
       
+      // Track simulation run
+      analytics.trackSimulationRun(pluginKey, params);
+      
       const simResult = await runPlugin(pluginKey, params);
       setResult(simResult);
       
+      // Track successful simulation
+      analytics.trackPluginInteraction(pluginKey, 'simulation_success', params);
+      
     } catch (err) {
       setError(err.message);
+      
+      // Track simulation error
+      analytics.trackError('simulation_error', err.message, `plugin_${pluginKey}`);
     } finally {
       setSimulating(false);
     }

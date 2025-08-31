@@ -3,6 +3,7 @@ import { Card, Button, Form, Nav, Tab, Spinner, Modal, InputGroup, Alert } from 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAtom, faPlay, faTrash, faSave, faCode, faChartBar, faPoll, faProjectDiagram, faCopy } from '@fortawesome/free-solid-svg-icons';
 import { getAvailableGates, runCircuitSimulation, saveCircuit, getSavedCircuits, exportCircuitCode } from '../services/api';
+import analytics from '../services/analytics';
 
 const CircuitDesigner = () => {
   // State variables
@@ -51,6 +52,9 @@ const CircuitDesigner = () => {
   useEffect(() => {
     // Initialize the circuit designer
     initializeCircuitDesigner();
+    
+    // Track circuit designer page view
+    analytics.trackEducationalContent('circuit_designer', 'page_view');
   }, []);
 
   const initializeCircuitDesigner = async () => {
