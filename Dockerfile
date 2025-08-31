@@ -2,10 +2,18 @@
 FROM node:18-alpine AS frontend-builder
 
 WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci
 
+# Copy package files
+COPY frontend/package*.json ./
+
+# Clear npm cache and install dependencies
+RUN npm cache clean --force && \
+    (npm ci --no-audit --no-fund || npm install --no-audit --no-fund)
+
+# Copy frontend source code
 COPY frontend/ ./
+
+# Build the frontend
 RUN npm run build
 
 # Python backend stage
