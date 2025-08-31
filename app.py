@@ -83,11 +83,11 @@ def configure_logging():
 # Create application logger
 logger = configure_logging()
 
-# Initialize Flask application
-app = Flask(__name__, static_folder='frontend/build')
+# Initialize Flask application (serve React build in production)
+app = Flask(__name__, static_folder='frontend/build', static_url_path='/')
 CORS(app, resources={
     r"/api/*": {
-        "origins": ["http://localhost:3000"],
+        "origins": ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5000", "http://127.0.0.1:5000"],
         "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
@@ -398,7 +398,14 @@ PLUGINS = {
             {'name': 'noise', 'type': 'float', 'default': 0.0, 'description': 'Noise level (0.0 - 0.2)',"min": 0, "max": 0.2},
             {'name': 'dimension', 'type': 'int', 'default': 4, 'description': 'Lattice dimension parameter',"min": 1, "max": 32}
         ],
-        'function': generate_quantum_fingerprint_cirq
+        'function': generate_quantum_fingerprint_cirq,
+        # Standardized runner to match other plugins and Socket.IO flow
+        'run': lambda p: run_plugin(
+            generate_quantum_fingerprint_cirq,
+            _plugin_key="auth",
+            data=p.get("username", "Bob"),
+            num_qubits=p.get("dimension", 4)
+        )
     },
 
     "bb84": {
@@ -765,16 +772,8 @@ def get_educational_content(plugin_key):
 # --- Route handlers ---
 @app.route("/")
 def index():
-    """Render the homepage with a list of available plugins."""
-    # Group plugins by category for better organization
-    categories = {}
-    for key, plugin in PLUGINS.items():
-        category = plugin.get("category", "other")
-        if category not in categories:
-            categories[category] = []
-        categories[category].append({"key": key, **plugin})
-    
-    return render_template("index.html", plugins=PLUGINS, categories=categories)
+    # Serve React index.html
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/sitemap.xml')
 def sitemap():
@@ -839,21 +838,8 @@ def sitemap():
 
 @app.route("/sitemap")
 def html_sitemap():
-    """HTML sitemap for users and SEO."""
-    # Group plugins by category
-    categories = {}
-    for key, plugin in PLUGINS.items():
-        category = plugin.get("category", "other")
-        if category not in categories:
-            categories[category] = []
-        categories[category].append({"key": key, **plugin})
-    
-    return render_template(
-        "sitemap.html",
-        categories=categories,
-        meta_title="Site Map | Quantum Field Kit",
-        meta_description="Comprehensive site map of Quantum Field Kit's quantum computing simulations, educational resources, and tools."
-    )
+    # Serve SPA index for HTML sitemap requests
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/robots.txt')
 def robots():
@@ -876,51 +862,11 @@ Sitemap: {base_url}/sitemap.xml
 
 @app.route("/category/<category>")
 def category_view(category):
-    """Display all plugins in a specific category with SEO optimizations."""
-    # Filter plugins by category
-    plugins_in_category = {k: v for k, v in PLUGINS.items() if v.get("category", "other") == category}
-    
-    if not plugins_in_category:
-        abort(404)
-    
-    # Properly formatted category name for display
-    display_category = category.replace('-', ' ').title()
-    
-    return render_template(
-        "category.html", 
-        category=category,
-        display_category=display_category,
-        plugins=plugins_in_category,
-        meta_description=f"Explore {display_category} quantum computing simulations including {', '.join([p['name'] for p in list(plugins_in_category.values())[:3]])} and more.",
-        meta_title=f"{display_category} Quantum Computing Simulations | Quantum Field Kit"
-    )
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route("/glossary")
 def glossary():
-    """Quantum computing glossary page."""
-    import datetime
-    current_year = datetime.datetime.now().year
-    # Load terms from JSON file
-    terms_file = os.path.join(app.static_folder, 'data', 'glossary_terms.json')
-    
-    try:
-        with open(terms_file, 'r') as f:
-            terms = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        app.logger.error(f"Error loading glossary terms: {e}")
-        # Fallback to minimal terms if file can't be loaded
-        terms = [
-            {"term": "Qubit", "definition": "The fundamental unit of quantum information."},
-            {"term": "Superposition", "definition": "A quantum property allowing particles to exist in multiple states."}
-        ]
-    
-    return render_template(
-        "glossary.html", 
-        terms=terms,
-        current_year=current_year,
-        meta_title="Quantum Computing Glossary | Quantum Field Kit",
-        meta_description="Comprehensive glossary of quantum computing terms, concepts, and principles explained in simple language."
-    )
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.after_request
 def add_cache_headers(response):
@@ -940,103 +886,26 @@ def add_cache_headers(response):
 
 @app.route("/plugin/<plugin_key>", methods=["GET", "POST"])
 def plugin_view(plugin_key):
-    """Handle individual plugin pages and simulation requests."""
-    if plugin_key not in PLUGINS:
-        abort(404)
-    
-    plugin = PLUGINS[plugin_key]
-    result = None
-    
-    # Get mini explanation (already working)
-    mini_explanation = get_mini_explanation(plugin_key)
-    
-    # Get educational content directly
-    educational_content = get_educational_content(plugin_key)
-    
-    # Process form submission...
-    result = None
     if request.method == 'POST':
+        # Support legacy AJAX POSTs from static JS (if any)
+        if plugin_key not in PLUGINS:
+            return jsonify({"error": "Plugin not found"}), 404
+        plugin = PLUGINS[plugin_key]
         try:
-            # Get plugin function
-            plugin_function = plugin.get('function')
-            if not plugin_function:
-                raise ValueError(f"Plugin function not found for {plugin_key}")
-            
-            # Special handling for auth plugin
-            if plugin_key == 'auth':
-                username = request.form.get('username', 'user123')
-                noise = float(request.form.get('noise', 0.0))
-                dimension = int(request.form.get('dimension', 4))
-                
-                # Call the function with updated parameters for the lattice-based implementation
-                output = plugin_function(username, dimension)
-                
-                # Process log for display
-                log = output.get('log', '')
-                
-                result = {
-                    'output': output,
-                    'log': log
-                }
-            else:
-                # Process parameters from form
-                params = {}
-                for param in plugin.get('parameters', []):
-                    param_name = param['name']
-                    param_type = param['type']
-                    
-                    # Get form value
-                    form_value = request.form.get(param_name)
-                    if form_value is None:
-                        continue
-                    
-                    # Convert value to appropriate type
-                    if param_type == 'int':
-                        params[param_name] = int(form_value)
-                    elif param_type == 'float':
-                        params[param_name] = float(form_value)
-                    else:
-                        params[param_name] = form_value
-                
-                # Call the plugin function with parameters
-                output = plugin_function(**params)
-                
-                # Process log for display
-                if isinstance(output, dict) and 'log' in output:
-                    log = output.get('log', '')
-                else:
-                    log = f"Execution complete. No detailed log available."
-                
-                result = {
-                    'output': output,
-                    'log': log
-                }
-            
-            # Return JSON response for AJAX requests
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(result)
-                
+            raw_params = {}
+            for param in plugin.get('parameters', []):
+                param_name = param['name']
+                if param_name in request.form:
+                    raw_params[param_name] = request.form.get(param_name)
+            params = validate_parameters(plugin, raw_params)
+            if 'run' not in plugin:
+                return jsonify({"error": "Plugin runner not defined"}), 500
+            result = plugin['run'](params)
+            return jsonify(result)
         except Exception as e:
-            error_message = str(e)
-            stack_trace = traceback.format_exc()
-            
-            # Add suggestion for common errors
-            suggestion = ""
-            if "target" in error_message.lower() and "bits" in error_message.lower():
-                suggestion = "Suggestion: Make sure your target state binary string length matches the number of qubits."
-            
-            error_details = f"{error_message}\n\n{stack_trace}\n\n{suggestion}"
-            
-            result = {
-                'error': error_details
-            }
-            
-            # Return JSON response for AJAX requests
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(result)
-    
-    # Render template
-    return render_template('plugin.html', plugin=plugin, result=result, educational_content=educational_content, mini_explanation=mini_explanation)
+            return jsonify({"error": str(e)}), 400
+    # GET falls back to React
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route("/api/plugins", methods=["GET"])
 def api_plugins():
@@ -1083,7 +952,15 @@ def api_run_plugin(plugin_key):
         return jsonify({"error": "Plugin not found"}), 404
     try:
         params = request.get_json()
-        result = run_plugin(PLUGINS[plugin_key]["function"], **params)
+        plugin = PLUGINS[plugin_key]
+        if 'run' in plugin and callable(plugin['run']):
+            # Use standardized runner which already wraps results
+            result = plugin['run'](params or {})
+        elif 'function' in plugin and callable(plugin['function']):
+            # Fallback for legacy plugins
+            result = run_plugin(plugin['function'], _plugin_key=plugin_key, **(params or {}))
+        else:
+            return jsonify({"error": "Plugin is misconfigured"}), 500
         return jsonify(result)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -1091,7 +968,13 @@ def api_run_plugin(plugin_key):
 @app.route("/api/glossary", methods=["GET"])
 def api_glossary():
     """Return glossary terms."""
-    terms_file = os.path.join(app.static_folder, 'data', 'glossary_terms.json')
+    # Prefer glossary shipped with the built SPA, then public, then repo static fallback
+    candidates = [
+        os.path.join(os.path.dirname(__file__), 'frontend', 'build', 'data', 'glossary_terms.json'),
+        os.path.join(os.path.dirname(__file__), 'frontend', 'public', 'data', 'glossary_terms.json'),
+        os.path.join(os.path.dirname(__file__), 'static', 'data', 'glossary_terms.json'),
+    ]
+    terms_file = next((p for p in candidates if os.path.exists(p)), None)
     try:
         with open(terms_file, 'r') as f:
             terms = json.load(f)
@@ -1157,8 +1040,8 @@ def api_validate(plugin_key):
 
 @app.route("/circuit")
 def circuit_designer():
-    """Render the circuit designer template"""
-    return render_template("circuit_designer.html")
+    # SPA route
+    return send_from_directory(app.static_folder, 'index.html')
 
 # API routes for Circuit Designer
 
@@ -1456,13 +1339,15 @@ def handle_run_plugin(data):
 # --- Error handling ---
 @app.errorhandler(404)
 def page_not_found(e):
-    """Handle 404 errors."""
-    return render_template("error.html", error="Page not found"), 404
+    # SPA fallback
+    try:
+        return send_from_directory(app.static_folder, 'index.html')
+    except Exception:
+        return jsonify({"error": "Not found"}), 404
 
 @app.errorhandler(500)
 def server_error(e):
-    """Handle 500 errors."""
-    return render_template("error.html", error="Server error"), 500
+    return jsonify({"error": "Server error"}), 500
 
 # --- Main entry point ---
 if __name__ == "__main__":

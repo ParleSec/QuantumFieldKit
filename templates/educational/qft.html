@@ -11,7 +11,7 @@
       <h5 class="mt-4">How Quantum Fourier Transform Works</h5>
       <ol>
         <li>
-          <strong>Input State</strong>: Begin with an n-qubit quantum state in the computational basis |x⟩.
+          <strong>Input State</strong>: Begin with an n-qubit quantum state in the computational basis |x>.
         </li>
         <li>
           <strong>Hadamard Gates</strong>: Apply a Hadamard gate to each qubit, starting with the most significant qubit.
@@ -75,7 +75,7 @@
     <div class="col-md-6">
       <h5>Mathematical Representation</h5>
       <ul>
-        <li><strong>Transformation Formula</strong>: QFT transforms |j⟩ to 1/√N · Σ<sub>k=0</sub><sup>N-1</sup> e<sup>2πijk/N</sup> |k⟩, where N = 2<sup>n</sup>.</li>
+        <li><strong>Transformation Formula</strong>: QFT transforms |j> to 1/sqrt(N) * Sum(k=0 to N-1) e^(2*pi*i*j*k/N) |k>, where N = 2^n.</li>
         <li><strong>Recursive Structure</strong>: The QFT can be implemented recursively, with each qubit determining one bit of the output frequency.</li>
         <li><strong>Gate Complexity</strong>: Requires O(n<sup>2</sup>) gates for n qubits, with O(n) depth using parallel execution.</li>
         <li><strong>Approximate QFT</strong>: For practical implementations, small rotations can be neglected with minimal accuracy loss.</li>

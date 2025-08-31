@@ -446,10 +446,10 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
       ctx.font = '14px Arial';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
-      ctx.fillText('|0⟩', centerX, centerY - radius - 10);
-      ctx.fillText('|1⟩', centerX, centerY + radius + 20);
-      ctx.fillText('|+⟩', centerX + radius + 20, centerY);
-      ctx.fillText('|-⟩', centerX - radius - 20, centerY);
+      ctx.fillText('|0>', centerX, centerY - radius - 10);
+      ctx.fillText('|1>', centerX, centerY + radius + 20);
+      ctx.fillText('|+>', centerX + radius + 20, centerY);
+      ctx.fillText('|->', centerX - radius - 20, centerY);
       
       // Draw state vector based on result data
       let theta = Math.PI / 4; // Default angle if no data
@@ -494,11 +494,11 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
         } else if (fingerprint.length > 0) {
           // With fewer bits, use simple mapping
           if (fingerprint[0] === 1) {
-            // Map to |+⟩ state
+            // Map to |+> state
             theta = Math.PI/2;
             phi = 0;
           } else {
-            // Map to |0⟩ state
+            // Map to |0> state
             theta = 0;
             phi = 0;
           }
@@ -554,8 +554,8 @@ window.QuantumVisualizer = window.QuantumVisualizer || {
       ctx.fillStyle = '#fff';
       ctx.font = '12px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(`θ: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
-      ctx.fillText(`φ: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
+      ctx.fillText(`theta: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
+      ctx.fillText(`phi: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
       
       // For auth plugin, add explanation about lattice-state mapping
       if (resultData.output && resultData.output.fingerprint) {
@@ -1812,10 +1812,10 @@ try {
       ctx.font = '14px Arial';
       ctx.fillStyle = '#fff';
       ctx.textAlign = 'center';
-      ctx.fillText('|0⟩', centerX, centerY - radius - 10);
-      ctx.fillText('|1⟩', centerX, centerY + radius + 20);
-      ctx.fillText('|+⟩', centerX + radius + 20, centerY);
-      ctx.fillText('|-⟩', centerX - radius - 20, centerY);
+      ctx.fillText('|0>', centerX, centerY - radius - 10);
+      ctx.fillText('|1>', centerX, centerY + radius + 20);
+      ctx.fillText('|+>', centerX + radius + 20, centerY);
+      ctx.fillText('|->', centerX - radius - 20, centerY);
       
       // Draw state vector based on result data
       let theta = Math.PI / 4; // Default angle if no data
@@ -1882,8 +1882,8 @@ try {
       ctx.fillStyle = '#fff';
       ctx.font = '12px Arial';
       ctx.textAlign = 'left';
-      ctx.fillText(`θ: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
-      ctx.fillText(`φ: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
+      ctx.fillText(`theta: ${(theta * 180 / Math.PI).toFixed(1)}°`, 10, 20);
+      ctx.fillText(`phi: ${(phi * 180 / Math.PI).toFixed(1)}°`, 10, 40);
       
       console.log("Successfully rendered 2D Bloch sphere visualization");
     } catch (e) {
@@ -2431,14 +2431,14 @@ populateQRNGBitDetails: function(output) {
     label.style.width = '60px';
     label.textContent = `q${index}:`;
     
-    // Initial state |0⟩
+    // Initial state |0>
     const initialState = document.createElement('div');
     initialState.className = 'text-center border rounded d-flex justify-content-center align-items-center';
     initialState.style.width = '35px';
     initialState.style.height = '35px';
     initialState.style.backgroundColor = '#f8f9fa';
     initialState.style.marginRight = '10px';
-    initialState.textContent = '|0⟩';
+    initialState.textContent = '|0>';
     
     // Arrow
     const arrow1 = document.createElement('div');
@@ -2460,7 +2460,7 @@ populateQRNGBitDetails: function(output) {
     arrow2.className = 'text-muted mx-2';
     arrow2.innerHTML = '<i class="fas fa-arrow-right"></i>';
     
-    // Superposition (|0⟩ + |1⟩)/√2
+    // Superposition (|0> + |1>)/√2
     const superpositionBox = document.createElement('div');
     superpositionBox.className = 'text-center border rounded d-flex justify-content-center align-items-center';
     superpositionBox.style.width = '70px';
@@ -2522,9 +2522,9 @@ populateQRNGBitDetails: function(output) {
   explanation.innerHTML = `
     <div class="fw-bold mb-2">How Quantum Random Number Generation Works:</div>
     <ol class="mb-0">
-      <li>Each qubit starts in the |0⟩ state</li>
-      <li>A Hadamard (H) gate creates an equal superposition: |0⟩ → (|0⟩ + |1⟩)/√2</li>
-      <li>Measurement collapses the superposition to |0⟩ or |1⟩ with 50% probability</li>
+      <li>Each qubit starts in the |0> state</li>
+      <li>A Hadamard (H) gate creates an equal superposition: |0> → (|0> + |1>)/√2</li>
+      <li>Measurement collapses the superposition to |0> or |1> with 50% probability</li>
       <li>The process results in a truly random bit due to quantum uncertainty</li>
     </ol>
   `;

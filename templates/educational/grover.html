@@ -5,7 +5,7 @@
       <p>Grover's algorithm, developed by Lov Grover in 1996, is a quantum algorithm that provides a quadratic speedup for searching unsorted databases or solving unstructured search problems.</p>
       
       <div class="alert alert-secondary">
-        <strong>Classical vs. Quantum Search</strong>: To find a specific item in an unsorted database of N items, a classical computer needs to check an average of N/2 items (O(N) complexity). Grover's algorithm can find the item in approximately √N steps (O(√N) complexity).
+        <strong>Classical vs. Quantum Search</strong>: To find a specific item in an unsorted database of N items, a classical computer needs to check an average of N/2 items (O(N) complexity). Grover's algorithm can find the item in approximately sqrt(N) steps (O(sqrt(N)) complexity).
       </div>
       
       <h5 class="mt-4">How Grover's Algorithm Works</h5>
@@ -20,7 +20,7 @@
           <strong>Amplitude Amplification</strong>: Apply the Grover diffusion operator, which increases the amplitude of the marked state while decreasing others.
         </li>
         <li>
-          <strong>Iteration</strong>: Repeat steps 2-3 approximately √N times to maximize the probability of measuring the target state.
+          <strong>Iteration</strong>: Repeat steps 2-3 approximately sqrt(N) times to maximize the probability of measuring the target state.
         </li>
         <li>
           <strong>Measurement</strong>: Measure the qubits to obtain the target state with high probability.
@@ -75,10 +75,10 @@
     <div class="col-md-6">
       <h5>Mathematical Insights</h5>
       <ul>
-        <li><strong>Optimal Iteration Count</strong>: The optimal number of iterations is approximately π√N/4, where N is the size of the search space.</li>
+        <li><strong>Optimal Iteration Count</strong>: The optimal number of iterations is approximately π*sqrt(N)/4, where N is the size of the search space.</li>
         <li><strong>Success Probability</strong>: With the optimal number of iterations, the success probability approaches 1.</li>
         <li><strong>Provable Speedup</strong>: The quadratic speedup of Grover's algorithm has been proven to be optimal for black-box search problems.</li>
-        <li><strong>Quantum Optimality</strong>: No quantum algorithm can solve the unstructured search problem in fewer than O(√N) steps.</li>
+        <li><strong>Quantum Optimality</strong>: No quantum algorithm can solve the unstructured search problem in fewer than O(sqrt(N)) steps.</li>
       </ul>
     </div>
   </div>
@@ -116,7 +116,7 @@
 
 <!-- MINI_EXPLANATION_START -->
 <h5>Grover's Search Algorithm</h5>
-<p>Grover's algorithm provides a quadratic speedup for unstructured search problems, finding a marked item in a database of N items with approximately &radic;N queries.</p>
+<p>Grover's algorithm provides a quadratic speedup for unstructured search problems, finding a marked item in a database of N items with approximately sqrt(N) queries.</p>
 <div class="alert alert-primary">
   <strong>Key Quantum Concept:</strong> Utilizes quantum superposition and amplitude amplification to enhance the probability of measuring the correct answer.
 </div>

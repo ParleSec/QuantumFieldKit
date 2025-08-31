@@ -16,7 +16,7 @@ def generate_random_bit_cirq(qubit_idx=0):
     Generates a single random bit using quantum superposition.
     
     In quantum mechanics, a qubit in equal superposition has a 50% chance
-    of collapsing to |0⟩ or |1⟩ when measured, providing true randomness
+    of collapsing to |0> or |1> when measured, providing true randomness
     based on quantum uncertainty.
     
     Args:
@@ -88,9 +88,9 @@ def generate_random_number_cirq(num_bits=8):
         individual_bit_circuits.append(bit_svg)
         
         # Log the quantum state before measurement
-        # For H|0⟩ state, this is (|0⟩ + |1⟩)/√2
-        log.append(f"Bit {i}: Prepared initial state |0⟩")
-        log.append(f"Bit {i}: Applied Hadamard gate to create superposition (|0⟩ + |1⟩)/√2")
+        # For H|0> state, this is (|0> + |1>)/sqrt(2)
+        log.append(f"Bit {i}: Prepared initial state |0>")
+        log.append(f"Bit {i}: Applied Hadamard gate to create superposition (|0> + |1>)/sqrt(2)")
         log.append(f"Bit {i}: Measured {bit}")
     
     # Calculate the random number from the bit sequence
