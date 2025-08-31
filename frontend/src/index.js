@@ -8,7 +8,7 @@ import './index.css';
 
 // Initialize Socket.IO
 import { io } from 'socket.io-client';
-const socket = io('http://localhost:5000');
+const socket = io();
 
 // Make socket available globally
 window.socket = socket;

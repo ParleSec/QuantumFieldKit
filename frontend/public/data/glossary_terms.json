@@ -1,42 +1,218 @@
 [
   {
     "term": "Qubit",
-    "definition": "The fundamental unit of quantum information, analogous to a classical bit but with the ability to exist in a superposition of states."
+    "definition": "The fundamental unit of quantum information, analogous to a classical bit but with the ability to exist in a superposition of states. Unlike classical bits that are either 0 or 1, qubits can be in a probabilistic combination of both states simultaneously.",
+    "category": "Fundamentals",
+    "tags": ["basic", "information", "state"]
   },
   {
     "term": "Superposition",
-    "definition": "A quantum mechanical principle where a quantum system can exist in multiple states simultaneously until measured."
+    "definition": "A quantum mechanical principle where a quantum system can exist in multiple states simultaneously until measured. This allows quantum computers to process multiple possibilities in parallel, providing exponential computational advantages for certain problems.",
+    "category": "Fundamentals",
+    "tags": ["basic", "state", "parallel"]
   },
   {
     "term": "Entanglement",
-    "definition": "A quantum mechanical phenomenon where particles become correlated to predictably interact with each other regardless of distance."
+    "definition": "A quantum mechanical phenomenon where particles become correlated to predictably interact with each other regardless of distance. When qubits are entangled, measuring one instantly affects the state of its partner, enabling quantum communication and computation protocols.",
+    "category": "Fundamentals",
+    "tags": ["correlation", "communication", "non-locality"]
   },
   {
     "term": "Quantum Gate",
-    "definition": "A basic quantum circuit operating on a small number of qubits, analogous to classical logic gates."
+    "definition": "A basic quantum circuit operating on a small number of qubits, analogous to classical logic gates. Common gates include Pauli-X (bit flip), Pauli-Z (phase flip), Hadamard (superposition creator), and CNOT (controlled operations).",
+    "category": "Gates & Circuits",
+    "tags": ["circuit", "operation", "unitary"]
   },
   {
     "term": "Measurement",
-    "definition": "The process of observing a quantum system, which causes it to collapse from a superposition of states into a definite state."
+    "definition": "The process of observing a quantum system, which causes it to collapse from a superposition of states into a definite state. This is probabilistic and irreversible, fundamentally changing the quantum system being observed.",
+    "category": "Fundamentals",
+    "tags": ["observation", "collapse", "probabilistic"]
   },
   {
     "term": "Quantum Circuit",
-    "definition": "A sequence of quantum gates applied to a set of qubits to perform a quantum computation."
+    "definition": "A sequence of quantum gates applied to a set of qubits to perform a quantum computation. Circuits are read from left to right and represent the time evolution of the quantum system through unitary operations.",
+    "category": "Gates & Circuits",
+    "tags": ["computation", "sequence", "unitary"]
   },
   {
     "term": "Quantum Algorithm",
-    "definition": "An algorithm that runs on a quantum computer, taking advantage of quantum mechanical phenomena like superposition and entanglement."
+    "definition": "An algorithm that runs on a quantum computer, taking advantage of quantum mechanical phenomena like superposition and entanglement. Famous examples include Shor's algorithm for factoring and Grover's algorithm for search.",
+    "category": "Algorithms",
+    "tags": ["computation", "advantage", "protocol"]
   },
   {
     "term": "Quantum Error Correction",
-    "definition": "Techniques used to protect quantum information from errors due to decoherence and other quantum noise."
+    "definition": "Techniques used to protect quantum information from errors due to decoherence and other quantum noise. These methods use redundancy and syndrome detection to identify and correct errors without directly measuring the quantum state.",
+    "category": "Error Correction",
+    "tags": ["protection", "noise", "redundancy"]
   },
   {
     "term": "Decoherence",
-    "definition": "The loss of quantum coherence due to interaction with the environment, leading to the collapse of quantum states."
+    "definition": "The loss of quantum coherence due to interaction with the environment, leading to the collapse of quantum states. This is the primary challenge in building practical quantum computers and limits the time available for quantum computations.",
+    "category": "Noise & Errors",
+    "tags": ["environment", "noise", "decay"]
   },
   {
     "term": "Quantum Teleportation",
-    "definition": "A process by which quantum information can be transmitted from one location to another, using a classical communication channel and quantum entanglement."
+    "definition": "A process by which quantum information can be transmitted from one location to another, using a classical communication channel and quantum entanglement. The original quantum state is destroyed in the process, making it true teleportation rather than copying.",
+    "category": "Communication",
+    "tags": ["transmission", "entanglement", "protocol"]
+  },
+  {
+    "term": "Hadamard Gate",
+    "definition": "A fundamental quantum gate that creates superposition by rotating a qubit from the computational basis to the diagonal basis. It maps |0> to (|0> + |1>)/sqrt(2) and |1> to (|0> - |1>)/sqrt(2).",
+    "category": "Gates & Circuits",
+    "tags": ["superposition", "rotation", "basis"]
+  },
+  {
+    "term": "CNOT Gate",
+    "definition": "A two-qubit controlled gate that flips the target qubit if and only if the control qubit is in state |1>. It's essential for creating entanglement and implementing quantum algorithms.",
+    "category": "Gates & Circuits",
+    "tags": ["controlled", "entanglement", "two-qubit"]
+  },
+  {
+    "term": "Bloch Sphere",
+    "definition": "A geometric representation of qubit states as points on a unit sphere. The north and south poles represent |0> and |1> states, while points on the equator represent equal superposition states with different phases.",
+    "category": "Visualization",
+    "tags": ["geometry", "representation", "visualization"]
+  },
+  {
+    "term": "Quantum Fourier Transform",
+    "definition": "The quantum analog of the discrete Fourier transform, efficiently implementable on quantum computers. It's a key component of Shor's algorithm and other quantum algorithms for period finding.",
+    "category": "Algorithms",
+    "tags": ["fourier", "period-finding", "efficient"]
+  },
+  {
+    "term": "Grover's Algorithm",
+    "definition": "A quantum search algorithm that finds a marked item in an unsorted database with quadratic speedup over classical algorithms. It requires O(sqrt(N)) operations compared to O(N) classically.",
+    "category": "Algorithms",
+    "tags": ["search", "speedup", "amplitude"]
+  },
+  {
+    "term": "Shor's Algorithm",
+    "definition": "A quantum algorithm for efficiently factoring large integers, which threatens current RSA cryptography. It combines period finding using the quantum Fourier transform with classical post-processing.",
+    "category": "Algorithms",
+    "tags": ["factoring", "cryptography", "period-finding"]
+  },
+  {
+    "term": "Variational Quantum Eigensolver",
+    "definition": "A hybrid quantum-classical algorithm for finding ground states of quantum systems. It uses a parameterized quantum circuit optimized by classical methods, making it suitable for near-term quantum devices.",
+    "category": "Algorithms",
+    "tags": ["hybrid", "optimization", "ground-state"]
+  },
+  {
+    "term": "Quantum Approximate Optimization Algorithm",
+    "definition": "A variational quantum algorithm designed to solve combinatorial optimization problems. QAOA alternates between problem-specific and mixing Hamiltonians to explore the solution space.",
+    "category": "Algorithms",
+    "tags": ["optimization", "variational", "combinatorial"]
+  },
+  {
+    "term": "Bell State",
+    "definition": "One of four maximally entangled two-qubit states that form the Bell basis. These states exhibit perfect correlation and are fundamental to quantum communication protocols like quantum teleportation.",
+    "category": "Fundamentals",
+    "tags": ["entanglement", "correlation", "basis"]
+  },
+  {
+    "term": "Quantum Supremacy",
+    "definition": "The point at which a quantum computer can perform a calculation that is practically impossible for classical computers. Also called quantum advantage, it represents a computational milestone rather than practical utility.",
+    "category": "Milestones",
+    "tags": ["advantage", "milestone", "computational"]
+  },
+  {
+    "term": "NISQ",
+    "definition": "Noisy Intermediate-Scale Quantum devices - current quantum computers with 50-1000 qubits that have significant noise but may still provide quantum advantages for specific problems.",
+    "category": "Hardware",
+    "tags": ["current", "noisy", "intermediate"]
+  },
+  {
+    "term": "Quantum Volume",
+    "definition": "A metric that measures the capability of a quantum computer, considering both the number of qubits and the quality of operations. It provides a more comprehensive assessment than qubit count alone.",
+    "category": "Metrics",
+    "tags": ["capability", "quality", "assessment"]
+  },
+  {
+    "term": "Adiabatic Quantum Computing",
+    "definition": "A model of quantum computation based on the adiabatic theorem, where the system evolves slowly from an easy initial Hamiltonian to a problem-encoding final Hamiltonian.",
+    "category": "Models",
+    "tags": ["adiabatic", "evolution", "hamiltonian"]
+  },
+  {
+    "term": "Quantum Annealing",
+    "definition": "A metaheuristic for finding the global minimum of a given objective function using quantum fluctuations. It's implemented in systems like D-Wave quantum computers for optimization problems.",
+    "category": "Models",
+    "tags": ["optimization", "annealing", "metaheuristic"]
+  },
+  {
+    "term": "Topological Quantum Computing",
+    "definition": "A theoretical approach to quantum computing using anyons and topological properties to create naturally error-resistant qubits. Microsoft's approach with Majorana fermions is an example.",
+    "category": "Models",
+    "tags": ["topological", "anyons", "error-resistant"]
+  },
+  {
+    "term": "Quantum Key Distribution",
+    "definition": "A secure communication method that uses quantum mechanics to detect eavesdropping. The BB84 protocol is the most famous implementation, providing information-theoretic security.",
+    "category": "Communication",
+    "tags": ["security", "cryptography", "eavesdropping"]
+  },
+  {
+    "term": "No-Cloning Theorem",
+    "definition": "A fundamental principle stating that arbitrary quantum states cannot be perfectly copied. This theorem is crucial for quantum cryptography security and explains why quantum teleportation destroys the original state.",
+    "category": "Principles",
+    "tags": ["fundamental", "copying", "security"]
+  },
+  {
+    "term": "Quantum Phase Estimation",
+    "definition": "An algorithm for estimating the eigenvalues (phases) of a unitary operator. It's a subroutine in many quantum algorithms including Shor's algorithm and is essential for quantum simulation.",
+    "category": "Algorithms",
+    "tags": ["eigenvalue", "estimation", "subroutine"]
+  },
+  {
+    "term": "Quantum Error Syndrome",
+    "definition": "Information extracted from a quantum error correction code that indicates what type of error occurred without revealing the actual quantum state. Syndromes enable error correction without measurement.",
+    "category": "Error Correction",
+    "tags": ["syndrome", "detection", "correction"]
+  },
+  {
+    "term": "Surface Code",
+    "definition": "A topological quantum error correction code that arranges qubits on a 2D lattice. It has a high threshold for error correction and is considered one of the most promising codes for fault-tolerant quantum computing.",
+    "category": "Error Correction",
+    "tags": ["topological", "threshold", "fault-tolerant"]
+  },
+  {
+    "term": "Quantum Coherence Time",
+    "definition": "The time scale over which a quantum system maintains its quantum properties before decoherence destroys the quantum information. Longer coherence times allow for more complex quantum computations.",
+    "category": "Noise & Errors",
+    "tags": ["time", "coherence", "decoherence"]
+  },
+  {
+    "term": "Fidelity",
+    "definition": "A measure of how close two quantum states are to each other, ranging from 0 (orthogonal states) to 1 (identical states). High fidelity operations are crucial for reliable quantum computing.",
+    "category": "Metrics",
+    "tags": ["similarity", "quality", "measure"]
+  },
+  {
+    "term": "Quantum Simulator",
+    "definition": "A controllable quantum system used to study another quantum system that is difficult to investigate directly. Both analog and digital quantum simulators are used to understand complex quantum phenomena.",
+    "category": "Applications",
+    "tags": ["simulation", "modeling", "investigation"]
+  },
+  {
+    "term": "Variational Quantum Algorithm",
+    "definition": "A class of hybrid quantum-classical algorithms that use parameterized quantum circuits optimized by classical computers. These algorithms are designed for near-term quantum devices with limited coherence.",
+    "category": "Algorithms",
+    "tags": ["hybrid", "parameterized", "near-term"]
+  },
+  {
+    "term": "Quantum Machine Learning",
+    "definition": "The integration of quantum computing with machine learning, potentially offering advantages in training speed, feature mapping, or handling quantum data. Still largely theoretical with ongoing research.",
+    "category": "Applications",
+    "tags": ["machine-learning", "integration", "research"]
+  },
+  {
+    "term": "Quantum Sensing",
+    "definition": "The use of quantum systems to measure physical quantities with enhanced precision beyond classical limits. Applications include atomic clocks, magnetometry, and gravitational wave detection.",
+    "category": "Applications",
+    "tags": ["sensing", "precision", "measurement"]
   }
 ] 
