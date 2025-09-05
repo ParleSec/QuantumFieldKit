@@ -11,3 +11,84 @@
 .app-shell main {
   padding-top: 4rem;
 }
+
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  /* Prevent zoom on input focus on iOS */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+  
+  /* Better touch targets */
+  button, input, select, textarea {
+    min-height: 44px;
+  }
+  
+  /* Fix viewport height issues on mobile */
+  .min-h-screen {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Prevent overscroll on mobile */
+  body {
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Improve scrolling on mobile */
+  .overflow-auto, .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .overflow-auto::-webkit-scrollbar,
+  .overflow-y-auto::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Better mobile card spacing */
+  .space-y-6 > * + * {
+    margin-top: 1rem;
+  }
+  
+  .space-y-8 > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* Mobile-friendly grid gaps */
+  .gap-8 {
+    gap: 1rem;
+  }
+  
+  .gap-6 {
+    gap: 1rem;
+  }
+  
+  /* Improve mobile padding */
+  .container {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS viewport height */
+  .min-h-screen {
+    min-height: -webkit-fill-available;
+  }
+  
+  /* Remove iOS input shadows */
+  input, textarea, select {
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0.5rem;
+  }
+  
+  /* Remove tap highlight */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
