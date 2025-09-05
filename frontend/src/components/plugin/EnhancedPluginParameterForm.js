@@ -258,13 +258,13 @@ const EnhancedPluginParameterForm = ({
         </AnimatePresence>
 
         {/* Action Buttons */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col sm:flex-row gap-3 pt-4">
           <Button
             type="submit"
             variant="primary"
             loading={loading}
             icon={<Zap size={16} />}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white border-0 shadow-lg min-h-[48px] sm:min-h-[44px]"
           >
             {loading ? 'Running Simulation...' : 'Run Simulation'}
           </Button>
@@ -275,7 +275,7 @@ const EnhancedPluginParameterForm = ({
             onClick={handleReset}
             disabled={loading}
             icon={<RotateCcw size={16} />}
-            className="border-2 border-neutral-400 hover:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700"
+            className="border-2 border-neutral-400 hover:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 min-h-[48px] sm:min-h-[44px] sm:flex-shrink-0"
           >
             Reset
           </Button>
