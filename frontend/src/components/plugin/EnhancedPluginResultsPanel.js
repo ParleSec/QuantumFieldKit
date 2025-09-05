@@ -197,23 +197,36 @@ const EnhancedPluginResultsPanel = ({ result, loading, onExport, onShare }) => {
       className={isFullscreen ? 'fixed inset-4 z-50 bg-white rounded-xl shadow-2xl' : ''}
     >
       <Card variant="elevated" padding="none" className="h-full">
-        <div className="p-6 border-b border-neutral-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-                <Activity size={20} className="text-white" />
+        <div className="p-4 sm:p-6 border-b border-neutral-200">
+          {/* Main Header */}
+          <div className="flex items-center justify-between mb-3 sm:mb-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center flex-shrink-0">
+                <Activity size={16} className="sm:w-5 sm:h-5 text-white" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-neutral-900">
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base sm:text-lg font-semibold text-neutral-900 truncate">
                   Simulation Results
                 </h3>
-                <p className="text-sm text-neutral-600">
+                <p className="text-xs sm:text-sm text-neutral-600 hidden sm:block">
                   Quantum computation completed successfully
                 </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            {/* Mobile: Only show fullscreen button */}
+            <div className="sm:hidden flex-shrink-0">
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+              >
+                <Maximize2 size={16} />
+              </button>
+            </div>
+            
+            {/* Desktop: Show all buttons */}
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
@@ -254,9 +267,45 @@ const EnhancedPluginResultsPanel = ({ result, loading, onExport, onShare }) => {
               </Button>
             </div>
           </div>
+          
+          {/* Mobile Action Buttons Row */}
+          <div className="flex gap-2 sm:hidden overflow-x-auto pb-1">
+            <button
+              onClick={handleCopyData}
+              disabled={!result?.output}
+              className={`
+                flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-h-[44px]
+                ${copied 
+                  ? 'bg-green-100 text-green-700' 
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-50'
+                }
+              `}
+            >
+              {copied ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+              {copied ? 'Copied!' : 'Copy'}
+            </button>
+            
+            <button
+              onClick={handleExport}
+              disabled={!result?.output}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 whitespace-nowrap min-h-[44px]"
+            >
+              <Download size={14} />
+              Export
+            </button>
+            
+            <button
+              onClick={() => onShare?.(result)}
+              disabled={!result?.output}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-50 whitespace-nowrap min-h-[44px]"
+            >
+              <Share2 size={14} />
+              Share
+            </button>
+          </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           <SimpleTabs tabs={tabs} defaultTab="visualization" />
         </div>
       </Card>
