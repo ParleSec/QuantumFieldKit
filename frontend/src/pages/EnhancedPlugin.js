@@ -157,46 +157,64 @@ const EnhancedPlugin = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white/80 backdrop-blur-md border-b border-neutral-200 sticky top-16 z-40"
       >
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate('/')}
                 icon={<ArrowLeft size={16} />}
+                className="hidden sm:flex"
               >
                 Back
               </Button>
               
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center">
-                  <i className={`fas ${plugin?.icon || 'fa-atom'} text-white text-sm`} />
+              {/* Mobile back button */}
+              <button
+                onClick={() => navigate('/')}
+                className="sm:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-primary-500 to-secondary-500 flex items-center justify-center flex-shrink-0">
+                  <i className={`fas ${plugin?.icon || 'fa-atom'} text-white text-xs sm:text-sm`} />
                 </div>
-                <div>
-                  <h1 className="text-xl font-bold">
+                <div className="min-w-0 flex-1">
+                  <h1 className="text-lg sm:text-xl font-bold truncate">
                     {plugin?.name || 'Loading...'}
                   </h1>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setShowEducational(!showEducational)}
                 icon={<Lightbulb size={16} />}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0"
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white border-0 hidden sm:flex"
               >
                 Learn More
               </Button>
+              
+              {/* Mobile learn button */}
+              <button
+                onClick={() => setShowEducational(!showEducational)}
+                className="sm:hidden p-2 rounded-lg bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
+              >
+                <Lightbulb size={16} />
+              </button>
               
               <Button
                 variant="ghost"
                 size="sm"
                 icon={<BookOpen size={16} />}
                 onClick={() => navigate('/glossary')}
+                className="hidden md:flex"
               >
                 Glossary
               </Button>
@@ -206,6 +224,7 @@ const EnhancedPlugin = () => {
                 size="sm"
                 icon={<Github size={16} />}
                 onClick={() => window.open('https://github.com/ParleSec/QuantumFieldKit', '_blank')}
+                className="hidden md:flex"
               >
                 GitHub
               </Button>
@@ -215,15 +234,15 @@ const EnhancedPlugin = () => {
       </motion.header>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[calc(100vh-12rem)]">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 lg:gap-8 min-h-[calc(100vh-12rem)]">
           
           {/* Left Sidebar - Parameters & Info */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:col-span-4 space-y-6"
+            className="lg:col-span-4 space-y-4 sm:space-y-6"
           >
             {/* Plugin Description */}
             <Card variant="elevated" padding="lg">
@@ -291,7 +310,7 @@ const EnhancedPlugin = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="lg:col-span-8"
+            className="lg:col-span-8 min-w-0"
           >
             {/* Error Display */}
             <AnimatePresence>
@@ -333,7 +352,7 @@ const EnhancedPlugin = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-2 sm:p-4"
             onClick={() => setShowEducational(false)}
           >
             <motion.div
@@ -341,42 +360,42 @@ const EnhancedPlugin = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-neutral-900 rounded-3xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden border border-neutral-200 dark:border-neutral-700"
+              className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-neutral-200 dark:border-neutral-700"
             >
               {/* Enhanced Header */}
-              <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 p-8 text-white">
+              <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 p-4 sm:p-6 lg:p-8 text-white">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                      <Lightbulb size={28} className="text-yellow-200" />
+                  <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                      <Lightbulb size={20} className="sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-yellow-200" />
                     </div>
-                    <div>
-                      <h2 className="text-3xl font-bold mb-1">Learn About {plugin?.name}</h2>
-                      <p className="text-blue-100 text-lg">
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold mb-1 truncate">Learn About {plugin?.name}</h2>
+                      <p className="text-blue-100 text-sm sm:text-base lg:text-lg hidden sm:block">
                         Master quantum concepts through interactive learning
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowEducational(false)}
-                    className="p-3 hover:bg-white/20 rounded-xl transition-all duration-200 hover:scale-105 group"
+                    className="p-2 sm:p-3 hover:bg-white/20 rounded-lg sm:rounded-xl transition-all duration-200 hover:scale-105 group flex-shrink-0"
                   >
-                    <X size={28} className="group-hover:rotate-90 transition-transform duration-200" />
+                    <X size={20} className="sm:w-6 sm:h-6 lg:w-7 lg:h-7 group-hover:rotate-90 transition-transform duration-200" />
                   </button>
                 </div>
               </div>
               
               {/* Scrollable Content Container */}
-              <div className="overflow-y-auto max-h-[calc(90vh-140px)] bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-800">
-                <div className="p-10 space-y-10">
+              <div className="overflow-y-auto max-h-[calc(95vh-100px)] sm:max-h-[calc(90vh-140px)] bg-gradient-to-b from-neutral-50 to-white dark:from-neutral-900 dark:to-neutral-800">
+                <div className="p-4 sm:p-6 lg:p-10 space-y-6 sm:space-y-8 lg:space-y-10">
                   
                   {/* Key Quantum Principles */}
-                  <section className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
-                    <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
-                      <Zap size={20} className="text-blue-600" />
+                  <section className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 sm:p-6 border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-base sm:text-lg font-semibold text-blue-900 dark:text-blue-100 mb-4 flex items-center gap-2">
+                      <Zap size={16} className="sm:w-5 sm:h-5 text-blue-600" />
                       Key Quantum Principles in {plugin?.name}
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       <div className="bg-white/60 dark:bg-blue-800/30 p-4 rounded-lg">
                         <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">No-Cloning Theorem</h4>
                         <p className="text-blue-700 dark:text-blue-300 text-sm">Prevents perfect copying of quantum authentication tokens, making them inherently secure against duplication.</p>
