@@ -11,7 +11,7 @@ numpy>=1.24.0,<2.0.0
 sympy>=1.11.1
 
 # Networking and async
-eventlet>=0.33.3
+eventlet>=0.40.3
 networkx>=3.0
 
 # Production server
