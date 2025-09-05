@@ -192,10 +192,10 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
           {/* Controls */}
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+            <div className="flex items-center gap-1 sm:gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
               <button
                 onClick={handleZoomOut}
-                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors"
+                className="p-2 sm:p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-[32px] flex items-center justify-center"
                 title="Zoom Out"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -205,13 +205,13 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
                 </svg>
               </button>
               
-              <span className="text-xs text-neutral-600 dark:text-neutral-400 min-w-[3rem] text-center">
+              <span className="text-xs text-neutral-600 dark:text-neutral-400 min-w-[3rem] text-center px-1">
                 {Math.round(zoom * 100)}%
               </span>
               
               <button
                 onClick={handleZoomIn}
-                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors"
+                className="p-2 sm:p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-[32px] flex items-center justify-center"
                 title="Zoom In"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -224,17 +224,18 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
               
               <button
                 onClick={handleResetZoom}
-                className="p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors text-xs"
+                className="p-2 sm:p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors text-xs min-h-[44px] sm:min-h-[32px] px-2 sm:px-1"
                 title="Reset Zoom"
               >
-                Reset
+                <span className="hidden sm:inline">Reset</span>
+                <span className="sm:hidden">↺</span>
               </button>
             </div>
             
             {/* Fullscreen Button */}
             <button
               onClick={() => setShowFullscreen(true)}
-              className="p-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors"
+              className="p-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg transition-colors min-h-[44px] sm:min-h-[40px] min-w-[44px] sm:min-w-[40px] flex items-center justify-center"
               title="View in Fullscreen"
             >
               <Maximize2 size={16} />
@@ -244,16 +245,26 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
         
         <div 
           ref={containerRef}
-          className="overflow-auto bg-white dark:bg-neutral-800 rounded-lg border border-neutral-100 dark:border-neutral-600 p-4 cursor-grab active:cursor-grabbing"
+          className="overflow-auto bg-white dark:bg-neutral-800 rounded-lg border border-neutral-100 dark:border-neutral-600 p-2 sm:p-4 cursor-grab active:cursor-grabbing touch-pan-x touch-pan-y"
           style={{ 
-            maxHeight: '500px',
+            maxHeight: '400px',
             scrollbarWidth: 'thin',
-            scrollbarColor: '#cbd5e1 #f1f5f9'
+            scrollbarColor: '#cbd5e1 #f1f5f9',
+            WebkitOverflowScrolling: 'touch'
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            handleMouseDown({ clientX: touch.clientX, clientY: touch.clientY });
+          }}
+          onTouchMove={(e) => {
+            const touch = e.touches[0];
+            handleMouseMove({ clientX: touch.clientX, clientY: touch.clientY });
+          }}
+          onTouchEnd={handleMouseUp}
         >
           <div
             dangerouslySetInnerHTML={{ __html: circuitSvg }}
@@ -273,7 +284,8 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M9 11H1m22 0h-8M9 11l3-3m-3 3l3 3"/>
             </svg>
-            Drag to pan • Scroll to navigate
+            <span className="hidden sm:inline">Drag to pan • Scroll to navigate</span>
+            <span className="sm:hidden">Drag or swipe to navigate</span>
           </span>
           
           <span className="flex items-center gap-1">
