@@ -28,10 +28,10 @@ const Button = forwardRef(({
   };
 
   const sizes = {
-    sm: 'px-3 py-1.5 text-sm gap-1.5',
-    md: 'px-4 py-2 text-base gap-2',
-    lg: 'px-6 py-3 text-lg gap-2.5',
-    xl: 'px-8 py-4 text-xl gap-3',
+    sm: 'px-3 py-2 text-sm gap-1.5 min-h-[44px] sm:py-1.5 sm:min-h-[36px]',
+    md: 'px-4 py-3 text-base gap-2 min-h-[48px] sm:py-2 sm:min-h-[40px]',
+    lg: 'px-6 py-4 text-lg gap-2.5 min-h-[52px] sm:py-3 sm:min-h-[44px]',
+    xl: 'px-8 py-5 text-xl gap-3 min-h-[56px] sm:py-4 sm:min-h-[48px]',
   };
 
   const classes = `

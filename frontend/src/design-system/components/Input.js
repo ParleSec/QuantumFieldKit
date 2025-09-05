@@ -26,12 +26,12 @@ const Input = forwardRef(({
 
   const inputType = type === 'password' && showPassword ? 'text' : type;
 
-  const baseClasses = 'w-full rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1';
+  const baseClasses = 'w-full rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 text-base sm:text-sm md:text-base';
   
   const sizes = {
-    sm: 'px-3 py-2 text-sm',
-    md: 'px-4 py-2.5 text-base',
-    lg: 'px-5 py-3 text-lg',
+    sm: 'px-3 py-2 text-sm min-h-[40px]',
+    md: 'px-4 py-3 text-base min-h-[48px] sm:py-2.5 sm:min-h-[44px]',
+    lg: 'px-5 py-4 text-lg min-h-[52px] sm:py-3 sm:min-h-[48px]',
   };
 
   const stateClasses = error 

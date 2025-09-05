@@ -22,9 +22,9 @@ const Card = forwardRef(({
   const paddings = {
     none: 'p-0',
     sm: 'p-3',
-    md: 'p-6',
-    lg: 'p-8',
-    xl: 'p-10',
+    md: 'p-4 sm:p-6',
+    lg: 'p-6 sm:p-8',
+    xl: 'p-8 sm:p-10',
   };
 
   const hoverClasses = hover ? 'hover:shadow-lg hover:-translate-y-1' : '';
@@ -58,13 +58,13 @@ const Card = forwardRef(({
 Card.displayName = 'Card';
 
 const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`pb-4 border-b border-neutral-200 mb-6 ${className}`} {...props}>
+  <div className={`pb-3 sm:pb-4 border-b border-neutral-200 mb-4 sm:mb-6 ${className}`} {...props}>
     {children}
   </div>
 );
 
 const CardTitle = ({ children, className = '', ...props }) => (
-  <h3 className={`text-lg font-semibold text-neutral-900 dark:text-neutral-100 ${className}`} {...props}>
+  <h3 className={`text-base sm:text-lg font-semibold text-neutral-900 dark:text-neutral-100 ${className}`} {...props}>
     {children}
   </h3>
 );
