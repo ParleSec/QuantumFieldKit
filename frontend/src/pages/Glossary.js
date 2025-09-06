@@ -106,7 +106,7 @@ function Glossary() {
             <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
               Error Loading Glossary
             </h3>
-            <p className="text-neutral-600 dark:text-neutral-400">
+            <p className="text-neutral-600 dark:text-neutral-200">
               {error}
             </p>
           </Card>
@@ -130,7 +130,7 @@ function Glossary() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
             Quantum Computing Glossary
           </h1>
-          <p className="text-lg text-neutral-600 dark:text-neutral-400 max-w-2xl mx-auto">
+          <p className="text-lg text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto">
             Explore comprehensive definitions of quantum computing concepts, algorithms, and terminology.
           </p>
         </motion.div>
@@ -147,11 +147,11 @@ function Glossary() {
               {/* Search Input */}
               <div className="flex-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search size={20} className="text-neutral-400" />
+                  <Search size={20} className="text-neutral-400 dark:text-neutral-200" />
                 </div>
                 <input
                   type="text"
-                  className="w-full pl-10 pr-10 py-3 border border-neutral-300 dark:border-neutral-600 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder-neutral-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full pl-10 pr-10 py-3 border border-neutral-300 dark:border-neutral-500 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 dark:placeholder-neutral-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="Search terms, definitions, or tags..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -159,7 +159,7 @@ function Glossary() {
                 {searchTerm && (
                   <button
                     onClick={clearSearch}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 dark:text-neutral-200 hover:text-neutral-600 dark:hover:text-neutral-100"
                   >
                     <X size={20} />
                   </button>
@@ -171,7 +171,7 @@ function Glossary() {
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-4 py-3 border border-neutral-300 dark:border-neutral-600 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-3 border border-neutral-300 dark:border-neutral-500 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Categories</option>
                   {categories.map(category => (
@@ -182,7 +182,7 @@ function Glossary() {
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-4 py-3 border border-neutral-300 dark:border-neutral-600 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-3 border border-neutral-300 dark:border-neutral-500 rounded-xl bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="alphabetical">A-Z</option>
                   <option value="category">By Category</option>
@@ -191,20 +191,20 @@ function Glossary() {
             </div>
 
             {/* Quick Actions */}
-            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700">
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-500">
               <button
                 onClick={expandAll}
-                className="px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+                className="px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-200 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors"
               >
                 Expand All
               </button>
               <button
                 onClick={collapseAll}
-                className="px-3 py-1.5 text-sm bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+                className="px-3 py-1.5 text-sm bg-neutral-100 dark:bg-neutral-600 text-neutral-700 dark:text-neutral-100 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-500 transition-colors"
               >
                 Collapse All
               </button>
-              <div className="text-sm text-neutral-500 dark:text-neutral-400 flex items-center ml-auto">
+              <div className="text-sm text-neutral-500 dark:text-neutral-200 flex items-center ml-auto">
                 {filteredTerms.length} term{filteredTerms.length !== 1 ? 's' : ''} found
               </div>
             </div>
@@ -247,8 +247,8 @@ function Glossary() {
                           </h3>
                           {term.category && (
                             <div className="flex items-center mt-1">
-                              <Tag size={14} className="text-neutral-400 mr-1" />
-                              <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                              <Tag size={14} className="text-neutral-400 dark:text-neutral-200 mr-1" />
+                              <span className="text-sm text-neutral-500 dark:text-neutral-200">
                                 {term.category}
                               </span>
                             </div>
@@ -259,7 +259,7 @@ function Glossary() {
                         animate={{ rotate: expandedItems.has(index) ? 180 : 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <ChevronDown size={20} className="text-neutral-400" />
+                        <ChevronDown size={20} className="text-neutral-400 dark:text-neutral-200" />
                       </motion.div>
                     </div>
                   </button>
@@ -273,8 +273,8 @@ function Glossary() {
                         transition={{ duration: 0.3 }}
                         className="overflow-hidden"
                       >
-                        <div className="px-6 pb-6 border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                          <p className="text-neutral-700 dark:text-neutral-300 leading-relaxed">
+                        <div className="px-6 pb-6 border-t border-neutral-200 dark:border-neutral-500 pt-4">
+                          <p className="text-neutral-700 dark:text-neutral-100 leading-relaxed">
                             <MathText text={term.definition} />
                           </p>
                           {term.tags && term.tags.length > 0 && (
@@ -282,7 +282,7 @@ function Glossary() {
                               {term.tags.map((tag, tagIndex) => (
                                 <span
                                   key={tagIndex}
-                                  className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 rounded-md"
+                                  className="px-2 py-1 text-xs bg-neutral-100 dark:bg-neutral-600 text-neutral-600 dark:text-neutral-100 rounded-md"
                                 >
                                   {tag}
                                 </span>
@@ -305,11 +305,11 @@ function Glossary() {
               className="text-center py-12"
             >
               <Card className="max-w-md mx-auto p-8">
-                <Search size={48} className="text-neutral-400 mx-auto mb-4" />
+                <Search size={48} className="text-neutral-400 dark:text-neutral-200 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
                   No terms found
                 </h3>
-                <p className="text-neutral-600 dark:text-neutral-400">
+                <p className="text-neutral-600 dark:text-neutral-200">
                   Try adjusting your search criteria or browse all terms.
                 </p>
               </Card>

@@ -13,9 +13,9 @@ const Card = forwardRef(({
   const baseClasses = 'rounded-xl border transition-all duration-200';
   
   const variants = {
-    default: 'border-neutral-200 dark:border-neutral-700 shadow-sm bg-white dark:bg-neutral-800',
-    elevated: 'border-neutral-200 dark:border-neutral-700 shadow-md bg-white dark:bg-neutral-800',
-    outlined: 'border-neutral-300 dark:border-neutral-600 shadow-none bg-white dark:bg-neutral-800',
+    default: 'border-neutral-200 dark:border-neutral-500 shadow-sm bg-white dark:bg-neutral-800',
+    elevated: 'border-neutral-200 dark:border-neutral-500 shadow-md bg-white dark:bg-neutral-800',
+    outlined: 'border-neutral-300 dark:border-neutral-400 shadow-none bg-white dark:bg-neutral-800',
     glass: 'border-white/20 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-md shadow-lg',
   };
 
@@ -58,7 +58,7 @@ const Card = forwardRef(({
 Card.displayName = 'Card';
 
 const CardHeader = ({ children, className = '', ...props }) => (
-  <div className={`pb-3 sm:pb-4 border-b border-neutral-200 mb-4 sm:mb-6 ${className}`} {...props}>
+  <div className={`pb-3 sm:pb-4 border-b border-neutral-200 dark:border-neutral-500 mb-4 sm:mb-6 ${className}`} {...props}>
     {children}
   </div>
 );
@@ -70,7 +70,7 @@ const CardTitle = ({ children, className = '', ...props }) => (
 );
 
 const CardDescription = ({ children, className = '', ...props }) => (
-  <p className={`text-sm text-neutral-600 dark:text-neutral-400 mt-1 ${className}`} {...props}>
+  <p className={`text-sm text-neutral-600 dark:text-neutral-200 mt-1 ${className}`} {...props}>
     {children}
   </p>
 );
@@ -82,7 +82,7 @@ const CardContent = ({ children, className = '', ...props }) => (
 );
 
 const CardFooter = ({ children, className = '', ...props }) => (
-  <div className={`pt-4 border-t border-neutral-200 mt-6 ${className}`} {...props}>
+  <div className={`pt-4 border-t border-neutral-200 dark:border-neutral-500 mt-6 ${className}`} {...props}>
     {children}
   </div>
 );
