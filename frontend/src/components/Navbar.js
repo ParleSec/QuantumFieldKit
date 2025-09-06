@@ -5,19 +5,29 @@ import { Sun, Moon, Menu, X } from 'lucide-react';
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [theme, setTheme] = useState('quantumlight');
+  const [theme, setTheme] = useState(() => {
+    // Check for saved theme in localStorage or default to quantumlight
+    return localStorage.getItem('theme') || 'quantumlight';
+  });
   const location = useLocation();
 
   useEffect(() => {
-    const html = document.querySelector('html');
-    html.setAttribute('data-theme', theme);
+    const html = document.documentElement;
+    const head = document.querySelector('head');
     
-    // Also handle Tailwind dark mode
+    // Set data-theme on both html and head for compatibility
+    html.setAttribute('data-theme', theme);
+    head.setAttribute('data-theme', theme);
+    
+    // Handle Tailwind dark mode
     if (theme === 'dark') {
       html.classList.add('dark');
     } else {
       html.classList.remove('dark');
     }
+    
+    // Save theme to localStorage
+    localStorage.setItem('theme', theme);
   }, [theme]);
 
   const toggleNavbar = () => setIsOpen(!isOpen);

@@ -3,6 +3,23 @@ module.exports = {
   content: [
     './public/index.html',
     './src/**/*.{js,jsx,ts,tsx}',
+    './build/index.html',
+  ],
+  safelist: [
+    'dark',
+    'dark:bg-neutral-800',
+    'dark:text-neutral-100',
+    'dark:text-neutral-200',
+    'dark:text-neutral-300',
+    'dark:border-neutral-500',
+    'dark:border-neutral-600',
+    'dark:placeholder-neutral-300',
+    'dark:bg-neutral-600',
+    'dark:bg-neutral-700',
+    'dark:hover:bg-neutral-500',
+    'dark:hover:bg-neutral-600',
+    'dark:hover:text-neutral-100',
+    'dark:hover:text-neutral-200',
   ],
   darkMode: 'class',
   theme: {
