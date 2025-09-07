@@ -13,10 +13,10 @@ const Card = forwardRef(({
   const baseClasses = 'rounded-xl border transition-all duration-200';
   
   const variants = {
-    default: 'border-neutral-200 dark:border-neutral-500 shadow-sm bg-white dark:bg-neutral-800',
-    elevated: 'border-neutral-200 dark:border-neutral-500 shadow-md bg-white dark:bg-neutral-800',
-    outlined: 'border-neutral-300 dark:border-neutral-400 shadow-none bg-white dark:bg-neutral-800',
-    glass: 'border-white/20 bg-white/80 dark:bg-neutral-800/80 backdrop-blur-md shadow-lg',
+    default: 'border-neutral-200 dark:border-neutral-500 shadow-sm bg-base-100 dark:bg-base-200',
+    elevated: 'border-neutral-200 dark:border-neutral-500 shadow-md bg-base-100 dark:bg-base-200',
+    outlined: 'border-neutral-300 dark:border-neutral-400 shadow-none bg-base-100 dark:bg-base-200',
+    glass: 'border-white/20 bg-base-100/80 dark:bg-base-200/80 backdrop-blur-md shadow-lg',
   };
 
   const paddings = {

@@ -194,10 +194,10 @@ const EnhancedPluginResultsPanel = ({ result, loading, onExport, onShare }) => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className={isFullscreen ? 'fixed inset-4 z-50 bg-white rounded-xl shadow-2xl' : ''}
+      className={isFullscreen ? 'fixed inset-4 z-50 bg-base-100 dark:bg-base-200 rounded-xl shadow-2xl' : ''}
     >
       <Card variant="elevated" padding="none" className="h-full">
-        <div className="p-4 sm:p-6 border-b border-neutral-200">
+        <div className="p-4 sm:p-6 border-b border-neutral-200 dark:border-neutral-700 bg-base-100 dark:bg-base-200">
           {/* Main Header */}
           <div className="flex items-center justify-between mb-3 sm:mb-0">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
@@ -218,7 +218,7 @@ const EnhancedPluginResultsPanel = ({ result, loading, onExport, onShare }) => {
             <div className="sm:hidden flex-shrink-0">
               <button
                 onClick={() => setIsFullscreen(!isFullscreen)}
-                className="p-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-neutral-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+                className="p-2 rounded-lg bg-base-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-600 dark:text-neutral-200 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
                 title={isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
               >
                 <Maximize2 size={16} />
@@ -277,7 +277,7 @@ const EnhancedPluginResultsPanel = ({ result, loading, onExport, onShare }) => {
                 flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all min-h-[44px]
                 ${copied 
                   ? 'bg-green-100 text-green-700' 
-                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200 disabled:opacity-50'
+                  : 'bg-base-200 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-200 dark:hover:bg-neutral-700 disabled:opacity-50'
                 }
               `}
             >

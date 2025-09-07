@@ -41,8 +41,8 @@ const Input = forwardRef(({
     : 'border-neutral-300 hover:border-neutral-400';
 
   const disabledClasses = disabled 
-    ? 'bg-neutral-50 text-neutral-500 cursor-not-allowed'
-    : 'bg-white text-neutral-900';
+    ? 'bg-base-200 text-neutral-500 cursor-not-allowed'
+    : 'bg-base-100 text-neutral-900 dark:text-neutral-100';
 
   const iconClasses = icon ? (iconPosition === 'left' ? 'pl-10' : 'pr-10') : '';
   const passwordToggleClasses = type === 'password' ? 'pr-10' : '';

@@ -151,7 +151,7 @@ const EnhancedPluginParameterForm = ({
             >
               <motion.span
                 layout
-                className="inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform"
+                className="inline-block h-4 w-4 transform rounded-full bg-base-100 dark:bg-neutral-200 shadow-sm transition-transform"
                 animate={{ x: value ? 24 : 4 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               />
@@ -237,7 +237,7 @@ const EnhancedPluginParameterForm = ({
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="space-y-4 pt-4 border-t border-neutral-200"
+              className="space-y-4 pt-4 border-t border-neutral-200 dark:border-neutral-700"
             >
               <div className="flex items-center gap-2 text-sm text-neutral-600">
                 <HelpCircle size={16} />
@@ -275,7 +275,7 @@ const EnhancedPluginParameterForm = ({
             onClick={handleReset}
             disabled={loading}
             icon={<RotateCcw size={16} />}
-            className="border-2 border-neutral-400 hover:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 min-h-[48px] sm:min-h-[44px] sm:flex-shrink-0"
+            className="border-2 border-neutral-400 hover:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:bg-base-200 dark:hover:bg-neutral-700 min-h-[48px] sm:min-h-[44px] sm:flex-shrink-0"
           >
             Reset
           </Button>

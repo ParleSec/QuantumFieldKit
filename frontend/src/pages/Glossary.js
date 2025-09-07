@@ -87,7 +87,7 @@ function Glossary() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
+      <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
         <div className="container mx-auto px-4 py-8">
           <SkeletonLoader />
         </div>
@@ -97,7 +97,7 @@ function Glossary() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
+      <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto text-center p-8">
             <div className="text-red-500 mb-4">
@@ -116,7 +116,7 @@ function Glossary() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-neutral-900 dark:via-neutral-800 dark:to-neutral-900">
+    <div className="min-h-screen bg-gradient-to-br from-base-200 via-base-100 to-base-200">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <motion.div

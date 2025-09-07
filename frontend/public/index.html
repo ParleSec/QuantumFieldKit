@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -8,6 +8,21 @@
     <title>Quantum Field Kit</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta name="color-scheme" content="light dark" />
+    <script>
+      (function() {
+        try {
+          var stored = localStorage.getItem('theme');
+          var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var theme = stored || (prefersDark ? 'dark' : 'quantumlight');
+          var html = document.documentElement;
+          var head = document.querySelector('head');
+          html.setAttribute('data-theme', theme);
+          if (head) head.setAttribute('data-theme', theme);
+          if (theme === 'dark') html.classList.add('dark');
+          else html.classList.remove('dark');
+        } catch (e) { /* no-op */ }
+      })();
+    </script>
     
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-SZH9MSH6K5"></script>

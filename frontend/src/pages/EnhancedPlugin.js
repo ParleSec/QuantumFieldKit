@@ -155,7 +155,7 @@ const EnhancedPlugin = () => {
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white/80 backdrop-blur-md border-b border-neutral-200 sticky top-16 z-40"
+        className="bg-base-100/80 dark:bg-base-200/80 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-700 sticky top-16 z-40"
       >
         <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
@@ -173,7 +173,7 @@ const EnhancedPlugin = () => {
               {/* Mobile back button */}
               <button
                 onClick={() => navigate('/')}
-                className="sm:hidden p-2 rounded-lg hover:bg-neutral-100 transition-colors"
+                className="sm:hidden p-2 rounded-lg hover:bg-base-200 dark:hover:bg-neutral-700 transition-colors"
               >
                 <ArrowLeft size={20} />
               </button>
@@ -360,13 +360,13 @@ const EnhancedPlugin = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-neutral-900 rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-neutral-200 dark:border-neutral-700"
+              className="bg-base-100 dark:bg-neutral-900 rounded-2xl sm:rounded-3xl shadow-2xl max-w-6xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden border border-neutral-200 dark:border-neutral-700"
             >
               {/* Enhanced Header */}
               <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-indigo-700 p-4 sm:p-6 lg:p-8 text-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl sm:rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 rounded-xl sm:rounded-2xl bg-base-100/20 dark:bg-neutral-800/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
                       <Lightbulb size={20} className="sm:w-6 sm:h-6 lg:w-7 lg:h-7 text-yellow-200" />
                     </div>
                     <div className="min-w-0 flex-1">

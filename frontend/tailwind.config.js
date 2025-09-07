@@ -7,6 +7,8 @@ module.exports = {
   ],
   safelist: [
     'dark',
+    'bg-base-100',
+    'bg-base-200',
     'dark:bg-neutral-800',
     'dark:text-neutral-100',
     'dark:text-neutral-200',

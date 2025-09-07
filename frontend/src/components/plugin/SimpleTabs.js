@@ -8,7 +8,7 @@ const SimpleTabs = ({ tabs, defaultTab = null }) => {
   return (
     <div className="w-full">
       {/* Tab Headers */}
-      <div className="flex bg-neutral-100 rounded-lg p-1 mb-4 gap-1 overflow-x-auto">
+      <div className="flex bg-base-200 rounded-lg p-1 mb-4 gap-1 overflow-x-auto">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -16,8 +16,8 @@ const SimpleTabs = ({ tabs, defaultTab = null }) => {
             className={`
               flex items-center gap-2 px-3 py-3 sm:px-4 sm:py-2 rounded-md border-0 text-sm font-medium cursor-pointer transition-all duration-200 whitespace-nowrap min-h-[44px] sm:min-h-[36px] flex-1 sm:flex-initial
               ${activeTab === tab.id 
-                ? 'bg-white text-neutral-900 shadow-sm' 
-                : 'bg-transparent text-neutral-600 hover:text-neutral-800'
+                ? 'bg-base-100 text-neutral-900 dark:text-neutral-100 shadow-sm' 
+                : 'bg-transparent text-neutral-600 dark:text-neutral-300 hover:text-neutral-800 dark:hover:text-neutral-100'
               }
             `}
           >

@@ -95,7 +95,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
         ref={canvasRef}
         width={300}
         height={300}
-        className="border border-neutral-200 rounded-lg bg-white"
+        className="border border-neutral-200 dark:border-neutral-600 rounded-lg bg-base-100 dark:bg-base-200"
       />
     );
   };
@@ -117,7 +117,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
             className="flex items-center gap-3"
           >
             <div className="w-12 text-sm font-mono text-neutral-600">|{state}⟩</div>
-            <div className="flex-1 bg-neutral-100 rounded-full h-6 relative overflow-hidden">
+            <div className="flex-1 bg-base-200 dark:bg-neutral-800 rounded-full h-6 relative overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${(probability / maxProb) * 100}%` }}
@@ -177,7 +177,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white dark:bg-neutral-900 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
+        className="bg-base-100 dark:bg-base-200 p-6 rounded-xl border border-neutral-200 dark:border-neutral-700 overflow-hidden"
       >
         <div className="mb-4 flex items-center justify-between">
           <div>
@@ -192,7 +192,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
           {/* Controls */}
           <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1 sm:gap-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1">
+            <div className="flex items-center gap-1 sm:gap-2 bg-base-200 dark:bg-neutral-800 rounded-lg p-1">
               <button
                 onClick={handleZoomOut}
                 className="p-2 sm:p-1 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded text-neutral-600 dark:text-neutral-400 transition-colors min-h-[44px] sm:min-h-[32px] min-w-[44px] sm:min-w-[32px] flex items-center justify-center"
@@ -245,7 +245,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
         
         <div 
           ref={containerRef}
-          className="overflow-auto bg-white dark:bg-neutral-800 rounded-lg border border-neutral-100 dark:border-neutral-600 p-2 sm:p-4 cursor-grab active:cursor-grabbing touch-pan-x touch-pan-y"
+          className="overflow-auto bg-base-100 dark:bg-neutral-800 rounded-lg border border-neutral-100 dark:border-neutral-600 p-2 sm:p-4 cursor-grab active:cursor-grabbing touch-pan-x touch-pan-y"
           style={{ 
             maxHeight: '400px',
             scrollbarWidth: 'thin',
@@ -339,7 +339,7 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
   return (
     <div className="space-y-6">
       {availableVisualizations.length > 1 && (
-        <div className="flex gap-2 p-1 bg-neutral-100 rounded-lg">
+        <div className="flex gap-2 p-1 bg-base-200 rounded-lg">
           {availableVisualizations.map((viz) => (
             <button
               key={viz.id}
@@ -347,8 +347,8 @@ const QuantumVisualization = ({ result, type = 'auto' }) => {
               className={`
                 flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all
                 ${activeVisualization === viz.id
-                  ? 'bg-white text-neutral-900 shadow-sm'
-                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-white/50'
+                  ? 'bg-base-100 text-neutral-900 dark:text-neutral-100 shadow-sm'
+                  : 'text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-base-100/50'
                 }
               `}
             >
