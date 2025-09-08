@@ -2190,52 +2190,196 @@ initQRNG: function(resultData) {
   if (!resultData || !resultData.output) return;
   const output = resultData.output;
   
-  // Find the visualization container - it's the tab with the circuit diagram
+  // Find the visualization container
   const visualizationTab = document.querySelector('#visualization');
   if (!visualizationTab) return;
   
-  // Create container for additional visualizations if they don't exist
+  // Create enhanced QRNG visualization container
   if (!document.getElementById('qrng-enhanced-viz')) {
     const container = document.createElement('div');
     container.id = 'qrng-enhanced-viz';
     container.className = 'mt-4';
     visualizationTab.appendChild(container);
     
-    // Create structure with tabs
+    // Create comprehensive visualization structure
     container.innerHTML = `
-      <div class="card">
-        <div class="card-header bg-primary text-white">
+      <div class="row">
+        <!-- Main Statistics Dashboard -->
+        <div class="col-md-8">
+          <div class="card mb-4">
+            <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
+              <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Quantum Randomness Dashboard</h5>
+              <div class="badge bg-light text-dark" id="qrng-quality-badge">Quality: --</div>
+            </div>
+            <div class="card-body">
+              <!-- Key Metrics Row -->
+              <div class="row mb-4">
+                <div class="col-md-3">
+                  <div class="text-center p-3 border rounded bg-light">
+                    <h3 class="text-primary mb-1" id="qrng-random-number">--</h3>
+                    <small class="text-muted">Random Number</small>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center p-3 border rounded bg-light">
+                    <h3 class="text-success mb-1" id="qrng-entropy">--</h3>
+                    <small class="text-muted">Entropy %</small>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center p-3 border rounded bg-light">
+                    <h3 class="text-info mb-1" id="qrng-bias">--</h3>
+                    <small class="text-muted">Bias</small>
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="text-center p-3 border rounded bg-light">
+                    <h3 class="text-warning mb-1" id="qrng-performance">--</h3>
+                    <small class="text-muted">Bits/sec</small>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Bit Visualization -->
+              <div class="mb-4">
+                <h6><i class="fas fa-binary me-2"></i>Bit Sequence Visualization</h6>
+                <div id="qrng-bit-sequence" class="p-3 bg-dark text-white rounded font-monospace" style="overflow-x: auto; white-space: nowrap;"></div>
+              </div>
+              
+              <!-- Statistical Charts -->
+              <div class="row">
+                <div class="col-md-6">
+                  <canvas id="qrng-distribution-chart" width="300" height="200"></canvas>
+                </div>
+                <div class="col-md-6">
+                  <canvas id="qrng-quality-radar" width="300" height="200"></canvas>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Control Panel & Information -->
+        <div class="col-md-4">
+          <!-- Source Information -->
+          <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+              <h6 class="mb-0"><i class="fas fa-atom me-2"></i>Quantum Source</h6>
+            </div>
+            <div class="card-body">
+              <div id="qrng-source-info">
+                <h6 id="qrng-source-name" class="text-primary">--</h6>
+                <p id="qrng-source-description" class="small text-muted">--</p>
+                <div class="progress mb-2" style="height: 5px;">
+                  <div id="qrng-noise-indicator" class="progress-bar bg-warning" style="width: 0%"></div>
+                </div>
+                <small class="text-muted">Noise Level: <span id="qrng-noise-level">0%</span></small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Real-time Controls -->
+          <div class="card mb-3">
+            <div class="card-header bg-secondary text-white">
+              <h6 class="mb-0"><i class="fas fa-sliders-h me-2"></i>Interactive Controls</h6>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label small">Export Format:</label>
+                <select id="qrng-export-format" class="form-select form-select-sm">
+                  <option value="binary">Binary</option>
+                  <option value="hex">Hexadecimal</option>
+                  <option value="base64">Base64</option>
+                  <option value="csv">CSV</option>
+                </select>
+              </div>
+              <div class="d-grid gap-2">
+                <button id="qrng-export-btn" class="btn btn-outline-primary btn-sm">
+                  <i class="fas fa-download me-1"></i>Export Data
+                </button>
+                <button id="qrng-regenerate-btn" class="btn btn-outline-success btn-sm">
+                  <i class="fas fa-refresh me-1"></i>Generate New
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Applications Demo -->
+          <div class="card">
+            <div class="card-header bg-success text-white">
+              <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Applications</h6>
+            </div>
+            <div class="card-body">
+              <div id="qrng-applications">
+                <div class="mb-3">
+                  <label class="small fw-bold">Cryptographic Key:</label>
+                  <div class="input-group input-group-sm">
+                    <input id="qrng-crypto-key" class="form-control font-monospace" readonly>
+                    <button class="btn btn-outline-secondary" onclick="this.previousElementSibling.select(); document.execCommand('copy');">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="small fw-bold">Dice Roll (1-6):</label>
+                  <div class="text-center">
+                    <span id="qrng-dice-result" class="badge bg-primary fs-6">-</span>
+                  </div>
+                </div>
+                <div>
+                  <label class="small fw-bold">UUID:</label>
+                  <div class="input-group input-group-sm">
+                    <input id="qrng-uuid" class="form-control font-monospace" readonly>
+                    <button class="btn btn-outline-secondary" onclick="this.previousElementSibling.select(); document.execCommand('copy');">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Detailed Analysis Tabs -->
+      <div class="card mt-4">
+        <div class="card-header">
           <ul class="nav nav-tabs card-header-tabs">
             <li class="nav-item">
-              <button class="nav-link active text-dark bg-white" id="qrng-tab-applications" data-bs-toggle="tab" data-bs-target="#qrng-applications-content">
-                <i class="fas fa-dice me-1"></i> Applications
+              <button class="nav-link active" id="qrng-tab-stats" data-bs-toggle="tab" data-bs-target="#qrng-stats-content">
+                <i class="fas fa-chart-bar me-1"></i>Statistical Tests
               </button>
             </li>
             <li class="nav-item">
-              <button class="nav-link text-white" id="qrng-tab-details" data-bs-toggle="tab" data-bs-target="#qrng-details-content">
-                <i class="fas fa-microchip me-1"></i> Quantum Bits
+              <button class="nav-link" id="qrng-tab-bits" data-bs-toggle="tab" data-bs-target="#qrng-bits-content">
+                <i class="fas fa-microchip me-1"></i>Bit Analysis
               </button>
             </li>
             <li class="nav-item">
-              <button class="nav-link text-white" id="qrng-tab-history" data-bs-toggle="tab" data-bs-target="#qrng-history-content">
-                <i class="fas fa-history me-1"></i> History
+              <button class="nav-link" id="qrng-tab-history" data-bs-toggle="tab" data-bs-target="#qrng-history-content">
+                <i class="fas fa-history me-1"></i>Generation History
+              </button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link" id="qrng-tab-education" data-bs-toggle="tab" data-bs-target="#qrng-education-content">
+                <i class="fas fa-graduation-cap me-1"></i>Learn More
               </button>
             </li>
           </ul>
         </div>
         <div class="card-body">
           <div class="tab-content">
-            <div class="tab-pane fade show active" id="qrng-applications-content">
-              <h5 class="card-title">Random Number Applications</h5>
-              <div id="qrng-apps-container"></div>
+            <div class="tab-pane fade show active" id="qrng-stats-content">
+              <div id="qrng-statistical-tests"></div>
             </div>
-            <div class="tab-pane fade" id="qrng-details-content">
-              <h5 class="card-title">Quantum Circuit Details</h5>
-              <div id="qrng-bits-container"></div>
+            <div class="tab-pane fade" id="qrng-bits-content">
+              <div id="qrng-bit-details"></div>
             </div>
             <div class="tab-pane fade" id="qrng-history-content">
-              <h5 class="card-title">Generation History</h5>
               <div id="qrng-history-container"></div>
+            </div>
+            <div class="tab-pane fade" id="qrng-education-content">
+              <div id="qrng-educational-content"></div>
             </div>
           </div>
         </div>
@@ -2248,855 +2392,338 @@ initQRNG: function(resultData) {
     window.qrngHistory = [];
   }
   
-  // Add current result to history
-  window.qrngHistory.unshift({
-    number: output.random_number,
-    binary: output.bits_string,
-    zeros: output.zeros_count,
-    ones: output.ones_count,
-    timestamp: new Date().toLocaleTimeString()
-  });
-  
-  // Keep only the last 10 entries
-  if (window.qrngHistory.length > 10) {
-    window.qrngHistory = window.qrngHistory.slice(0, 10);
-  }
-  
-  // Populate the applications tab
-  this.populateQRNGApplications(output);
-  
-  // Populate the quantum bits tab
-  this.populateQRNGBitDetails(output);
-  
-  // Populate the history tab
-  this.populateQRNGHistory();
+  // Update the visualization with new data
+  this.updateQRNGVisualization(output);
 },
 
-// Applications visualization
-populateQRNGApplications: function(output) {
-  const container = document.getElementById('qrng-apps-container');
-  if (!container) return;
-  
-  container.innerHTML = '';
-  
-  const randomNumber = output.random_number;
-  
-  // Create applications display
-  const applications = [
-    { name: 'Coin Flip', icon: '🪙', mapping: (n) => n % 2 === 0 ? 'Heads' : 'Tails' },
-    { name: 'Dice Roll', icon: '🎲', mapping: (n) => 1 + (n % 6) },
-    { name: 'Card Draw', icon: '🃏', mapping: (n) => {
-      const suits = ['♠️', '♥️', '♦️', '♣️'];
-      const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-      const suit = suits[n % 4];
-      const value = values[(n >> 2) % 13];
-      return `${value}${suit}`;
-    }},
-    { name: 'Lottery', icon: '🎰', mapping: (n) => {
-      // Generate lottery numbers
-      const numbers = new Set();
-      let seed = n;
-      while(numbers.size < 6) {
-        seed = (seed * 1664525 + 1013904223) % Math.pow(2, 32);
-        numbers.add(1 + (seed % 49));
-      }
-      return Array.from(numbers).sort((a, b) => a - b).join(', ');
-    }},
-    { name: 'Password', icon: '🔑', mapping: (n) => {
-      // Generate a simple password based on the random number
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-      let password = '';
-      let seed = n;
-      for (let i = 0; i < 8; i++) {
-        seed = (seed * 1664525 + 1013904223) % Math.pow(2, 32);
-        password += chars[seed % chars.length];
-      }
-      return password;
-    }},
-    { name: 'RGB Color', icon: '🎨', mapping: (n) => {
-      // Generate a color based on the random number
-      const r = (n * 73) % 256;
-      const g = (n * 149) % 256;
-      const b = (n * 223) % 256;
-      const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-      return hex;
-    }}
-  ];
-  
-  // Create grid for applications
-  const row = document.createElement('div');
-  row.className = 'row g-3';
-  
-  applications.forEach(app => {
-    const col = document.createElement('div');
-    col.className = 'col-md-6 col-lg-4';
+updateQRNGVisualization: function(output) {
+  try {
+    // Update main metrics
+    document.getElementById('qrng-random-number').textContent = output.random_number || '--';
     
-    const card = document.createElement('div');
-    card.className = 'card h-100 application-card';
-    
-    // Style for hover effect
-    card.style.transition = 'all 0.2s ease';
-    card.onmouseenter = function() { 
-      this.style.transform = 'translateY(-3px)';
-      this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
-    };
-    card.onmouseleave = function() {
-      this.style.transform = '';
-      this.style.boxShadow = '';
-    };
-    
-    // Card header with app icon and name
-    const cardHeader = document.createElement('div');
-    cardHeader.className = 'card-header d-flex align-items-center';
-    cardHeader.innerHTML = `
-      <span class="me-2 fs-4">${app.icon}</span>
-      <h6 class="mb-0">${app.name}</h6>
-    `;
-    
-    // Card body with the application output
-    const cardBody = document.createElement('div');
-    cardBody.className = 'card-body';
-    
-    // Special case for color preview
-    if (app.name === 'RGB Color') {
-      const colorHex = app.mapping(randomNumber);
-      cardBody.innerHTML = `
-        <div class="d-flex align-items-center">
-          <div style="width: 30px; height: 30px; background-color: ${colorHex}; border-radius: 4px; border: 1px solid #dee2e6; margin-right: 10px;"></div>
-          <div class="fw-bold">${colorHex.toUpperCase()}</div>
-        </div>
-      `;
-    } else {
-      const result = app.mapping(randomNumber);
-      cardBody.innerHTML = `<div class="fw-bold text-center py-2 fs-5">${result}</div>`;
+    // Update quality metrics
+    if (output.statistics && !output.statistics.error) {
+      const stats = output.statistics;
+      document.getElementById('qrng-entropy').textContent = Math.round(stats.entropy_percentage) + '%';
+      document.getElementById('qrng-bias').textContent = (stats.bias * 100).toFixed(2) + '%';
+      document.getElementById('qrng-quality-badge').textContent = `Quality: ${Math.round(stats.quality_score)}/100`;
+      
+      // Color code quality badge
+      const qualityBadge = document.getElementById('qrng-quality-badge');
+      qualityBadge.className = 'badge ' + (stats.quality_score >= 80 ? 'bg-success' : 
+                                         stats.quality_score >= 60 ? 'bg-warning' : 'bg-danger');
     }
     
-    // Assemble the card
-    card.appendChild(cardHeader);
-    card.appendChild(cardBody);
-    col.appendChild(card);
-    row.appendChild(col);
-  });
-  
-  container.appendChild(row);
-  
-  // Add explanation
-  const explanation = document.createElement('div');
-  explanation.className = 'mt-3 alert alert-info';
-  explanation.innerHTML = `
-    <p class="mb-0"><i class="fas fa-info-circle me-2"></i> These examples show how a single quantum random number (${randomNumber}) can be 
-    transformed into different applications. Unlike classical random number generators that use predictable algorithms, quantum randomness is truly unpredictable.</p>
-  `;
-  container.appendChild(explanation);
+    // Update performance metrics
+    if (output.bits_per_second) {
+      document.getElementById('qrng-performance').textContent = Math.round(output.bits_per_second);
+    }
+    
+    // Update source information
+    document.getElementById('qrng-source-name').textContent = output.source_name || 'Unknown';
+    document.getElementById('qrng-source-description').textContent = output.source_description || '';
+    
+    // Update noise level
+    const noiseLevel = (output.noise_level * 100).toFixed(1);
+    document.getElementById('qrng-noise-level').textContent = noiseLevel + '%';
+    document.getElementById('qrng-noise-indicator').style.width = noiseLevel + '%';
+    
+    // Update bit sequence visualization
+    this.updateBitSequenceVisualization(output);
+    
+    // Update statistical charts
+    this.updateQRNGCharts(output);
+    
+    // Update detailed tabs
+    this.updateQRNGStatisticalTests(output);
+    this.updateQRNGBitDetails(output);
+    this.updateQRNGApplications(output);
+    this.updateQRNGEducationalContent(output);
+    
+    // Add to history
+    this.addToQRNGHistory(output);
+    
+    // Setup event listeners for interactive controls
+    this.setupQRNGControls(output);
+    
+  } catch (error) {
+    console.error('Error updating QRNG visualization:', error);
+  }
 },
 
-// Quantum bits visualization
-populateQRNGBitDetails: function(output) {
-  const container = document.getElementById('qrng-bits-container');
+updateBitSequenceVisualization: function(output) {
+  const container = document.getElementById('qrng-bit-sequence');
   if (!container) return;
   
-  container.innerHTML = '';
+  const bits = output.bits_string || '';
+  let html = '';
   
-  // Add binary representation in large format
-  const binaryRepDiv = document.createElement('div');
-  binaryRepDiv.className = 'text-center mb-4 py-2 border rounded bg-light';
+  // Detect theme for better color choices
+  const isDarkMode = document.documentElement.getAttribute('data-theme') === 'quantumdark';
   
-  let binaryHTML = '';
-  for (let i = 0; i < output.bits_string.length; i++) {
-    const bit = output.bits_string[i];
-    binaryHTML += `<span class="fs-3 fw-bold mx-1 ${bit === '0' ? 'text-primary' : 'text-danger'}">${bit}</span>`;
+  // Create colored bit representation with theme-aware colors
+  for (let i = 0; i < bits.length; i++) {
+    const bit = bits[i];
+    let bgClass, textClass;
+    
+    if (bit === '1') {
+      bgClass = 'bg-success';
+      textClass = isDarkMode ? 'text-dark' : 'text-white';
+    } else {
+      bgClass = isDarkMode ? 'bg-secondary' : 'bg-dark';
+      textClass = isDarkMode ? 'text-light' : 'text-white';
+    }
+    
+    html += `<span class="badge ${bgClass} ${textClass} me-1 mb-1" style="font-size: 0.9em;" 
+                   title="Bit ${i}: ${bit}">${bit}</span>`;
   }
   
-  binaryRepDiv.innerHTML = binaryHTML;
-  container.appendChild(binaryRepDiv);
-  
-  // Add quantum circuit visualization
-  const circuitContainer = document.createElement('div');
-  circuitContainer.className = 'quantum-circuit-container mt-4';
-  
-  const bitseq = output.bitseq || [];
-  
-  bitseq.forEach((bit, index) => {
-    // Generate a random "superposition" value just for visualization
-    // In a real quantum system we couldn't observe this
-    const superposition = Math.random();
-    
-    const qubitRow = document.createElement('div');
-    qubitRow.className = 'qubit-row p-2 mb-2 rounded d-flex align-items-center';
-    qubitRow.style.backgroundColor = 'rgba(0,0,0,0.03)';
-    
-    // Qubit label
-    const label = document.createElement('div');
-    label.className = 'me-3 text-muted';
-    label.style.width = '60px';
-    label.textContent = `q${index}:`;
-    
-    // Initial state |0>
-    const initialState = document.createElement('div');
-    initialState.className = 'text-center border rounded d-flex justify-content-center align-items-center';
-    initialState.style.width = '35px';
-    initialState.style.height = '35px';
-    initialState.style.backgroundColor = '#f8f9fa';
-    initialState.style.marginRight = '10px';
-    initialState.textContent = '|0>';
-    
-    // Arrow
-    const arrow1 = document.createElement('div');
-    arrow1.className = 'text-muted mx-2';
-    arrow1.innerHTML = '<i class="fas fa-arrow-right"></i>';
-    
-    // H gate
-    const hGate = document.createElement('div');
-    hGate.className = 'text-center border rounded d-flex justify-content-center align-items-center';
-    hGate.style.width = '35px';
-    hGate.style.height = '35px';
-    hGate.style.backgroundColor = '#3b82f6';
-    hGate.style.color = 'white';
-    hGate.style.marginRight = '10px';
-    hGate.textContent = 'H';
-    
-    // Arrow
-    const arrow2 = document.createElement('div');
-    arrow2.className = 'text-muted mx-2';
-    arrow2.innerHTML = '<i class="fas fa-arrow-right"></i>';
-    
-    // Superposition (|0> + |1>)/√2
-    const superpositionBox = document.createElement('div');
-    superpositionBox.className = 'text-center border rounded d-flex justify-content-center align-items-center';
-    superpositionBox.style.width = '70px';
-    superpositionBox.style.height = '35px';
-    superpositionBox.style.backgroundColor = '#f8f9fa';
-    superpositionBox.style.marginRight = '10px';
-    superpositionBox.innerHTML = '<span class="small">|ψ⟩</span>';
-    
-    // Arrow
-    const arrow3 = document.createElement('div');
-    arrow3.className = 'text-muted mx-2';
-    arrow3.innerHTML = '<i class="fas fa-arrow-right"></i>';
-    
-    // Measurement
-    const mGate = document.createElement('div');
-    mGate.className = 'text-center border rounded d-flex justify-content-center align-items-center';
-    mGate.style.width = '35px';
-    mGate.style.height = '35px';
-    mGate.style.backgroundColor = '#10b981';
-    mGate.style.color = 'white';
-    mGate.style.marginRight = '10px';
-    mGate.textContent = 'M';
-    
-    // Arrow
-    const arrow4 = document.createElement('div');
-    arrow4.className = 'text-muted mx-2';
-    arrow4.innerHTML = '<i class="fas fa-arrow-right"></i>';
-    
-    // Result
-    const result = document.createElement('div');
-    result.className = 'text-center border rounded-circle d-flex justify-content-center align-items-center';
-    result.style.width = '35px';
-    result.style.height = '35px';
-    result.style.backgroundColor = bit === 0 ? '#3b82f6' : '#ef4444';
-    result.style.color = 'white';
-    result.style.fontWeight = 'bold';
-    result.textContent = bit;
-    
-    // Assemble row
-    qubitRow.appendChild(label);
-    qubitRow.appendChild(initialState);
-    qubitRow.appendChild(arrow1);
-    qubitRow.appendChild(hGate);
-    qubitRow.appendChild(arrow2);
-    qubitRow.appendChild(superpositionBox);
-    qubitRow.appendChild(arrow3);
-    qubitRow.appendChild(mGate);
-    qubitRow.appendChild(arrow4);
-    qubitRow.appendChild(result);
-    
-    circuitContainer.appendChild(qubitRow);
-  });
-  
-  container.appendChild(circuitContainer);
-  
-  // Add explanation
-  const explanation = document.createElement('div');
-  explanation.className = 'mt-4 alert alert-primary';
-  explanation.innerHTML = `
-    <div class="fw-bold mb-2">How Quantum Random Number Generation Works:</div>
-    <ol class="mb-0">
-      <li>Each qubit starts in the |0> state</li>
-      <li>A Hadamard (H) gate creates an equal superposition: |0> → (|0> + |1>)/√2</li>
-      <li>Measurement collapses the superposition to |0> or |1> with 50% probability</li>
-      <li>The process results in a truly random bit due to quantum uncertainty</li>
-    </ol>
-  `;
-  container.appendChild(explanation);
+  container.innerHTML = html;
 },
 
-// History visualization
-populateQRNGHistory: function() {
+updateQRNGCharts: function(output) {
+  // Distribution Chart
+  this.createDistributionChart(output);
+  
+  // Quality Radar Chart  
+  this.createQualityRadarChart(output);
+},
+
+createDistributionChart: function(output) {
+  const canvas = document.getElementById('qrng-distribution-chart');
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext('2d');
+  
+  // Clear previous chart
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  if (!output.statistics || output.statistics.error) return;
+  
+  const stats = output.statistics;
+  const zeros = stats.zeros_count;
+  const ones = stats.ones_count;
+  
+  // Detect theme for colors
+  const isDarkMode = document.documentElement.getAttribute('data-theme') === 'quantumdark';
+  const colors = {
+    zero: isDarkMode ? '#6b7280' : '#3498db',
+    one: isDarkMode ? '#34d399' : '#e74c3c',
+    text: isDarkMode ? '#f9fafb' : '#333333',
+    grid: isDarkMode ? '#4b5563' : '#e5e7eb'
+  };
+  
+  // Simple bar chart
+  const maxCount = Math.max(zeros, ones);
+  const barWidth = canvas.width / 3;
+  const barHeight = canvas.height - 60;
+  
+  // Draw bars
+  ctx.fillStyle = colors.zero;
+  const zeroHeight = (zeros / maxCount) * barHeight;
+  ctx.fillRect(barWidth / 2, canvas.height - 40 - zeroHeight, barWidth / 2, zeroHeight);
+  
+  ctx.fillStyle = colors.one;
+  const oneHeight = (ones / maxCount) * barHeight;
+  ctx.fillRect(barWidth * 1.5, canvas.height - 40 - oneHeight, barWidth / 2, oneHeight);
+  
+  // Draw labels
+  ctx.fillStyle = colors.text;
+  ctx.font = '12px Inter, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('0s: ' + zeros, barWidth * 0.75, canvas.height - 20);
+  ctx.fillText('1s: ' + ones, barWidth * 1.75, canvas.height - 20);
+  ctx.fillText('Bit Distribution', canvas.width / 2, 15);
+},
+
+// Additional stub functions for the enhanced QRNG visualization
+createQualityRadarChart: function(output) {
+  // Placeholder for quality radar chart
+  console.log('Quality radar chart would be implemented here');
+},
+
+updateQRNGStatisticalTests: function(output) {
+  const container = document.getElementById('qrng-statistical-tests');
+  if (!container) return;
+  
+  if (!output.statistics || output.statistics.error) {
+    container.innerHTML = '<div class="alert alert-info">Insufficient data for statistical analysis</div>';
+    return;
+  }
+  
+  const stats = output.statistics;
+  container.innerHTML = `
+    <div class="alert alert-success">
+      <strong>Quality Score:</strong> ${Math.round(stats.quality_score)}/100<br>
+      <strong>Entropy:</strong> ${(stats.entropy_percentage || 0).toFixed(1)}%<br>
+      <strong>Bias:</strong> ${((stats.bias || 0) * 100).toFixed(2)}%
+    </div>
+  `;
+},
+
+updateQRNGBitDetails: function(output) {
+  const container = document.getElementById('qrng-bit-details');
+  if (!container) return;
+  
+  // Determine configuration type for better user understanding
+  let configType = 'Educational';
+  let configColor = 'primary';
+  let configIcon = 'graduation-cap';
+  
+  if (output.post_processing_enabled && output.noise_level > 0.05) {
+    configType = 'Cryptographic';
+    configColor = 'success';
+    configIcon = 'lock';
+  } else if (output.noise_level > 0 || output.hardware_simulation) {
+    configType = 'Research/Advanced';
+    configColor = 'warning';
+    configIcon = 'cogs';
+  }
+  
+  container.innerHTML = `
+    <div class="row">
+      <div class="col-md-8">
+        <div class="alert alert-${configColor}">
+          <h6><i class="fas fa-${configIcon} me-2"></i>Configuration: ${configType}</h6>
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Bits Generated:</strong> ${output.num_bits}<br>
+              <strong>Source:</strong> ${output.source_name || 'Unknown'}<br>
+              <strong>Noise Level:</strong> ${(output.noise_level * 100).toFixed(1)}%
+            </div>
+            <div class="col-md-6">
+              <strong>Post-Processing:</strong> ${output.post_processing_enabled ? '✓ Enabled' : '✗ Disabled'}<br>
+              <strong>Hardware Simulation:</strong> ${output.hardware_simulation ? '✓ Enabled' : '✗ Disabled'}<br>
+              <strong>Generation Time:</strong> ${output.generation_time_ms ? output.generation_time_ms.toFixed(1) + 'ms' : 'N/A'}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">Feature Guide</h6>
+          </div>
+          <div class="card-body">
+            <small>
+              ${output.post_processing_enabled ? 
+                '<div class="text-success mb-2"><i class="fas fa-check me-1"></i><strong>Bias Correction:</strong> Applied von Neumann extraction for cryptographic quality</div>' : 
+                '<div class="text-muted mb-2"><i class="fas fa-info me-1"></i><strong>Raw Output:</strong> Pure quantum measurements without processing</div>'
+              }
+              ${output.noise_level > 0 ? 
+                `<div class="text-warning mb-2"><i class="fas fa-exclamation-triangle me-1"></i><strong>Realistic Noise:</strong> Simulating ${(output.noise_level * 100).toFixed(1)}% hardware imperfections</div>` : 
+                '<div class="text-info mb-2"><i class="fas fa-star me-1"></i><strong>Ideal Simulation:</strong> Perfect quantum operations</div>'
+              }
+              ${output.hardware_simulation ? 
+                '<div class="text-primary"><i class="fas fa-clock me-1"></i><strong>Hardware Timing:</strong> Realistic delays included</div>' : 
+                '<div class="text-muted"><i class="fas fa-zap me-1"></i><strong>Instant Mode:</strong> No hardware delays</div>'
+              }
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+},
+
+updateQRNGApplications: function(output) {
+  // Generate applications from the random number
+  const cryptoKey = output.random_number.toString(16).padStart(8, '0').toUpperCase();
+  const diceRoll = (output.random_number % 6) + 1;
+  const uuid = `${cryptoKey}-4000-8000-${cryptoKey}`;
+  
+  const cryptoEl = document.getElementById('qrng-crypto-key');
+  const diceEl = document.getElementById('qrng-dice-result');
+  const uuidEl = document.getElementById('qrng-uuid');
+  
+  if (cryptoEl) cryptoEl.value = cryptoKey;
+  if (diceEl) diceEl.textContent = diceRoll;
+  if (uuidEl) uuidEl.value = uuid;
+},
+
+updateQRNGEducationalContent: function(output) {
+  const container = document.getElementById('qrng-educational-content');
+  if (!container) return;
+  
+  container.innerHTML = `
+    <div class="row">
+      <div class="col-md-12">
+        <h5>Quantum Random Number Generation</h5>
+        <p>This simulation demonstrates how quantum mechanics provides true randomness through:</p>
+        <ul>
+          <li><strong>Superposition:</strong> ${output.quantum_principles?.superposition || 'Quantum states existing in multiple possibilities simultaneously'}</li>
+          <li><strong>Measurement:</strong> ${output.quantum_principles?.measurement || 'Random collapse upon observation'}</li>
+          <li><strong>Uncertainty:</strong> ${output.quantum_principles?.uncertainty || 'Fundamental unpredictability'}</li>
+        </ul>
+        <div class="alert alert-primary">
+          <strong>Source Used:</strong> ${output.source_description || 'Quantum superposition'}
+        </div>
+      </div>
+    </div>
+  `;
+},
+
+addToQRNGHistory: function(output) {
+  if (!window.qrngHistory) {
+    window.qrngHistory = [];
+  }
+  
+  window.qrngHistory.unshift({
+    timestamp: output.timestamp || new Date().toLocaleTimeString(),
+    number: output.random_number,
+    binary: output.bits_string,
+    source: output.source_name,
+    quality: output.statistics && !output.statistics.error ? Math.round(output.statistics.quality_score) : 0
+  });
+  
+  // Keep only last 20 entries
+  if (window.qrngHistory.length > 20) {
+    window.qrngHistory = window.qrngHistory.slice(0, 20);
+  }
+  
+  this.updateQRNGHistoryDisplay();
+},
+
+updateQRNGHistoryDisplay: function() {
   const container = document.getElementById('qrng-history-container');
   if (!container || !window.qrngHistory) return;
   
-  container.innerHTML = '';
-  
   if (window.qrngHistory.length === 0) {
-    container.innerHTML = '<div class="alert alert-info">Generate more random numbers to see your history.</div>';
+    container.innerHTML = '<div class="alert alert-info">No generation history available</div>';
     return;
   }
   
-  // Create table for history
-  const table = document.createElement('table');
-  table.className = 'table table-striped table-sm';
+  let html = '<div class="table-responsive"><table class="table table-sm"><thead><tr><th>Time</th><th>Number</th><th>Binary</th><th>Source</th><th>Quality</th></tr></thead><tbody>';
   
-  // Create table header
-  const thead = document.createElement('thead');
-  thead.innerHTML = `
-    <tr>
-      <th>Time</th>
-      <th>Number</th>
-      <th>Binary</th>
-      <th>Distribution</th>
-    </tr>
-  `;
-  
-  // Create table body
-  const tbody = document.createElement('tbody');
-  
-  window.qrngHistory.forEach((item, index) => {
-    const row = document.createElement('tr');
-    
-    // Highlight most recent entry
-    if (index === 0) {
-      row.className = 'table-primary';
-    }
-    
-    // Time cell
-    const timeCell = document.createElement('td');
-    timeCell.textContent = item.timestamp;
-    
-    // Number cell
-    const numberCell = document.createElement('td');
-    numberCell.textContent = item.number;
-    
-    // Binary cell
-    const binaryCell = document.createElement('td');
-    binaryCell.innerHTML = `<code>${item.binary}</code>`;
-    
-    // Distribution cell
-    const distCell = document.createElement('td');
-    const totalBits = item.zeros + item.ones;
-    
-    // Create mini distribution bar
-    distCell.innerHTML = `
-      <div class="d-flex" style="height: 20px; width: 100px;">
-        <div class="bg-primary" style="width: ${(item.zeros/totalBits)*100}%; height: 100%;"></div>
-        <div class="bg-danger" style="width: ${(item.ones/totalBits)*100}%; height: 100%;"></div>
-      </div>
-      <div class="small">${item.zeros}:${item.ones}</div>
-    `;
-    
-    // Add cells to row
-    row.appendChild(timeCell);
-    row.appendChild(numberCell);
-    row.appendChild(binaryCell);
-    row.appendChild(distCell);
-    
-    // Add row to table body
-    tbody.appendChild(row);
+  window.qrngHistory.slice(0, 10).forEach(entry => {
+    html += `<tr>
+      <td><small>${entry.timestamp}</small></td>
+      <td><code>${entry.number}</code></td>
+      <td><code class="small">${entry.binary}</code></td>
+      <td><small>${entry.source}</small></td>
+      <td><span class="badge ${entry.quality >= 80 ? 'bg-success' : entry.quality >= 60 ? 'bg-warning' : 'bg-danger'}">${entry.quality}</span></td>
+    </tr>`;
   });
   
-  // Assemble table
-  table.appendChild(thead);
-  table.appendChild(tbody);
-  container.appendChild(table);
-  
-  // Add statistical insight
-  if (window.qrngHistory.length >= 3) {
-    const statsDiv = document.createElement('div');
-    statsDiv.className = 'mt-3 alert alert-info';
-    
-    // Calculate average percentage of 1s
-    const avgOnes = window.qrngHistory.reduce((sum, item) => 
-      sum + (item.ones / (item.ones + item.zeros)), 0) / window.qrngHistory.length;
-    
-    statsDiv.innerHTML = `
-      <div class="fw-bold">Statistical Insights:</div>
-      <p class="mb-0">Average distribution: ${(avgOnes * 100).toFixed(1)}% ones / ${(100 - avgOnes * 100).toFixed(1)}% zeros
-      (ideal: 50/50). <span class="fst-italic">The more numbers you generate, the closer this should get to 50/50.</span></p>
-    `;
-    
-    container.appendChild(statsDiv);
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+},
+
+setupQRNGControls: function(output) {
+  // Setup export functionality
+  const exportBtn = document.getElementById('qrng-export-btn');
+  if (exportBtn) {
+    exportBtn.onclick = () => {
+      const data = `Random Number: ${output.random_number}\nBinary: ${output.bits_string}\nSource: ${output.source_name}`;
+      const blob = new Blob([data], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'qrng_data.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    };
   }
 }
 
-
-};
-
-// Additional utility functions
-document.addEventListener('DOMContentLoaded', function() {
-// Handle form submission via AJAX
-const setupFormHandling = () => {
-  const form = document.getElementById('simulation-form');
-  const statusBadge = document.getElementById('status-badge');
-  const resetBtn = document.getElementById('reset-form');
-  
-  if (form) {
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      console.log("Form submitted"); // Debug log
-      
-      // Update status badge
-      if (statusBadge) {
-        statusBadge.textContent = 'Running...';
-        statusBadge.className = 'badge bg-warning';
-      }
-      
-      // Create FormData from form
-      const formData = new FormData(form);
-      const url = window.location.href;
-      
-      // Submit form via AJAX
-      fetch(url, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-      .then(response => {
-        console.log("Response received", response); // Debug log
-        return response.json();
-      })
-      .then(data => {
-        console.log("Data received", data); // Debug log
-        // Update status badge based on result
-        if (statusBadge) {
-          if (data.error) {
-            statusBadge.textContent = 'Error';
-            statusBadge.className = 'badge bg-danger';
-            alert('Error: ' + data.error);
-          } else {
-            statusBadge.textContent = 'Completed';
-            statusBadge.className = 'badge bg-success';
-            // Instead of reloading, display results directly
- 
-            displayResults(data);
-          }
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        if (statusBadge) {
-          statusBadge.textContent = 'Error';
-          statusBadge.className = 'badge bg-danger';
-        }
-        alert('Network error occurred. Please try again.');
-      });
-    });
-  }
-  
-  // Handle form reset
-  if (resetBtn) {
-    resetBtn.addEventListener('click', function() {
-      if (form) {
-        form.reset();
-        // Reset range inputs which might have custom handling
-        document.querySelectorAll('input[type="range"]').forEach(range => {
-          const targetInput = document.getElementById(range.id.replace('_range', ''));
-          if (targetInput) {
-            targetInput.value = targetInput.defaultValue;
-            range.value = targetInput.defaultValue;
-          }
-        });
-      }
-    });
-  }
-};
-
-// Initialize form handling
-setupFormHandling();
-
-// Initialize range input synchronization
-const syncRangeInputs = () => {
-  document.querySelectorAll('input[type="range"]').forEach(range => {
-    const numberInputId = range.id.replace('_range', '');
-    const numberInput = document.getElementById(numberInputId);
-    
-    if (numberInput) {
-      // Initial sync
-      if (range.value !== numberInput.value) {
-        numberInput.value = range.value;
-      }
-      
-      // Listen for input events on range
-      range.addEventListener('input', () => {
-        numberInput.value = range.value;
-      });
-      
-      // Listen for input events on number input
-      numberInput.addEventListener('input', () => {
-        range.value = numberInput.value;
-      });
-    }
-  });
-};
-// Initialize range inputs
-syncRangeInputs();
-});
-
-// Safely injects SVG content by creating a new div and using the DOM parser
-function displayResults(data) {
-  // Get the results container
-  const resultsContainer = document.getElementById('results-container');
-  if (!resultsContainer) return;
-
-  // Save the currently active tab before clearing the container
-  let activeTabId = 'visualization'; // Default to visualization tab
-  const activeTabElement = document.querySelector('#resultTabs .nav-link.active');
-  if (activeTabElement) {
-    // Extract the active tab ID from data-bs-target attribute (removing the # prefix)
-    activeTabId = activeTabElement.getAttribute('data-bs-target')?.replace('#', '') || activeTabId;
-  }
-
-  // Extract the plugin key from the URL
-  const urlParts = window.location.pathname.split('/');
-  const pluginKey = urlParts[urlParts.length - 1];
-
-  // Create a container for the results
-  resultsContainer.innerHTML = '';
-
-  // Create the tabs structure
-  const tabsContainer = document.createElement('div');
-  tabsContainer.className = 'result-container';
-
-  // Create tab navigation
-  const tabNav = document.createElement('ul');
-  tabNav.className = 'nav nav-tabs';
-  tabNav.id = 'resultTabs';
-  tabNav.setAttribute('role', 'tablist');
-
-  // Add tab buttons
-  const tabItems = [
-    {id: 'visualization', icon: 'chart-bar', text: 'Visualization', active: activeTabId === 'visualization'},
-    {id: 'raw-data', icon: 'table', text: 'Raw Data', active: activeTabId === 'raw-data'},
-    {id: 'log', icon: 'terminal', text: 'Process Log', active: activeTabId === 'log'}
-  ];
-
-  tabItems.forEach(item => {
-    const li = document.createElement('li');
-    li.className = 'nav-item';
-    li.setAttribute('role', 'presentation');
-    
-    const button = document.createElement('button');
-    button.className = `nav-link ${item.active ? 'active' : ''}`;
-    button.id = `${item.id}-tab`;
-    button.setAttribute('data-bs-toggle', 'tab');
-    button.setAttribute('data-bs-target', `#${item.id}`);
-    button.setAttribute('type', 'button');
-    button.setAttribute('role', 'tab');
-    button.setAttribute('aria-controls', item.id);
-    button.setAttribute('aria-selected', item.active ? 'true' : 'false');
-    
-    const icon = document.createElement('i');
-    icon.className = `fas fa-${item.icon} me-2`;
-    
-    button.appendChild(icon);
-    button.appendChild(document.createTextNode(item.text));
-    li.appendChild(button);
-    tabNav.appendChild(li);
-  });
-
-  tabsContainer.appendChild(tabNav);
-
-  // Create tab content container
-  const tabContent = document.createElement('div');
-  tabContent.className = 'tab-content p-3 border border-top-0 rounded-bottom';
-  tabContent.id = 'resultTabsContent';
-
-  // Create visualization tab content
-  const vizTab = document.createElement('div');
-  vizTab.className = `tab-pane fade ${activeTabId === 'visualization' ? 'show active' : ''}`;
-  vizTab.id = 'visualization';
-  vizTab.setAttribute('role', 'tabpanel');
-  vizTab.setAttribute('aria-labelledby', 'visualization-tab');
-
-  // Add circuit SVG if available
-  if (data.output && data.output.circuit_svg) {
-    const circuitTitle = document.createElement('h5');
-    circuitTitle.className = 'mb-3';
-    circuitTitle.textContent = 'Circuit Diagram';
-    vizTab.appendChild(circuitTitle);
-    
-    const circuitContainer = document.createElement('div');
-    circuitContainer.className = 'circuit-svg bg-white p-3 rounded mb-4 text-center overflow-auto position-relative';
-    
-    // IMPORTANT FIX: Use a proper DOM parser for SVG instead of innerHTML
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = data.output.circuit_svg;
-    
-    // Append the SVG element(s) to the circuit container
-    while (tempDiv.firstChild) {
-      circuitContainer.appendChild(tempDiv.firstChild);
-    }
-    
-    vizTab.appendChild(circuitContainer);
-  }
-
-  // When dynamically loading results, call our new function to add download buttons
-  setTimeout(addCircuitDownloadButtons, 100); // Short delay to ensure DOM is updated
-
-  // Add specific visualization containers based on plugin type
-  const vizRow = document.createElement('div');
-  vizRow.className = 'row';
-
-  // Add appropriate visualization containers based on plugin type
-  if (pluginKey === 'bb84') {
-    const bitDistCol = createVisualizationCard('Bit Distribution', 'bit-distribution-chart');
-    vizRow.appendChild(bitDistCol);
-  }
-
-  if (pluginKey === 'teleport' || pluginKey === 'handshake' || pluginKey === 'auth') {
-    const stateVizCol = createVisualizationCard('Quantum State', 'quantum-state-viz');
-    vizRow.appendChild(stateVizCol);
-  }
-
-  if (pluginKey === 'grover' || pluginKey === 'quantum_decryption_grover') {
-    const probDistCol = createVisualizationCard('Probability Distribution', 'probability-distribution');
-    vizRow.appendChild(probDistCol);
-  }
-
-  if (pluginKey === 'vqe') {
-    const energyCol = createVisualizationCard('Energy Convergence', 'energy-convergence');
-    vizRow.appendChild(energyCol);
-  }
-
-  vizTab.appendChild(vizRow);
-  tabContent.appendChild(vizTab);
-
-  // Create raw data tab content
-  const rawDataTab = document.createElement('div');
-  rawDataTab.className = `tab-pane fade ${activeTabId === 'raw-data' ? 'show active' : ''}`;
-  rawDataTab.id = 'raw-data';
-  rawDataTab.setAttribute('role', 'tabpanel');
-  rawDataTab.setAttribute('aria-labelledby', 'raw-data-tab');
-
-  const rawDataRow = document.createElement('div');
-  rawDataRow.className = 'row';
-
-  const rawDataCol = document.createElement('div');
-  rawDataCol.className = 'col-12';
-
-  const rawDataPre = document.createElement('pre');
-  rawDataPre.className = 'mb-0';
-  rawDataPre.textContent = JSON.stringify(data.output, null, 2);
-
-  rawDataCol.appendChild(rawDataPre);
-  rawDataRow.appendChild(rawDataCol);
-  rawDataTab.appendChild(rawDataRow);
-  tabContent.appendChild(rawDataTab);
-
-  // Create log tab content
-  const logTab = document.createElement('div');
-  logTab.className = `tab-pane fade ${activeTabId === 'log' ? 'show active' : ''}`;
-  logTab.id = 'log';
-  logTab.setAttribute('role', 'tabpanel');
-  logTab.setAttribute('aria-labelledby', 'log-tab');
-
-  const logDiv = document.createElement('div');
-  logDiv.className = 'bg-dark text-light p-3 rounded';
-
-  const logPre = document.createElement('pre');
-  logPre.className = 'mb-0 terminal-log';
-  logPre.textContent = data.log || 'No log data available';
-
-  logDiv.appendChild(logPre);
-  logTab.appendChild(logDiv);
-  tabContent.appendChild(logTab);
-
-  tabsContainer.appendChild(tabContent);
-  resultsContainer.appendChild(tabsContainer);
-
-  // Initialize visualization components
-  if (window.QuantumVisualizer) {
-    window.QuantumVisualizer.init(pluginKey, data);
-  }
-
-  // Initialize Bootstrap tabs
-  if (typeof bootstrap !== 'undefined' && bootstrap.Tab) {
-    document.querySelectorAll('#resultTabs button').forEach(button => {
-      new bootstrap.Tab(button);
-    });
-  }
-}
-
-// Helper function to create visualization cards
-function createVisualizationCard(title, containerId) {
-  const col = document.createElement('div');
-  col.className = 'col-md-6 mb-4';
-  
-  const card = document.createElement('div');
-  card.className = 'card';
-  
-  const cardHeader = document.createElement('div');
-  cardHeader.className = 'card-header';
-  cardHeader.textContent = title;
-  
-  const cardBody = document.createElement('div');
-  cardBody.className = 'card-body';
-  
-  // Create the container for the visualization
-  if (containerId.endsWith('-chart') || 
-      containerId === 'probability-distribution' || 
-      containerId === 'energy-convergence' || 
-      containerId === 'bit-distribution-chart') {
-    // For Chart.js visualizations - must be a canvas element
-    const canvas = document.createElement('canvas');
-    canvas.id = containerId;
-    canvas.className = 'chart-container';
-    cardBody.appendChild(canvas);
-  } else {
-    // For other visualizations (like Bloch sphere)
-    const container = document.createElement('div');
-    container.id = containerId;
-    container.className = 'chart-container';
-    cardBody.appendChild(container);
-  }
-  
-  card.appendChild(cardHeader);
-  card.appendChild(cardBody);
-  col.appendChild(card);
-  
-  return col;
-}
-
-/**
- * Downloads the circuit SVG visualization as a file
- * 
- * @param {string} containerSelector - CSS selector for the container holding the SVG
- * @param {string} filename - Desired filename for the downloaded SVG
- */
-function downloadCircuitSVG(containerSelector, filename = 'quantum-circuit.svg') {
-  // Get the SVG element from the container
-  const container = document.querySelector(containerSelector);
-  if (!container) {
-    console.error(`Container not found: ${containerSelector}`);
-    return;
-  }
-  
-  const svgElement = container.querySelector('svg');
-  if (!svgElement) {
-    console.error('SVG element not found within container');
-    return;
-  }
-  
-  // Clone the SVG to avoid modifying the displayed one
-  const clonedSvg = svgElement.cloneNode(true);
-  
-  // Ensure the SVG has proper dimensions
-  if (!clonedSvg.getAttribute('width') || !clonedSvg.getAttribute('height')) {
-    const bbox = svgElement.getBBox();
-    clonedSvg.setAttribute('width', bbox.width);
-    clonedSvg.setAttribute('height', bbox.height);
-    clonedSvg.setAttribute('viewBox', `${bbox.x} ${bbox.y} ${bbox.width} ${bbox.height}`);
-  }
-  
-  // Get SVG source
-  const serializer = new XMLSerializer();
-  let source = serializer.serializeToString(clonedSvg);
-  
-  // Add namespaces if they're missing
-  if (!source.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
-    source = source.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-  }
-  
-  // Add XML declaration
-  source = '<?xml version="1.0" standalone="no"?>\r\n' + source;
-  
-  // Convert SVG source to URL data
-  const svgBlob = new Blob([source], {type: "image/svg+xml;charset=utf-8"});
-  const svgUrl = URL.createObjectURL(svgBlob);
-  
-  // Create download link
-  const downloadLink = document.createElement('a');
-  downloadLink.href = svgUrl;
-  downloadLink.download = filename;
-  
-  // Trigger download
-  document.body.appendChild(downloadLink);
-  downloadLink.click();
-  document.body.removeChild(downloadLink);
-  
-  // Clean up
-  URL.revokeObjectURL(svgUrl);
-  
-  console.log(`Downloaded circuit diagram as: ${filename}`);
-}
-
-/**
- * Adds download buttons to all circuit SVG visualizations on the page
- */
-function addCircuitDownloadButtons() {
-  // Find the circuit SVG container
-  const circuitContainers = document.querySelectorAll('.circuit-svg');
-  
-  if (circuitContainers.length === 0) {
-    console.log('No circuit visualizations found on page');
-    return;
-  }
-  
-  console.log(`Found ${circuitContainers.length} circuit visualization(s)`);
-  
-  // Get the plugin key from the URL to use in the filename
-  const urlParts = window.location.pathname.split('/');
-  const pluginKey = urlParts[urlParts.length - 1] || 'quantum';
-  
-  // Add a download button to each circuit container
-  circuitContainers.forEach((container, index) => {
-    // Check if container already has a download button
-    if (container.querySelector('.circuit-download-btn')) {
-      return;
-    }
-    
-    // Create download button
-    const downloadBtn = document.createElement('button');
-    downloadBtn.className = 'btn btn-sm btn-primary circuit-download-btn';
-    downloadBtn.innerHTML = '<i class="fas fa-download me-1"></i> Download SVG';
-    downloadBtn.title = 'Download circuit diagram as SVG';
-    downloadBtn.style.position = 'absolute';
-    downloadBtn.style.top = '10px';
-    downloadBtn.style.right = '10px';
-    downloadBtn.style.zIndex = '100';
-    
-    // Add click event listener
-    downloadBtn.addEventListener('click', function(e) {
-      e.stopPropagation(); // Prevent event from interfering with scrolling
-      const filename = `${pluginKey}_circuit${index > 0 ? '_' + index : ''}.svg`;
-      downloadCircuitSVG(`.circuit-svg:nth-of-type(${index + 1})`, filename);
-    });
-    
-    // Add button to container
-    container.appendChild(downloadBtn);
-    console.log(`Added download button to circuit visualization ${index + 1}`);
-  });
-}
-
-// Add the initialization to the document ready event
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize download buttons when the page loads
-  addCircuitDownloadButtons();
-  
-  // Also add buttons after any results are loaded via AJAX
-  // This ensures buttons are added to dynamically generated content
-  const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-      if (mutation.addedNodes.length > 0) {
-        addCircuitDownloadButtons();
-      }
-    });
-  });
-  
-  // Observe the results container for changes
-  const resultsContainer = document.getElementById('results-container');
-  if (resultsContainer) {
-    observer.observe(resultsContainer, { childList: true, subtree: true });
-  }
-});
+}; // End of QuantumVisualizer object

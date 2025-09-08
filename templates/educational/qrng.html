@@ -1,31 +1,53 @@
 <!-- EDUCATIONAL-CONTENT BEGIN --> 
 <div class="row mb-4">
     <div class="col-md-6">
-      <h4>Quantum Random Number Generator</h4>
-      <p>A Quantum Random Number Generator (QRNG) produces truly random numbers by exploiting the inherent randomness in quantum mechanical processes, unlike classical random number generators which are typically deterministic and only appear random.</p>
+      <h4>Enhanced Quantum Random Number Generator</h4>
+      <p>Our enhanced QRNG demonstrates multiple quantum randomness sources with real-time statistical analysis, providing truly random numbers by exploiting the inherent randomness in quantum mechanical processes. Unlike classical random number generators which are deterministic, quantum generators access the fundamental unpredictability of quantum mechanics.</p>
+      
+      <div class="alert alert-info">
+        <strong>New Features</strong>: This enhanced version includes multiple quantum sources (superposition, vacuum fluctuations, entanglement), real-time quality analysis, hardware noise simulation, and advanced post-processing techniques.
+      </div>
       
       <div class="alert alert-secondary">
         <strong>True Randomness vs. Pseudorandomness</strong>: Classical computers generate "pseudorandom" numbers using deterministic algorithms. Quantum generators access the fundamental randomness of quantum mechanics to produce numbers that are truly unpredictable, even in principle.
       </div>
       
-      <h5 class="mt-4">How QRNG Works</h5>
+      <h5 class="mt-4">Enhanced QRNG Process</h5>
       <ol>
         <li>
-          <strong>Quantum State Preparation</strong>: A qubit is prepared in a superposition state (typically using a Hadamard gate).
+          <strong>Source Selection</strong>: Choose from multiple quantum randomness sources:
+          <ul>
+            <li><em>Superposition</em>: Traditional approach using Hadamard gates (recommended for beginners)</li>
+            <li><em>Vacuum Fluctuation</em>: Advanced technique simulating quantum field fluctuations</li>
+            <li><em>Entanglement</em>: Uses Bell state measurements for correlated randomness</li>
+          </ul>
         </li>
         <li>
-          <strong>Measurement</strong>: The qubit is measured, collapsing its state randomly to either 0 or 1 with equal probability.
+          <strong>Quantum State Preparation</strong>: Qubits are prepared according to the selected source methodology.
         </li>
         <li>
-          <strong>Bit Generation</strong>: The measurement outcome becomes one random bit in the sequence.
+          <strong>Measurement</strong>: Quantum states are measured, collapsing to definite values with quantum probabilities.
         </li>
         <li>
-          <strong>Repetition</strong>: The process is repeated to generate multiple random bits.
+          <strong>Optional Features</strong>:
+          <ul>
+            <li><em>Noise Simulation</em>: Add realistic hardware imperfections</li>
+            <li><em>Post-Processing</em>: Apply bias correction techniques</li>
+          </ul>
         </li>
         <li>
-          <strong>Optional Post-Processing</strong>: Statistical tests and randomness extraction may be applied to enhance quality.
+          <strong>Quality Analysis</strong>: Real-time statistical tests validate the randomness quality.
         </li>
       </ol>
+      
+      <div class="alert alert-info mt-3">
+        <h6><i class="fas fa-lightbulb me-2"></i>When to Use Optional Features:</h6>
+        <ul class="mb-0">
+          <li><strong>Noise Simulation</strong>: Enable when learning about real quantum hardware limitations</li>
+          <li><strong>Post-Processing</strong>: Enable when generating numbers for security/cryptographic purposes</li>
+          <li><strong>Both Disabled</strong>: Best for understanding pure quantum mechanics principles</li>
+        </ul>
+      </div>
     </div>
     <div class="col-md-6">
       <div class="card mb-4">
@@ -37,20 +59,26 @@
       </div>
       
       <div class="card">
-        <div class="card-header">Key Quantum Principles in QRNG</div>
+        <div class="card-header">Enhanced QRNG Features</div>
         <div class="card-body">
           <ul class="mb-0">
             <li>
-              <strong>Quantum Superposition</strong>: Places the qubit in an equal probability state between 0 and 1.
+              <strong>Multiple Quantum Sources</strong>: Superposition, vacuum fluctuations, and entanglement-based randomness.
             </li>
             <li>
-              <strong>Quantum Measurement</strong>: The act of measurement causes the random collapse of the superposition state.
+              <strong>Real-time Quality Analysis</strong>: Statistical tests including entropy, frequency, runs, and correlation tests.
             </li>
             <li>
-              <strong>Heisenberg Uncertainty Principle</strong>: Guarantees that certain quantum properties cannot be simultaneously determined with perfect precision.
+              <strong>Hardware Simulation</strong>: Realistic noise modeling and timing constraints.
             </li>
             <li>
-              <strong>Bell's Theorem</strong>: Confirms that quantum randomness cannot be explained by hidden deterministic variables.
+              <strong>Post-processing</strong>: Von Neumann extraction and other randomness enhancement techniques.
+            </li>
+            <li>
+              <strong>Interactive Visualization</strong>: Live bit generation, quality metrics, and application examples.
+            </li>
+            <li>
+              <strong>Export Capabilities</strong>: Multiple formats including binary, hex, Base64, and CSV.
             </li>
           </ul>
         </div>
@@ -62,25 +90,103 @@
   
   <div class="row">
     <div class="col-md-6">
-      <h5>Applications of Quantum Random Numbers</h5>
-      <p>True random numbers are valuable in many fields:</p>
-      <ul>
-        <li><strong>Cryptography</strong>: Generating encryption keys, initialization vectors, and nonces for security applications.</li>
-        <li><strong>Scientific Simulations</strong>: Monte Carlo methods that require high-quality randomness for accurate results.</li>
-        <li><strong>Statistical Sampling</strong>: Unbiased random sampling for statistics and research studies.</li>
-        <li><strong>Gaming and Gambling</strong>: Provably fair random number generation for games of chance.</li>
-        <li><strong>Numerical Optimization</strong>: Stochastic optimization algorithms that benefit from true randomness.</li>
-      </ul>
+      <h5>Configuration Guide by Use Case</h5>
+      
+      <div class="card mb-3">
+        <div class="card-header bg-primary text-white">
+          <h6 class="mb-0"><i class="fas fa-graduation-cap me-2"></i>Educational/Learning</h6>
+        </div>
+        <div class="card-body">
+          <ul class="mb-2">
+            <li><strong>Source:</strong> Superposition (easiest to understand)</li>
+            <li><strong>Noise:</strong> 0% (pure quantum mechanics)</li>
+            <li><strong>Post-processing:</strong> Disabled</li>
+            <li><strong>Hardware simulation:</strong> Disabled</li>
+          </ul>
+          <small class="text-muted">Perfect for understanding fundamental quantum randomness</small>
+        </div>
+      </div>
+      
+      <div class="card mb-3">
+        <div class="card-header bg-success text-white">
+          <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Cryptographic/Security</h6>
+        </div>
+        <div class="card-body">
+          <ul class="mb-2">
+            <li><strong>Source:</strong> Any (superposition recommended)</li>
+            <li><strong>Noise:</strong> 5-10% (realistic hardware)</li>
+            <li><strong>Post-processing:</strong> Enabled (bias correction)</li>
+            <li><strong>Hardware simulation:</strong> Optional</li>
+          </ul>
+          <small class="text-muted">Ensures high-quality randomness for security applications</small>
+        </div>
+      </div>
+      
+      <div class="card">
+        <div class="card-header bg-warning text-dark">
+          <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Research/Advanced</h6>
+        </div>
+        <div class="card-body">
+          <ul class="mb-2">
+            <li><strong>Source:</strong> Vacuum fluctuation or Entanglement</li>
+            <li><strong>Noise:</strong> Variable (experiment dependent)</li>
+            <li><strong>Post-processing:</strong> Variable</li>
+            <li><strong>Hardware simulation:</strong> Enabled</li>
+          </ul>
+          <small class="text-muted">For studying real quantum hardware behavior and limitations</small>
+        </div>
+      </div>
     </div>
+    
     <div class="col-md-6">
-      <h5>Implementation Methods</h5>
-      <ul>
-        <li><strong>Photonic QRNG</strong>: Using the quantum properties of light, such as path choice or photon arrival time.</li>
-        <li><strong>Vacuum Fluctuation</strong>: Measuring quantum fluctuations in the vacuum state of an electromagnetic field.</li>
-        <li><strong>Radioactive Decay</strong>: Using the inherently random timing of radioactive decay events.</li>
-        <li><strong>Quantum Circuit QRNG</strong>: Implementing quantum gates and measurements on quantum processors.</li>
-        <li><strong>Commercial QRNG Devices</strong>: Several companies now offer hardware QRNG products for various applications.</li>
-      </ul>
+      <h5>Feature Explanations</h5>
+      
+      <div class="accordion" id="featureAccordion">
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#noiseExplanation">
+              <i class="fas fa-volume-up me-2"></i>Noise Simulation
+            </button>
+          </h2>
+          <div id="noiseExplanation" class="accordion-collapse collapse" data-bs-parent="#featureAccordion">
+            <div class="accordion-body">
+              <p><strong>What it does:</strong> Adds realistic quantum hardware imperfections like gate errors and measurement noise.</p>
+              <p><strong>When to use:</strong> Enable when you want to understand how real quantum computers behave, not just ideal textbook scenarios.</p>
+              <p><strong>Typical values:</strong> 0% = perfect, 1-5% = good hardware, >10% = noisy hardware</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#postProcessingExplanation">
+              <i class="fas fa-filter me-2"></i>Post-Processing
+            </button>
+          </h2>
+          <div id="postProcessingExplanation" class="accordion-collapse collapse" data-bs-parent="#featureAccordion">
+            <div class="accordion-body">
+              <p><strong>What it does:</strong> Applies von Neumann extraction to remove any bias from the raw quantum measurements.</p>
+              <p><strong>When to use:</strong> Essential for cryptographic applications where even tiny biases could be exploited.</p>
+              <p><strong>Trade-off:</strong> Improves quality but may reduce the number of output bits.</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="accordion-item">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#hardwareExplanation">
+              <i class="fas fa-microchip me-2"></i>Hardware Simulation
+            </button>
+          </h2>
+          <div id="hardwareExplanation" class="accordion-collapse collapse" data-bs-parent="#featureAccordion">
+            <div class="accordion-body">
+              <p><strong>What it does:</strong> Adds realistic timing delays that would occur on actual quantum hardware.</p>
+              <p><strong>When to use:</strong> Educational purposes to understand that quantum operations aren't instantaneous.</p>
+              <p><strong>Effect:</strong> Slows down generation to simulate real hardware constraints (~1ms per bit).</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
   
@@ -116,9 +222,9 @@
 <!-- EDUCATIONAL-CONTENT END -->
 
 <!-- MINI_EXPLANATION_START -->
-<h5>Quantum Random Number Generator</h5>
-<p>QRNGs produce true random numbers based on inherently random quantum processes, unlike classical random number generators which are typically deterministic.</p>
+<h5>Enhanced Quantum Random Number Generator</h5>
+<p>Our advanced QRNG provides multiple quantum randomness sources with real-time quality analysis, producing truly random numbers based on fundamental quantum processes with comprehensive statistical validation.</p>
 <div class="alert alert-primary">
-  <strong>Key Quantum Concept:</strong> Leverages the fundamental randomness of quantum measurement outcomes to generate unpredictable numbers.
+  <strong>Key Features:</strong> Multiple quantum sources, real-time quality metrics, hardware simulation, post-processing, and interactive visualization for educational and practical applications.
 </div>
 <!-- MINI_EXPLANATION_END -->

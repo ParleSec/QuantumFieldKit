@@ -507,15 +507,30 @@ PLUGINS = {
     },
     
     "qrng": {
-        "name": "Quantum Random Number Generator",
-        "description": "Generate a random number using quantum superposition.",
+        "name": "Enhanced Quantum Random Number Generator",
+        "description": "Generate truly random numbers using multiple quantum sources with advanced statistical analysis.",
         "icon": "fa-dice",
         "category": "utilities",
         "parameters": [
-            {"name": "num_bits", "type": "int", "default": 8, "description": "Number of bits",
-             "min": 1, "max": 16}
+            {"name": "num_bits", "type": "int", "default": 8, "description": "Number of quantum bits to generate",
+             "min": 1, "max": 32},
+            {"name": "source_type", "type": "select", "default": "superposition", 
+             "description": "Quantum randomness source",
+             "options": ["superposition", "vacuum_fluctuation", "entanglement"]},
+            {"name": "noise_level", "type": "float", "default": 0.0, "description": "Hardware noise level",
+             "min": 0.0, "max": 0.3},
+            {"name": "enable_post_processing", "type": "bool", "default": False, 
+             "description": "Apply bias correction"},
+            {"name": "hardware_simulation", "type": "bool", "default": False, 
+             "description": "Add timing delays"}
         ],
-        "run": lambda p: run_plugin(generate_random_number_cirq, _plugin_key="qrng", num_bits=p["num_bits"])
+        "run": lambda p: run_plugin(generate_random_number_cirq, 
+                                  _plugin_key="qrng", 
+                                  num_bits=p["num_bits"],
+                                  source_type=p["source_type"],
+                                  noise_level=p["noise_level"],
+                                  enable_post_processing=p["enable_post_processing"] if isinstance(p["enable_post_processing"], bool) else p["enable_post_processing"].lower() == "true",
+                                  hardware_simulation=p["hardware_simulation"] if isinstance(p["hardware_simulation"], bool) else p["hardware_simulation"].lower() == "true")
     },
     
     "teleport": {
