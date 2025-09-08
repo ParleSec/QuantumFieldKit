@@ -20,7 +20,7 @@ function Navbar() {
     head.setAttribute('data-theme', theme);
     
     // Handle Tailwind dark mode
-    if (theme === 'dark') {
+    if (theme === 'quantumdark') {
       html.classList.add('dark');
     } else {
       html.classList.remove('dark');
@@ -97,7 +97,7 @@ function Navbar() {
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              onClick={() => setTheme(theme === 'quantumlight' ? 'dark' : 'quantumlight')}
+              onClick={() => setTheme(theme === 'quantumlight' ? 'quantumdark' : 'quantumlight')}
               className="p-2 rounded-lg hover:bg-base-200 transition-all"
             >
               <AnimatePresence mode="wait">

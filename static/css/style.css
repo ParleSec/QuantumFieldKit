@@ -5,23 +5,53 @@
    Base Styles
    ===================== */
    :root {
-    /* Color Palette */
-    --primary: #3c56b0;
-    --primary-dark: #273875;
-    --primary-light: #6d83d3;
-    --secondary: #2e3047;
-    --accent: #7c3aed;
+    /* Light Mode Color Palette */
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --secondary: #22d3ee;
+    --accent: #f472b6;
     --success: #10b981;
     --info: #3b82f6;
     --warning: #f59e0b;
     --danger: #ef4444;
-    --dark: #111827;
-    --gray-dark: #1f2937;
+    --dark: #1f2937;
+    --gray-dark: #374151;
     --gray-medium: #6b7280;
     --gray-light: #e5e7eb;
     --light: #f9fafb;
-    
-    /* Typography */
+    --background: #ffffff;
+    --surface: #f9fafb;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+  }
+  
+  /* Dark Mode Color Palette */
+  [data-theme="quantumdark"] {
+    --primary: #818cf8;
+    --primary-dark: #6366f1;
+    --primary-light: #a5b4fc;
+    --secondary: #34d399;
+    --accent: #fbbf24;
+    --success: #34d399;
+    --info: #60a5fa;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --dark: #111827;
+    --gray-dark: #1f2937;
+    --gray-medium: #9ca3af;
+    --gray-light: #4b5563;
+    --light: #f9fafb;
+    --background: #1f2937;
+    --surface: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border: #4b5563;
+  }
+  
+  /* Typography (shared across themes) */
+  :root {
     --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     --font-mono: 'Space Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     
@@ -47,8 +77,8 @@
   
   body {
     font-family: var(--font-primary);
-    background-color: #f8f9fa;
-    color: #333;
+    background-color: var(--background);
+    color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
@@ -56,6 +86,7 @@
     overflow-x: hidden;
     position: relative;
     padding-top: 56px;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   main {
@@ -98,7 +129,7 @@
      ===================== */
   #mainNav {
     transition: background-color 0.3s ease;
-    background-color: var(--dark);
+    background-color: var(--surface);
     box-shadow: var(--shadow-md);
     z-index: 1030; /* Ensure navbar is above other content */
     padding: 0.5rem 1rem;
@@ -107,10 +138,11 @@
     left: 0;
     right: 0;
     width: 100%;
+    border-bottom: 1px solid var(--border);
   }
   
   #mainNav.scrolled {
-    background-color: var(--dark);
+    background-color: var(--surface);
   }
   
   /* Brand styling */
@@ -382,8 +414,9 @@
      Cards & Plugins
      ===================== */
   .plugin-card {
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    background-color: #fff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    background-color: var(--background);
+    border: 1px solid var(--border);
     overflow: hidden;
     border-radius: var(--border-radius-lg);
   }
@@ -400,11 +433,132 @@
   .icon-wrapper {
     transition: transform 0.3s ease;
     width: 48px;
-    height: 48px;
   }
   
-  .plugin-card:hover .icon-wrapper {
-    transform: scale(1.1) rotate(5deg);
+  /* =====================
+     Enhanced Theme Support
+     ===================== */
+  
+  /* Form Controls */
+  .form-control, .form-select {
+    background-color: var(--background);
+    border-color: var(--border);
+    color: var(--text-primary);
+    transition: all 0.3s ease;
+  }
+  
+  .form-control:focus, .form-select:focus {
+    background-color: var(--background);
+    border-color: var(--primary);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+  }
+  
+  /* Cards and Surfaces */
+  .card {
+    background-color: var(--background);
+    border-color: var(--border);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+  
+  .card-header {
+    background-color: var(--surface);
+    border-bottom-color: var(--border);
+    color: var(--text-primary);
+  }
+  
+  .card-body {
+    color: var(--text-primary);
+  }
+  
+  /* Alerts */
+  .alert {
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+  
+  .alert-primary {
+    background-color: rgba(99, 102, 241, 0.1);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+  
+  .alert-success {
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+  }
+  
+  .alert-warning {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: var(--warning);
+    color: var(--warning);
+  }
+  
+  .alert-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: var(--info);
+    color: var(--info);
+  }
+  
+  /* Tables */
+  .table {
+    color: var(--text-primary);
+  }
+  
+  .table th {
+    border-color: var(--border);
+    color: var(--text-primary);
+  }
+  
+  .table td {
+    border-color: var(--border);
+  }
+  
+  /* Badges */
+  .badge {
+    transition: all 0.3s ease;
+  }
+  
+  /* Code blocks */
+  pre, code {
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  
+  /* QRNG Specific Styles */
+  .qrng-bit-sequence {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  .qrng-enhanced-viz .card {
+    background-color: var(--background);
+    border-color: var(--border);
+  }
+  
+  .qrng-enhanced-viz .card-header {
+    background-color: var(--surface);
+    color: var(--text-primary);
+  }
+  
+  /* Dark mode specific improvements */
+  [data-theme="quantumdark"] {
+    /* Improve contrast for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+  }
+  
+  [data-theme="quantumdark"] .form-control:focus,
+  [data-theme="quantumdark"] .form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(129, 140, 248, 0.25);
+  }
+  
+  [data-theme="quantumdark"] .text-muted {
+    color: var(--text-secondary) !important;
   }
   
   .tilt-card {
