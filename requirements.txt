@@ -28,3 +28,4 @@ cryptography>=41.0.0
 
 # Optional: For better JSON handling
 orjson>=3.9.0
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
